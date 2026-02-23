@@ -44,46 +44,63 @@
   </div>
 
   <!-- Header -->
-  <header class="header">
-    <h1>
-      <span class="logo">C</span>
-      <span data-i18n="title">Claude Token Tracker</span>
-    </h1>
-    <div class="header-right">
-      <!-- User info (multi-user mode) -->
-      <div class="user-info" id="user-info" style="display:none;">
-        <img class="user-avatar" id="user-avatar" src="" alt="">
-        <span class="user-name" id="user-name"></span>
-        <button class="logout-btn" id="logout-btn" data-i18n="logout">Abmelden</button>
+  <div class="sticky-header">
+    <header class="header">
+      <h1>
+        <span class="logo">C</span>
+        <span data-i18n="title">Claude Token Tracker</span>
+      </h1>
+      <div class="header-right">
+        <div class="lang-switch">
+          <button class="lang-btn" data-lang="de">DE</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <div class="user-info" id="user-info" style="display:none;">
+          <img class="user-avatar" id="user-avatar" src="" alt="">
+          <span class="user-name" id="user-name"></span>
+          <button class="logout-btn" id="logout-btn" data-i18n="logout">Abmelden</button>
+        </div>
       </div>
-      <div class="lang-switch">
-        <button class="lang-btn" data-lang="de">DE</button>
-        <button class="lang-btn" data-lang="en">EN</button>
-      </div>
-      <div class="period-filter">
-        <button class="period-btn" data-period="today" data-i18n="today">Heute</button>
-        <button class="period-btn" data-period="7d" data-i18n="days7">7 Tage</button>
-        <button class="period-btn active" data-period="30d" data-i18n="days30">30 Tage</button>
-        <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
-      </div>
-      <span class="live-label">
-        <span class="live-dot" id="live-dot"></span>
-        <span data-i18n="live">Live</span>
-      </span>
-      <button class="rebuild-btn" id="rebuild-btn" data-i18n="rebuildCache">Cache neu aufbauen</button>
-    </div>
-  </header>
+    </header>
 
-  <!-- Tabs -->
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="overview" data-i18n="overview">Übersicht</button>
-    <button class="tab-btn" data-tab="sessions" data-i18n="sessions">Sitzungen</button>
-    <button class="tab-btn" data-tab="projects" data-i18n="projects">Projekte</button>
-    <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
-    <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
-    <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
-    <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
-  </nav>
+    <nav class="tabs">
+      <div class="tabs-left">
+        <button class="tab-btn active" data-tab="overview" data-i18n="overview">Übersicht</button>
+        <button class="tab-btn" data-tab="sessions" data-i18n="sessions">Sitzungen</button>
+        <button class="tab-btn" data-tab="projects" data-i18n="projects">Projekte</button>
+        <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
+        <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
+        <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
+        <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
+      </div>
+      <div class="tabs-right">
+        <span class="live-label">
+          <span class="live-dot" id="live-dot"></span>
+          <span data-i18n="live">Live</span>
+        </span>
+        <div class="period-filter">
+          <button class="period-btn" data-period="today" data-i18n="today">Heute</button>
+          <button class="period-btn" data-period="7d" data-i18n="days7">7 Tage</button>
+          <button class="period-btn" data-period="30d" data-i18n="days30">30 Tage</button>
+          <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
+        </div>
+        <script>
+        (function() {
+          var p = localStorage.getItem('period') || '30d';
+          document.querySelectorAll('.period-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.period === p);
+          });
+        })();
+        </script>
+      </div>
+    </nav>
+
+    <div class="status-bar">
+      <div class="status-bar-right">
+        <button class="rebuild-btn" id="rebuild-btn" data-i18n="rebuildCache">Cache neu aufbauen</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Content -->
   <main class="content">
@@ -143,6 +160,29 @@
           <div class="kpi-label" data-tooltip-key="tooltipCacheCreateTokens">Cache Create</div>
           <div class="kpi-value" id="kpi-cache-create-tokens">-</div>
           <div class="kpi-sub" id="kpi-cache-create-cost"></div>
+        </div>
+      </div>
+
+      <div class="kpi-grid kpi-detail-grid kpi-lines-grid">
+        <div class="kpi-card kpi-detail kpi-detail-lines-written">
+          <div class="kpi-label" data-i18n="linesWritten">Write</div>
+          <div class="kpi-value" id="kpi-lines-written">-</div>
+          <div class="kpi-sub" id="kpi-lines-written-sub"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-lines-edited">
+          <div class="kpi-label" data-i18n="linesEdited">Edit</div>
+          <div class="kpi-value" id="kpi-lines-edited">-</div>
+          <div class="kpi-sub" id="kpi-lines-edited-sub"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-lines-deleted">
+          <div class="kpi-label" data-i18n="linesDeleted">Delete</div>
+          <div class="kpi-value" id="kpi-lines-deleted">-</div>
+          <div class="kpi-sub" id="kpi-lines-deleted-sub"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-lines-net">
+          <div class="kpi-label" data-i18n="linesNet">Net Change</div>
+          <div class="kpi-value" id="kpi-lines-net">-</div>
+          <div class="kpi-sub" id="kpi-lines-net-sub"></div>
         </div>
       </div>
 
@@ -339,6 +379,15 @@
           </div>
         </div>
       </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="dailyLinesChart" data-tooltip-key="tooltipDailyLines">Tägliche Zeilen Code</h3>
+          <div class="chart-container">
+            <canvas id="chart-daily-lines"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Tab 7: Info -->
@@ -424,10 +473,10 @@ pm2 save</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Claude Opus 4.6</td><td class="num">$15.00</td><td class="num">$75.00</td><td class="num">$1.50</td><td class="num">$18.75</td></tr>
-              <tr><td>Claude Opus 4.5</td><td class="num">$15.00</td><td class="num">$75.00</td><td class="num">$1.50</td><td class="num">$18.75</td></tr>
+              <tr><td>Claude Opus 4.6</td><td class="num">$5.00</td><td class="num">$25.00</td><td class="num">$0.50</td><td class="num">$6.25</td></tr>
+              <tr><td>Claude Opus 4.5</td><td class="num">$5.00</td><td class="num">$25.00</td><td class="num">$0.50</td><td class="num">$6.25</td></tr>
               <tr><td>Claude Sonnet 4.5</td><td class="num">$3.00</td><td class="num">$15.00</td><td class="num">$0.30</td><td class="num">$3.75</td></tr>
-              <tr><td>Claude Haiku 4.5</td><td class="num">$0.80</td><td class="num">$4.00</td><td class="num">$0.08</td><td class="num">$1.00</td></tr>
+              <tr><td>Claude Haiku 4.5</td><td class="num">$1.00</td><td class="num">$5.00</td><td class="num">$0.10</td><td class="num">$1.25</td></tr>
               <tr><td>Claude Sonnet 3.7</td><td class="num">$3.00</td><td class="num">$15.00</td><td class="num">$0.30</td><td class="num">$3.75</td></tr>
             </tbody>
           </table>
@@ -437,6 +486,21 @@ pm2 save</code></pre>
           <h3 data-i18n="infoDataSourceTitle">Datenquelle</h3>
           <p data-i18n="infoDataSourceDesc"></p>
         </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoLinesTitle">Lines of Code</h3>
+          <p data-i18n="infoLinesDesc"></p>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoChartInteractivityTitle">Chart Interactivity</h3>
+          <p data-i18n="infoChartInteractivityDesc"></p>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoDashboardOverviewTitle">Dashboard Overview</h3>
+          <p data-i18n="infoDashboardOverviewDesc"></p>
+        </div>
       </div>
     </div>
 
@@ -444,6 +508,7 @@ pm2 save</code></pre>
 
   <footer class="footer">
     <div class="footer-inner">
+      <span class="footer-version">v0.0.1</span>
       <span class="footer-dev">
         Built by <a href="https://celox.io" target="_blank" rel="noopener">Martin Pfeffer</a>
       </span>

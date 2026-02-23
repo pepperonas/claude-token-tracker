@@ -14,6 +14,16 @@ const STATE_PATH = path.join(__dirname, '.sync-state.json');
 
 // --- Inline parser (standalone, no imports from main project) ---
 
+function countLines(str) {
+  if (!str) return 0;
+  let n = 1;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '\n') n++;
+  }
+  if (str[str.length - 1] === '\n') n--;
+  return n;
+}
+
 const HOME_PREFIX_RE = new RegExp(
   '^' + HOME.replace(/\//g, '-').replace(/^-/, '-') + '-?'
 );
@@ -58,9 +68,18 @@ function parseSessionFile(filePath, fromOffset = 0) {
       const timestamp = obj.timestamp;
 
       const tools = [];
+      let linesAdded = 0, linesRemoved = 0, linesWritten = 0;
       if (Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          if (block.type === 'tool_use') tools.push(block.name);
+          if (block.type === 'tool_use') {
+            tools.push(block.name);
+            if (block.name === 'Edit' && block.input) {
+              linesRemoved += countLines(block.input.old_string);
+              linesAdded += countLines(block.input.new_string);
+            } else if (block.name === 'Write' && block.input) {
+              linesWritten += countLines(block.input.content);
+            }
+          }
         }
       }
 
@@ -78,7 +97,10 @@ function parseSessionFile(filePath, fromOffset = 0) {
         cacheReadTokens: usage.cache_read_input_tokens || 0,
         cacheCreateTokens: usage.cache_creation_input_tokens || 0,
         tools: mergedTools,
-        stopReason: msg.stop_reason
+        stopReason: msg.stop_reason,
+        linesAdded,
+        linesRemoved,
+        linesWritten
       });
     }
   }

@@ -9,8 +9,8 @@ describe('pricing', () => {
         cacheReadTokens: 1_000_000,
         cacheCreateTokens: 1_000_000
       });
-      // 15 + 75 + 1.5 + 18.75 = 110.25
-      expect(cost).toBeCloseTo(110.25, 2);
+      // 5 + 25 + 0.50 + 6.25 = 36.75
+      expect(cost).toBeCloseTo(36.75, 2);
     });
 
     it('calculates cost for Sonnet 4.5', () => {
@@ -31,8 +31,8 @@ describe('pricing', () => {
         cacheReadTokens: 300_000,
         cacheCreateTokens: 100_000
       });
-      // 0.4 + 0.8 + 0.024 + 0.1 = 1.324
-      expect(cost).toBeCloseTo(1.324, 3);
+      // 0.5 + 1.0 + 0.03 + 0.125 = 1.655
+      expect(cost).toBeCloseTo(1.655, 3);
     });
 
     it('handles zero tokens', () => {
@@ -80,8 +80,8 @@ describe('pricing', () => {
   describe('getPricing', () => {
     it('returns pricing for known models', () => {
       const p = getPricing('claude-opus-4-6');
-      expect(p.input).toBe(15);
-      expect(p.output).toBe(75);
+      expect(p.input).toBe(5);
+      expect(p.output).toBe(25);
     });
 
     it('returns default pricing for unknown models', () => {

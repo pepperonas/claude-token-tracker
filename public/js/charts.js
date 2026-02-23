@@ -10,6 +10,46 @@ const COLORS = {
   models: ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149', '#39d2c0']
 };
 
+function saveChartLegendState(chartId, chart) {
+  const store = JSON.parse(localStorage.getItem('chartLegendHidden') || '{}');
+  const hidden = [];
+  const isDoughnut = chart.config.type === 'doughnut' || chart.config.type === 'pie';
+  if (isDoughnut) {
+    const meta = chart.getDatasetMeta(0);
+    meta.data.forEach((_, i) => {
+      if (!chart.getDataVisibility(i)) hidden.push(i);
+    });
+  } else {
+    chart.data.datasets.forEach((ds, i) => {
+      if (ds.hidden) hidden.push(i);
+    });
+  }
+  if (hidden.length > 0) store[chartId] = hidden;
+  else delete store[chartId];
+  localStorage.setItem('chartLegendHidden', JSON.stringify(store));
+}
+
+function restoreChartLegendState(chartId, chart) {
+  const store = JSON.parse(localStorage.getItem('chartLegendHidden') || '{}');
+  const hidden = store[chartId];
+  if (!hidden || !Array.isArray(hidden)) return;
+  const isDoughnut = chart.config.type === 'doughnut' || chart.config.type === 'pie';
+  if (isDoughnut) {
+    hidden.forEach(i => {
+      if (i < chart.data.datasets[0].data.length) {
+        chart.toggleDataVisibility(i);
+      }
+    });
+  } else {
+    hidden.forEach(i => {
+      if (i < chart.data.datasets.length) {
+        chart.data.datasets[i].hidden = true;
+      }
+    });
+  }
+  chart.update('none');
+}
+
 // Chart.js global defaults
 function initChartDefaults() {
   Chart.defaults.color = '#8b949e';
@@ -23,6 +63,14 @@ function initChartDefaults() {
   Chart.defaults.plugins.tooltip.borderWidth = 1;
   Chart.defaults.plugins.tooltip.padding = 10;
   Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+  const defaultLegendClick = Chart.defaults.plugins.legend.onClick;
+  Chart.defaults.plugins.legend.onClick = function(e, legendItem, legend) {
+    defaultLegendClick.call(this, e, legendItem, legend);
+    const chart = legend.chart;
+    const canvasId = chart.canvas.id;
+    saveChartLegendState(canvasId, chart);
+  };
 }
 
 function formatTokens(n) {
@@ -108,6 +156,7 @@ function createDailyTokenChart(canvasId, data, includeCache) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createDailyCostChart(canvasId, data) {
@@ -147,6 +196,7 @@ function createDailyCostChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createModelDoughnut(canvasId, data, includeCache) {
@@ -181,6 +231,7 @@ function createModelDoughnut(canvasId, data, includeCache) {
       cutout: '60%'
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createHourlyChart(canvasId, data) {
@@ -211,6 +262,7 @@ function createHourlyChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createProjectBarChart(canvasId, data, includeCache) {
@@ -252,6 +304,7 @@ function createProjectBarChart(canvasId, data, includeCache) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createToolBarChart(canvasId, data) {
@@ -289,6 +342,7 @@ function createToolBarChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createModelAreaChart(canvasId, data) {
@@ -336,6 +390,7 @@ function createModelAreaChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 // --- Insights chart creators ---
@@ -412,6 +467,7 @@ function createCostBreakdownChart(canvasId, data, includeCache) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createCumulativeCostChart(canvasId, data) {
@@ -450,6 +506,7 @@ function createCumulativeCostChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createWeekdayChart(canvasId, data) {
@@ -507,6 +564,7 @@ function createWeekdayChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createCacheEfficiencyChart(canvasId, data) {
@@ -549,6 +607,59 @@ function createCacheEfficiencyChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createDailyLinesChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.date.slice(5)),
+      datasets: [
+        {
+          label: t('linesWritten'),
+          data: data.map(d => d.linesWritten),
+          backgroundColor: '#3fb950',
+          stack: 'lines'
+        },
+        {
+          label: t('linesEdited'),
+          data: data.map(d => d.linesAdded),
+          backgroundColor: '#d29922',
+          stack: 'lines'
+        },
+        {
+          label: t('linesDeleted'),
+          data: data.map(d => d.linesRemoved),
+          backgroundColor: '#f85149',
+          stack: 'lines'
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${formatNumber(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: {
+          stacked: true,
+          ticks: { callback: v => formatNumber(v) }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createStopReasonsChart(canvasId, data) {
@@ -580,6 +691,7 @@ function createStopReasonsChart(canvasId, data) {
       cutout: '60%'
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
 function createSessionEfficiencyChart(canvasId, data) {
@@ -626,4 +738,5 @@ function createSessionEfficiencyChart(canvasId, data) {
       }
     }
   });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }

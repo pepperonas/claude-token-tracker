@@ -22,6 +22,13 @@ body {
   min-height: 100vh;
 }
 
+/* Sticky header wrapper */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 /* Header */
 .header {
   display: flex;
@@ -30,9 +37,6 @@ body {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  position: sticky;
-  top: 0;
-  z-index: 100;
 }
 
 .header h1 {
@@ -109,10 +113,37 @@ body {
 /* Tabs */
 .tabs {
   display: flex;
-  gap: 0;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
   background: var(--surface);
+}
+
+.tabs-left {
+  display: flex;
+  gap: 0;
+}
+
+.tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.status-bar-right {
+  display: flex;
+  gap: 12px;
 }
 
 .tab-btn {
@@ -186,6 +217,11 @@ body {
 .kpi-detail-output .kpi-value { color: var(--green); }
 .kpi-detail-cache-read .kpi-value { color: var(--purple); }
 .kpi-detail-cache-create .kpi-value { color: var(--orange); }
+
+.kpi-detail-lines-written .kpi-value { color: #3fb950; }
+.kpi-detail-lines-edited .kpi-value { color: #d29922; }
+.kpi-detail-lines-deleted .kpi-value { color: #f85149; }
+.kpi-detail-lines-net .kpi-value { color: #e6edf3; }
 
 /* Table sort indicators */
 .data-table th.sort-asc::after { content: ' \u25B2'; font-size: 9px; }
@@ -373,12 +409,14 @@ body {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .chart-grid { grid-template-columns: 1fr; }
   .header { flex-direction: column; gap: 12px; }
+  .tabs { flex-wrap: wrap; }
+  .tabs-right { width: 100%; justify-content: flex-end; padding: 8px 0; }
 }
 
 @media (max-width: 600px) {
   .kpi-grid { grid-template-columns: 1fr; }
   .content { padding: 16px; }
-  .tabs { overflow-x: auto; }
+  .tabs-left { overflow-x: auto; width: 100%; }
 }
 
 /* Rebuild button */
@@ -862,6 +900,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+}
+
+.footer-version {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.6;
 }
 
 .footer-dev {

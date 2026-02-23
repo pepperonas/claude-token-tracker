@@ -3,7 +3,7 @@ let state = {
   period: localStorage.getItem('period') || '30d',
   activeTab: 'overview',
   sessionFilter: { project: '', model: '' },
-  includeCache: false,
+  includeCache: true,
   multiUser: false,
   user: null
 };
@@ -386,8 +386,8 @@ async function loadOverview() {
   const [overview, daily, models, hourly, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
     api('daily' + periodQuery()),
-    api('models'),
-    api('hourly'),
+    api('models' + periodQuery()),
+    api('hourly' + periodQuery()),
     api('stats-cache').catch(() => null)
   ]);
 
@@ -398,13 +398,8 @@ async function loadOverview() {
   const displayCost = getDisplayCost(overview);
 
   document.getElementById('kpi-tokens').textContent = formatTokens(displayTokens);
-  if (state.includeCache) {
-    document.getElementById('kpi-tokens-sub').textContent =
-      LANG[currentLang].kpiTokensSub(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens), formatTokens(overview.cacheReadTokens));
-  } else {
-    document.getElementById('kpi-tokens-sub').textContent =
-      LANG[currentLang].kpiTokensSubNoCache(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens));
-  }
+  document.getElementById('kpi-tokens-sub').textContent =
+    LANG[currentLang].kpiTokensSub(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens), formatTokens(overview.cacheReadTokens));
   document.getElementById('kpi-cost').textContent = formatCost(displayCost);
   document.getElementById('kpi-cost-sub').textContent = t('costSubLabel');
   document.getElementById('kpi-sessions').textContent = formatNumber(overview.sessions);
@@ -419,6 +414,23 @@ async function loadOverview() {
   document.getElementById('kpi-cache-read-cost').textContent = formatCost(overview.cacheReadCost || 0);
   document.getElementById('kpi-cache-create-tokens').textContent = formatTokens(overview.cacheCreateTokens);
   document.getElementById('kpi-cache-create-cost').textContent = formatCost(overview.cacheCreateCost || 0);
+
+  // Lines of Code detail cards
+  const lA = overview.linesAdded || 0;
+  const lR = overview.linesRemoved || 0;
+  const lW = overview.linesWritten || 0;
+  const netLines = lW + lA - lR;
+  const sessCount = overview.sessions || 1;
+  const dayCount = daily.length || 1;
+
+  document.getElementById('kpi-lines-written').textContent = formatNumber(lW);
+  document.getElementById('kpi-lines-written-sub').textContent = `~${formatNumber(Math.round(lW / dayCount))} ${t('linesPerDay')}`;
+  document.getElementById('kpi-lines-edited').textContent = formatNumber(lA);
+  document.getElementById('kpi-lines-edited-sub').textContent = `~${formatNumber(Math.round(lA / sessCount))} ${t('linesPerSession')}`;
+  document.getElementById('kpi-lines-deleted').textContent = formatNumber(lR);
+  document.getElementById('kpi-lines-deleted-sub').textContent = `~${formatNumber(Math.round(lR / sessCount))} ${t('linesPerSession')}`;
+  document.getElementById('kpi-lines-net').textContent = (netLines >= 0 ? '+' : '') + formatNumber(netLines);
+  document.getElementById('kpi-lines-net-sub').textContent = t('netChangeDesc');
 
   // Stats-cache banner (official Claude totals — single-user only)
   const banner = document.getElementById('stats-banner');
@@ -449,14 +461,15 @@ async function loadOverview() {
   }
 
   // Charts — pass includeCache flag
-  createDailyTokenChart('chart-daily-tokens', daily, state.includeCache);
+  createDailyTokenChart('chart-daily-tokens', daily, false);
   createDailyCostChart('chart-daily-cost', daily);
-  createModelDoughnut('chart-model-dist', models, state.includeCache);
+  createModelDoughnut('chart-model-dist', models, false);
   createHourlyChart('chart-hourly', hourly);
 }
 
 async function loadSessions() {
-  const sessions = await api('sessions');
+  const pq = periodQuery();
+  const sessions = await api('sessions' + pq);
 
   // Populate project filter
   const projectSelect = document.getElementById('filter-project');
@@ -480,6 +493,29 @@ async function loadSessions() {
     filtered = filtered.filter(s => s.project === state.sessionFilter.project);
   }
 
+  // Update sessions table headers dynamically (to include lines columns)
+  const sessionThead = document.querySelector('#tab-sessions thead tr');
+  if (sessionThead) {
+    sessionThead.textContent = '';
+    const sHeaders = [
+      { text: t('date') },
+      { text: t('project') },
+      { text: t('model') },
+      { text: t('duration'), cls: 'num' },
+      { text: t('messages'), cls: 'num' },
+      { text: t('toolCalls'), cls: 'num' },
+      { text: t('tokens'), cls: 'num' },
+      { text: '+/-', cls: 'num' },
+      { text: t('cost'), cls: 'num' }
+    ];
+    for (const h of sHeaders) {
+      const th = document.createElement('th');
+      th.textContent = h.text;
+      if (h.cls) th.className = h.cls;
+      sessionThead.appendChild(th);
+    }
+  }
+
   storeTableData('sessions-tbody', filtered, [
     { value: s => s.firstTs ? s.firstTs.slice(0, 16).replace('T', ' ') : '-' },
     { value: s => s.project },
@@ -488,13 +524,20 @@ async function loadSessions() {
     { value: s => formatNumber(s.messages), className: 'num' },
     { value: s => formatNumber(s.toolCalls), className: 'num' },
     { value: s => formatTokens(getDisplayTokens(s)), className: 'num' },
+    { value: s => {
+      const a = s.linesAdded || 0;
+      const r = s.linesRemoved || 0;
+      const w = s.linesWritten || 0;
+      if (a + r + w === 0) return '-';
+      return `+${formatNumber(a)} -${formatNumber(r)} w${formatNumber(w)}`;
+    }, className: 'num' },
     { value: s => formatCost(s.cost), className: 'num' }
   ], 100);
 }
 
 async function loadProjects() {
-  const projects = await api('projects');
-  createProjectBarChart('chart-projects', projects, state.includeCache);
+  const projects = await api('projects' + periodQuery());
+  createProjectBarChart('chart-projects', projects, false);
 
   const tbody = document.getElementById('projects-tbody');
   const cellDefs = [
@@ -502,17 +545,20 @@ async function loadProjects() {
     { value: p => formatTokens(getDisplayTokens(p)), className: 'num' },
     { value: p => formatTokens(p.inputTokens), className: 'num' },
     { value: p => formatTokens(p.outputTokens), className: 'num' },
-  ];
-  if (state.includeCache) {
-    cellDefs.push({ value: p => formatTokens(p.cacheReadTokens), className: 'num' });
-  }
-  cellDefs.push(
+    { value: p => formatTokens(p.cacheReadTokens), className: 'num' },
+    { value: p => {
+      const a = p.linesAdded || 0;
+      const r = p.linesRemoved || 0;
+      const w = p.linesWritten || 0;
+      if (a + r + w === 0) return '-';
+      return `+${formatNumber(a)} -${formatNumber(r)} w${formatNumber(w)}`;
+    }, className: 'num' },
     { value: p => formatNumber(p.sessions), className: 'num' },
     { value: p => formatNumber(p.messages), className: 'num' },
     { value: p => formatCost(p.cost), className: 'num' }
-  );
+  ];
 
-  // Update table headers for cache visibility
+  // Update table headers
   const thead = document.querySelector('#tab-projects thead tr');
   if (thead) {
     thead.textContent = '';
@@ -521,15 +567,12 @@ async function loadProjects() {
       { text: t('totalTokensH'), cls: 'num' },
       { text: t('input'), cls: 'num' },
       { text: t('output'), cls: 'num' },
-    ];
-    if (state.includeCache) {
-      headers.push({ text: t('cacheRead'), cls: 'num' });
-    }
-    headers.push(
+      { text: t('cacheRead'), cls: 'num' },
+      { text: '+/-', cls: 'num' },
       { text: t('sessionsLabel'), cls: 'num' },
       { text: t('messagesLabel'), cls: 'num' },
       { text: t('cost'), cls: 'num' }
-    );
+    ];
     for (const h of headers) {
       const th = document.createElement('th');
       th.textContent = h.text;
@@ -542,7 +585,7 @@ async function loadProjects() {
 }
 
 async function loadTools() {
-  const tools = await api('tools');
+  const tools = await api('tools' + periodQuery());
   createToolBarChart('chart-tools', tools);
 
   storeTableData('tools-tbody', tools, [
@@ -554,7 +597,7 @@ async function loadTools() {
 
 async function loadModels() {
   const [models, dailyByModel] = await Promise.all([
-    api('models'),
+    api('models' + periodQuery()),
     api('daily-by-model' + periodQuery())
   ]);
 
@@ -565,13 +608,9 @@ async function loadModels() {
     { value: m => m.label },
     { value: m => formatTokens(m.inputTokens), className: 'num' },
     { value: m => formatTokens(m.outputTokens), className: 'num' },
+    { value: m => formatTokens(m.cacheReadTokens), className: 'num' },
+    { value: m => formatTokens(m.cacheCreateTokens), className: 'num' },
   ];
-  if (state.includeCache) {
-    cellDefs.push(
-      { value: m => formatTokens(m.cacheReadTokens), className: 'num' },
-      { value: m => formatTokens(m.cacheCreateTokens), className: 'num' }
-    );
-  }
   cellDefs.push(
     { value: m => formatNumber(m.messages), className: 'num' },
     { value: m => formatCost(m.cost), className: 'num' }
@@ -585,13 +624,9 @@ async function loadModels() {
       { text: t('model') },
       { text: t('input'), cls: 'num' },
       { text: t('output'), cls: 'num' },
+      { text: t('cacheRead'), cls: 'num' },
+      { text: t('cacheCreate'), cls: 'num' },
     ];
-    if (state.includeCache) {
-      headers.push(
-        { text: t('cacheRead'), cls: 'num' },
-        { text: t('cacheCreate'), cls: 'num' }
-      );
-    }
     headers.push(
       { text: t('messagesLabel'), cls: 'num' },
       { text: t('cost'), cls: 'num' }
@@ -609,21 +644,23 @@ async function loadModels() {
 
 async function loadInsights() {
   const pq = periodQuery();
-  const [costBreakdown, cumulativeCost, weekday, cacheEfficiency, stopReasons, sessionEfficiency] = await Promise.all([
+  const [costBreakdown, cumulativeCost, weekday, cacheEfficiency, stopReasons, sessionEfficiency, daily] = await Promise.all([
     api('daily-cost-breakdown' + pq),
     api('cumulative-cost' + pq),
-    api('day-of-week'),
+    api('day-of-week' + pq),
     api('cache-efficiency' + pq),
-    api('stop-reasons'),
-    api('session-efficiency')
+    api('stop-reasons' + pq),
+    api('session-efficiency' + pq),
+    api('daily' + pq)
   ]);
 
-  createCostBreakdownChart('chart-cost-breakdown', costBreakdown, state.includeCache);
+  createCostBreakdownChart('chart-cost-breakdown', costBreakdown, false);
   createCumulativeCostChart('chart-cumulative-cost', cumulativeCost);
   createWeekdayChart('chart-weekday', weekday);
   createCacheEfficiencyChart('chart-cache-efficiency', cacheEfficiency);
   createStopReasonsChart('chart-stop-reasons', stopReasons);
   createSessionEfficiencyChart('chart-session-efficiency', sessionEfficiency);
+  createDailyLinesChart('chart-daily-lines', daily);
 }
 
 async function loadInfo() {

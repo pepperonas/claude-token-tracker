@@ -475,7 +475,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/sessions') {
-    return sendJSON(res, agg.getSessions(query.project, query.model));
+    return sendJSON(res, agg.getSessions(query.project, query.model, query.from, query.to));
   }
 
   if (pathname.startsWith('/api/session/')) {
@@ -486,28 +486,28 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/projects') {
-    return sendJSON(res, agg.getProjects());
+    return sendJSON(res, agg.getProjects(query.from, query.to));
   }
 
   if (pathname === '/api/models') {
-    return sendJSON(res, agg.getModels());
+    return sendJSON(res, agg.getModels(query.from, query.to));
   }
 
   if (pathname === '/api/tools') {
-    return sendJSON(res, agg.getTools());
+    return sendJSON(res, agg.getTools(query.from, query.to));
   }
 
   if (pathname === '/api/hourly') {
-    return sendJSON(res, agg.getHourly());
+    return sendJSON(res, agg.getHourly(query.from, query.to));
   }
 
   // Insights API endpoints
   if (pathname === '/api/stop-reasons') {
-    return sendJSON(res, agg.getStopReasons());
+    return sendJSON(res, agg.getStopReasons(query.from, query.to));
   }
 
   if (pathname === '/api/day-of-week') {
-    return sendJSON(res, agg.getDayOfWeek());
+    return sendJSON(res, agg.getDayOfWeek(query.from, query.to));
   }
 
   if (pathname === '/api/cache-efficiency') {
@@ -523,7 +523,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/session-efficiency') {
-    return sendJSON(res, agg.getSessionEfficiency());
+    return sendJSON(res, agg.getSessionEfficiency(query.from, query.to));
   }
 
   // Claude's own stats-cache with cost calculation (single-user only)
