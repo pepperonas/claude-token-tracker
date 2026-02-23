@@ -26,6 +26,7 @@
         <button class="period-btn active" data-period="30d" data-i18n="days30">30 Tage</button>
         <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
       </div>
+      <button class="cache-toggle" id="cache-toggle">Cache: Off</button>
       <span class="live-label">
         <span class="live-dot" id="live-dot"></span>
         <span data-i18n="live">Live</span>
@@ -42,6 +43,7 @@
     <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
     <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
     <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
+    <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
   </nav>
 
   <!-- Content -->
@@ -263,6 +265,73 @@
           <div class="chart-container">
             <canvas id="chart-session-efficiency"></canvas>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 7: Info -->
+    <div id="tab-info" class="tab-panel">
+      <div class="info-container">
+        <h2 data-i18n="infoTitle">So funktioniert das Token-Tracking</h2>
+
+        <div class="info-grid">
+          <div class="info-card info-card-input">
+            <div class="info-card-icon">I</div>
+            <h3 data-i18n="infoInputTitle">Input Tokens</h3>
+            <p data-i18n="infoInputDesc"></p>
+          </div>
+          <div class="info-card info-card-output">
+            <div class="info-card-icon">O</div>
+            <h3 data-i18n="infoOutputTitle">Output Tokens</h3>
+            <p data-i18n="infoOutputDesc"></p>
+          </div>
+          <div class="info-card info-card-cache-read">
+            <div class="info-card-icon">CR</div>
+            <h3 data-i18n="infoCacheReadTitle">Cache Read Tokens</h3>
+            <p data-i18n="infoCacheReadDesc"></p>
+          </div>
+          <div class="info-card info-card-cache-create">
+            <div class="info-card-icon">CC</div>
+            <h3 data-i18n="infoCacheCreateTitle">Cache Create Tokens</h3>
+            <p data-i18n="infoCacheCreateDesc"></p>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoToggleTitle">Cache-Umschalter</h3>
+          <p data-i18n="infoToggleDesc"></p>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoCostTitle">Kostenschaetzung</h3>
+          <p data-i18n="infoCostDesc"></p>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoPricingTitle">Modell-Preise (pro 1M Tokens)</h3>
+          <table class="data-table info-pricing-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th class="num">Input</th>
+                <th class="num">Output</th>
+                <th class="num">Cache Read</th>
+                <th class="num">Cache Create</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Claude Opus 4.6</td><td class="num">$15.00</td><td class="num">$75.00</td><td class="num">$1.50</td><td class="num">$18.75</td></tr>
+              <tr><td>Claude Opus 4.5</td><td class="num">$15.00</td><td class="num">$75.00</td><td class="num">$1.50</td><td class="num">$18.75</td></tr>
+              <tr><td>Claude Sonnet 4.5</td><td class="num">$3.00</td><td class="num">$15.00</td><td class="num">$0.30</td><td class="num">$3.75</td></tr>
+              <tr><td>Claude Haiku 4.5</td><td class="num">$0.80</td><td class="num">$4.00</td><td class="num">$0.08</td><td class="num">$1.00</td></tr>
+              <tr><td>Claude Sonnet 3.7</td><td class="num">$3.00</td><td class="num">$15.00</td><td class="num">$0.30</td><td class="num">$3.75</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <h3 data-i18n="infoDataSourceTitle">Datenquelle</h3>
+          <p data-i18n="infoDataSourceDesc"></p>
         </div>
       </div>
     </div>

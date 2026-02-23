@@ -51,40 +51,42 @@ function destroyChart(id) {
   }
 }
 
-function createDailyTokenChart(canvasId, data) {
+function createDailyTokenChart(canvasId, data, includeCache) {
   destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
+  const datasets = [
+    {
+      label: 'Input',
+      data: data.map(d => d.inputTokens),
+      backgroundColor: COLORS.input,
+      stack: 'tokens'
+    },
+    {
+      label: 'Output',
+      data: data.map(d => d.outputTokens),
+      backgroundColor: COLORS.output,
+      stack: 'tokens'
+    }
+  ];
+  if (includeCache) {
+    datasets.push(
+      {
+        label: 'Cache Read',
+        data: data.map(d => d.cacheReadTokens),
+        backgroundColor: COLORS.cacheRead,
+        stack: 'tokens'
+      },
+      {
+        label: 'Cache Create',
+        data: data.map(d => d.cacheCreateTokens),
+        backgroundColor: COLORS.cacheCreate,
+        stack: 'tokens'
+      }
+    );
+  }
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: data.map(d => d.date.slice(5)),
-      datasets: [
-        {
-          label: 'Input',
-          data: data.map(d => d.inputTokens),
-          backgroundColor: COLORS.input,
-          stack: 'tokens'
-        },
-        {
-          label: 'Output',
-          data: data.map(d => d.outputTokens),
-          backgroundColor: COLORS.output,
-          stack: 'tokens'
-        },
-        {
-          label: 'Cache Read',
-          data: data.map(d => d.cacheReadTokens),
-          backgroundColor: COLORS.cacheRead,
-          stack: 'tokens'
-        },
-        {
-          label: 'Cache Create',
-          data: data.map(d => d.cacheCreateTokens),
-          backgroundColor: COLORS.cacheCreate,
-          stack: 'tokens'
-        }
-      ]
-    },
+    data: { labels: data.map(d => d.date.slice(5)), datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -144,15 +146,19 @@ function createDailyCostChart(canvasId, data) {
   });
 }
 
-function createModelDoughnut(canvasId, data) {
+function createModelDoughnut(canvasId, data, includeCache) {
   destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
+  const tokenValues = data.map(d => {
+    if (includeCache) return d.totalTokens;
+    return (d.inputTokens || 0) + (d.outputTokens || 0);
+  });
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: data.map(d => d.label),
       datasets: [{
-        data: data.map(d => d.totalTokens),
+        data: tokenValues,
         backgroundColor: COLORS.models.slice(0, data.length),
         borderWidth: 0
       }]
@@ -202,17 +208,21 @@ function createHourlyChart(canvasId, data) {
   });
 }
 
-function createProjectBarChart(canvasId, data) {
+function createProjectBarChart(canvasId, data, includeCache) {
   destroyChart(canvasId);
   const top = data.slice(0, 15);
   const ctx = document.getElementById(canvasId).getContext('2d');
+  const tokenValues = top.map(d => {
+    if (includeCache) return d.totalTokens;
+    return (d.inputTokens || 0) + (d.outputTokens || 0);
+  });
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: top.map(d => d.name.length > 25 ? d.name.slice(0, 25) + '...' : d.name),
       datasets: [{
         label: 'Total Tokens',
-        data: top.map(d => d.totalTokens),
+        data: tokenValues,
         backgroundColor: COLORS.input + '80',
         borderColor: COLORS.input,
         borderWidth: 1
@@ -322,52 +332,57 @@ function createModelAreaChart(canvasId, data) {
 
 // --- Insights chart creators ---
 
-function createCostBreakdownChart(canvasId, data) {
+function createCostBreakdownChart(canvasId, data, includeCache) {
   destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
+  const datasets = [
+    {
+      label: 'Input',
+      data: data.map(d => d.inputCost),
+      borderColor: COLORS.input,
+      backgroundColor: COLORS.input + '30',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 2
+    },
+    {
+      label: 'Output',
+      data: data.map(d => d.outputCost),
+      borderColor: COLORS.output,
+      backgroundColor: COLORS.output + '30',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 2
+    }
+  ];
+  if (includeCache) {
+    datasets.push(
+      {
+        label: 'Cache Read',
+        data: data.map(d => d.cacheReadCost),
+        borderColor: COLORS.cacheRead,
+        backgroundColor: COLORS.cacheRead + '30',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2
+      },
+      {
+        label: 'Cache Create',
+        data: data.map(d => d.cacheCreateCost),
+        borderColor: COLORS.cacheCreate,
+        backgroundColor: COLORS.cacheCreate + '30',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2
+      }
+    );
+  }
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
       labels: data.map(d => d.date.slice(5)),
-      datasets: [
-        {
-          label: 'Input',
-          data: data.map(d => d.inputCost),
-          borderColor: COLORS.input,
-          backgroundColor: COLORS.input + '30',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        },
-        {
-          label: 'Output',
-          data: data.map(d => d.outputCost),
-          borderColor: COLORS.output,
-          backgroundColor: COLORS.output + '30',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        },
-        {
-          label: 'Cache Read',
-          data: data.map(d => d.cacheReadCost),
-          borderColor: COLORS.cacheRead,
-          backgroundColor: COLORS.cacheRead + '30',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        },
-        {
-          label: 'Cache Create',
-          data: data.map(d => d.cacheCreateCost),
-          borderColor: COLORS.cacheCreate,
-          backgroundColor: COLORS.cacheCreate + '30',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        }
-      ]
+      datasets
     },
     options: {
       responsive: true,

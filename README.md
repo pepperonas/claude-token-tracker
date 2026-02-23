@@ -15,7 +15,9 @@ Ein lokales Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JS
 
 ### Features
 
-- **11 interaktive Charts** ueber 6 Tabs (Uebersicht, Sitzungen, Projekte, Tools, Modelle, Insights)
+- **11 interaktive Charts** ueber 7 Tabs (Uebersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Info)
+- **Cache-Token-Toggle** — gecachte Tokens standardmaessig ausgeblendet, per Klick einblendbar
+- **Info-Tab** mit Erklaerungen aller Token-Typen, Kostenberechnung und Modell-Preistabelle
 - **SQLite-Datenbank** fuer persistente Speicherung und schnelle Abfragen
 - **Echtzeit-Updates** via Server-Sent Events (Live-Indikator)
 - **Automatisches Backup** (konfigurierbar, z.B. in Google Drive)
@@ -82,7 +84,9 @@ A local dashboard for analyzing your Claude Code token usage. Reads JSONL sessio
 
 ### Features
 
-- **11 interactive charts** across 6 tabs (Overview, Sessions, Projects, Tools, Models, Insights)
+- **11 interactive charts** across 7 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Info)
+- **Cache token toggle** — cached tokens hidden by default, one-click to include
+- **Info tab** explaining all token types, cost calculation, and model pricing table
 - **SQLite database** for persistent storage and fast queries
 - **Real-time updates** via Server-Sent Events (live indicator)
 - **Automatic backups** (configurable, e.g. to Google Drive)

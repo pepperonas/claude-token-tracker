@@ -2,8 +2,44 @@
 let state = {
   period: '30d',
   activeTab: 'overview',
-  sessionFilter: { project: '', model: '' }
+  sessionFilter: { project: '', model: '' },
+  includeCache: localStorage.getItem('includeCache') === 'true' // default: false
 };
+
+// --- Cache toggle helpers ---
+function getDisplayTokens(obj) {
+  if (state.includeCache) {
+    return (obj.inputTokens || 0) + (obj.outputTokens || 0) + (obj.cacheReadTokens || 0) + (obj.cacheCreateTokens || 0);
+  }
+  return (obj.inputTokens || 0) + (obj.outputTokens || 0);
+}
+
+function getDisplayCost(obj) {
+  // obj must have inputCost/outputCost/cacheReadCost/cacheCreateCost OR estimatedCost+cost breakdown
+  if (obj.inputCost !== undefined) {
+    if (state.includeCache) {
+      return obj.inputCost + obj.outputCost + obj.cacheReadCost + obj.cacheCreateCost;
+    }
+    return obj.inputCost + obj.outputCost;
+  }
+  // Fallback: use estimatedCost (includes cache) or cost field
+  return obj.estimatedCost !== undefined ? obj.estimatedCost : (obj.cost || 0);
+}
+
+function toggleCache() {
+  state.includeCache = !state.includeCache;
+  localStorage.setItem('includeCache', state.includeCache);
+  updateCacheToggleUI();
+  loadTab(state.activeTab);
+}
+
+function updateCacheToggleUI() {
+  const btn = document.getElementById('cache-toggle');
+  if (btn) {
+    btn.classList.toggle('active', state.includeCache);
+    btn.textContent = state.includeCache ? t('cacheOn') : t('cacheOff');
+  }
+}
 
 // --- API helpers ---
 async function api(path) {
@@ -71,6 +107,7 @@ async function loadTab(tab) {
     case 'tools': return loadTools();
     case 'models': return loadModels();
     case 'insights': return loadInsights();
+    case 'info': return; // static content
   }
 }
 
@@ -83,11 +120,19 @@ async function loadOverview() {
     api('stats-cache').catch(() => null)
   ]);
 
-  // KPI Cards
-  document.getElementById('kpi-tokens').textContent = formatTokens(overview.totalTokens);
-  document.getElementById('kpi-tokens-sub').textContent =
-    LANG[currentLang].kpiTokensSub(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens), formatTokens(overview.cacheReadTokens));
-  document.getElementById('kpi-cost').textContent = formatCost(overview.estimatedCost);
+  // KPI Cards — respect cache toggle
+  const displayTokens = getDisplayTokens(overview);
+  const displayCost = getDisplayCost(overview);
+
+  document.getElementById('kpi-tokens').textContent = formatTokens(displayTokens);
+  if (state.includeCache) {
+    document.getElementById('kpi-tokens-sub').textContent =
+      LANG[currentLang].kpiTokensSub(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens), formatTokens(overview.cacheReadTokens));
+  } else {
+    document.getElementById('kpi-tokens-sub').textContent =
+      LANG[currentLang].kpiTokensSubNoCache(formatTokens(overview.inputTokens), formatTokens(overview.outputTokens));
+  }
+  document.getElementById('kpi-cost').textContent = formatCost(displayCost);
   document.getElementById('kpi-cost-sub').textContent = t('costSubLabel');
   document.getElementById('kpi-sessions').textContent = formatNumber(overview.sessions);
   document.getElementById('kpi-messages').textContent = formatNumber(overview.messages);
@@ -120,10 +165,10 @@ async function loadOverview() {
     banner.style.display = 'none';
   }
 
-  // Charts
-  createDailyTokenChart('chart-daily-tokens', daily);
+  // Charts — pass includeCache flag
+  createDailyTokenChart('chart-daily-tokens', daily, state.includeCache);
   createDailyCostChart('chart-daily-cost', daily);
-  createModelDoughnut('chart-model-dist', models);
+  createModelDoughnut('chart-model-dist', models, state.includeCache);
   createHourlyChart('chart-hourly', hourly);
 }
 
@@ -160,26 +205,58 @@ async function loadSessions() {
     { value: s => s.durationMin + 'm', className: 'num' },
     { value: s => formatNumber(s.messages), className: 'num' },
     { value: s => formatNumber(s.toolCalls), className: 'num' },
-    { value: s => formatTokens(s.totalTokens), className: 'num' },
+    { value: s => formatTokens(getDisplayTokens(s)), className: 'num' },
     { value: s => formatCost(s.cost), className: 'num' }
   ]);
 }
 
 async function loadProjects() {
   const projects = await api('projects');
-  createProjectBarChart('chart-projects', projects);
+  createProjectBarChart('chart-projects', projects, state.includeCache);
 
   const tbody = document.getElementById('projects-tbody');
-  buildTableRows(tbody, projects, [
+  const cellDefs = [
     { value: p => p.name },
-    { value: p => formatTokens(p.totalTokens), className: 'num' },
+    { value: p => formatTokens(getDisplayTokens(p)), className: 'num' },
     { value: p => formatTokens(p.inputTokens), className: 'num' },
     { value: p => formatTokens(p.outputTokens), className: 'num' },
-    { value: p => formatTokens(p.cacheReadTokens), className: 'num' },
+  ];
+  if (state.includeCache) {
+    cellDefs.push({ value: p => formatTokens(p.cacheReadTokens), className: 'num' });
+  }
+  cellDefs.push(
     { value: p => formatNumber(p.sessions), className: 'num' },
     { value: p => formatNumber(p.messages), className: 'num' },
     { value: p => formatCost(p.cost), className: 'num' }
-  ]);
+  );
+
+  // Update table headers for cache visibility
+  const thead = document.querySelector('#tab-projects thead tr');
+  if (thead) {
+    thead.textContent = '';
+    const headers = [
+      { text: t('project') },
+      { text: t('totalTokensH'), cls: 'num' },
+      { text: t('input'), cls: 'num' },
+      { text: t('output'), cls: 'num' },
+    ];
+    if (state.includeCache) {
+      headers.push({ text: t('cacheRead'), cls: 'num' });
+    }
+    headers.push(
+      { text: t('sessionsLabel'), cls: 'num' },
+      { text: t('messagesLabel'), cls: 'num' },
+      { text: t('cost'), cls: 'num' }
+    );
+    for (const h of headers) {
+      const th = document.createElement('th');
+      th.textContent = h.text;
+      if (h.cls) th.className = h.cls;
+      thead.appendChild(th);
+    }
+  }
+
+  buildTableRows(tbody, projects, cellDefs);
 }
 
 async function loadTools() {
@@ -203,15 +280,50 @@ async function loadModels() {
   createModelAreaChart('chart-model-area', dailyByModel);
 
   const tbody = document.getElementById('models-tbody');
-  buildTableRows(tbody, models, [
+  const cellDefs = [
     { value: m => m.label },
     { value: m => formatTokens(m.inputTokens), className: 'num' },
     { value: m => formatTokens(m.outputTokens), className: 'num' },
-    { value: m => formatTokens(m.cacheReadTokens), className: 'num' },
-    { value: m => formatTokens(m.cacheCreateTokens), className: 'num' },
+  ];
+  if (state.includeCache) {
+    cellDefs.push(
+      { value: m => formatTokens(m.cacheReadTokens), className: 'num' },
+      { value: m => formatTokens(m.cacheCreateTokens), className: 'num' }
+    );
+  }
+  cellDefs.push(
     { value: m => formatNumber(m.messages), className: 'num' },
     { value: m => formatCost(m.cost), className: 'num' }
-  ]);
+  );
+
+  // Update table headers
+  const thead = document.querySelector('#tab-models thead tr');
+  if (thead) {
+    thead.textContent = '';
+    const headers = [
+      { text: t('model') },
+      { text: t('input'), cls: 'num' },
+      { text: t('output'), cls: 'num' },
+    ];
+    if (state.includeCache) {
+      headers.push(
+        { text: t('cacheRead'), cls: 'num' },
+        { text: t('cacheCreate'), cls: 'num' }
+      );
+    }
+    headers.push(
+      { text: t('messagesLabel'), cls: 'num' },
+      { text: t('cost'), cls: 'num' }
+    );
+    for (const h of headers) {
+      const th = document.createElement('th');
+      th.textContent = h.text;
+      if (h.cls) th.className = h.cls;
+      thead.appendChild(th);
+    }
+  }
+
+  buildTableRows(tbody, models, cellDefs);
 }
 
 async function loadInsights() {
@@ -225,7 +337,7 @@ async function loadInsights() {
     api('session-efficiency')
   ]);
 
-  createCostBreakdownChart('chart-cost-breakdown', costBreakdown);
+  createCostBreakdownChart('chart-cost-breakdown', costBreakdown, state.includeCache);
   createCumulativeCostChart('chart-cumulative-cost', cumulativeCost);
   createWeekdayChart('chart-weekday', weekday);
   createCacheEfficiencyChart('chart-cache-efficiency', cacheEfficiency);
@@ -260,7 +372,7 @@ async function rebuild() {
     btn.textContent = `OK (${result.messages} msgs, ${result.timeMs}ms)`;
     setTimeout(() => { btn.textContent = t('rebuildCache'); btn.disabled = false; }, 3000);
     loadTab(state.activeTab);
-  } catch (e) {
+  } catch (_e) {
     btn.textContent = 'Error!';
     setTimeout(() => { btn.textContent = t('rebuildCache'); btn.disabled = false; }, 3000);
   }
@@ -282,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initChartDefaults();
   applyTranslations();
   applyTooltips();
+  updateCacheToggleUI();
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -296,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       setLang(btn.dataset.lang);
       applyTooltips();
+      updateCacheToggleUI();
       loadTab(state.activeTab);
     });
   });
@@ -306,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('rebuild-btn')?.addEventListener('click', rebuild);
+  document.getElementById('cache-toggle')?.addEventListener('click', toggleCache);
 
   switchTab('overview');
   connectSSE();
