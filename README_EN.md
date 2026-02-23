@@ -177,7 +177,7 @@ curl -sL "https://your-domain.com/api/sync-agent/install.sh?key=YOUR_API_KEY" | 
 
 The script:
 - Checks Node.js >= 18 and npm
-- Installs the agent to `~/claude-sync-agent/`
+- Installs the agent to `~/claude-sync-agent/` (auto-updates existing installations)
 - Configures API key and server URL automatically
 - Verifies server connectivity
 - Sets up autostart (launchd on macOS, systemd on Linux)
