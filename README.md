@@ -44,7 +44,7 @@ Open [http://localhost:5010](http://localhost:5010)
 ## Highlights
 
 - **13 interactive charts** across 8 tabs with real-time SSE updates
-- **250 achievements** — gamification system across 12 categories (tokens, sessions, cost, streaks, ...) with 5 tiers
+- **500 achievements** — gamification system across 12 categories (tokens, sessions, cost, streaks, ...) with 5 tiers
 - **Demo mode** — non-logged-in visitors see sample data with a login button to switch to their own
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install

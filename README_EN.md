@@ -51,7 +51,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
-- **250 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond)
+- **500 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond)
 - **125 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Architecture
@@ -84,7 +84,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
-| `lib/achievements.js` | 250 achievement definitions with check logic, stats builder, and unlock tracking |
+| `lib/achievements.js` | 500 achievement definitions with check logic, stats builder, and unlock tracking |
 | `server.js` | Vanilla `http.createServer` with 20+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
 
@@ -265,7 +265,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Stop reason distribution |
 | `/api/session-efficiency` | GET | Tokens/message and cost/message |
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
-| `/api/achievements` | GET | All 250 achievements with unlock status |
+| `/api/achievements` | GET | All 500 achievements with unlock status |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
 | `/api/export` | GET | Full JSON export |

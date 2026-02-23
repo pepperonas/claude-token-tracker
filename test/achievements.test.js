@@ -47,13 +47,13 @@ function createMockDb() {
 
 describe('Achievements', () => {
   describe('ACHIEVEMENTS array', () => {
-    it('should have exactly 250 achievements', () => {
-      expect(ACHIEVEMENTS.length).toBe(250);
+    it('should have exactly 500 achievements', () => {
+      expect(ACHIEVEMENTS.length).toBe(500);
     });
 
     it('should have unique keys', () => {
       const keys = ACHIEVEMENTS.map(a => a.key);
-      expect(new Set(keys).size).toBe(250);
+      expect(new Set(keys).size).toBe(500);
     });
 
     it('should have valid tiers', () => {
@@ -243,13 +243,13 @@ describe('Achievements', () => {
       }
     });
 
-    it('should return all 250 achievements with unlock status', () => {
+    it('should return all 500 achievements with unlock status', () => {
       const db = createMockDb();
       db.unlockAchievementsBatch(0, ['tokens_1k', 'sessions_1']);
 
       const response = getAchievementsResponse(0, db);
 
-      expect(response.length).toBe(250);
+      expect(response.length).toBe(500);
 
       const tokens1k = response.find(a => a.key === 'tokens_1k');
       expect(tokens1k.unlocked).toBe(true);

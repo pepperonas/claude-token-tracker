@@ -51,7 +51,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **SEO-optimiert** mit Open Graph, Twitter Cards und strukturierten Meta-Tags
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
-- **250 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant)
+- **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant)
 - **125 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
 ## Architektur
@@ -84,7 +84,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
 | `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien |
-| `lib/achievements.js` | 250 Achievement-Definitionen mit Check-Logik, Stats-Builder und Unlock-Tracking |
+| `lib/achievements.js` | 500 Achievement-Definitionen mit Check-Logik, Stats-Builder und Unlock-Tracking |
 | `server.js` | Vanilla `http.createServer` mit 20+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
 
@@ -265,7 +265,7 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Verteilung der Stop-Reasons |
 | `/api/session-efficiency` | GET | Tokens/Message und Kosten/Message |
 | `/api/active-sessions` | GET | Aktive Sessions (letzte 10 Min.) |
-| `/api/achievements` | GET | Alle 250 Achievements mit Unlock-Status |
+| `/api/achievements` | GET | Alle 500 Achievements mit Unlock-Status |
 | `/api/rebuild` | POST | Cache neu aufbauen |
 | `/api/backup` | POST | Manuelles Backup erstellen |
 | `/api/export` | GET | Vollständiger JSON-Export |
