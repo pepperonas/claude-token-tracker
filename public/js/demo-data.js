@@ -184,7 +184,7 @@ const DEMO_DATA = (() => {
     let msgs = 0;
     if (h >= 9 && h <= 18) msgs = 30 + Math.round(Math.sin((h - 9) / 9 * Math.PI) * 40);
     else if (h >= 7 && h <= 22) msgs = 5 + Math.round(Math.random() * 10);
-    return { hour: h, messages: msgs, tokens: msgs * 8200 };
+    return { hour: h, messages: msgs, tokens: msgs * 8200, linesWritten: Math.round(msgs * 6.4), linesAdded: Math.round(msgs * 3.8), linesRemoved: Math.round(msgs * 1.4) };
   });
 
   // --- Daily by model ---

@@ -6,10 +6,10 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/version-0.0.1-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.2-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-124%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
@@ -24,10 +24,10 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 ### Dashboard & Visualization
 
-- **12 interactive charts** across 7 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Info)
+- **13 interactive charts** across 8 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Achievements, Info)
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
-- **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation
+- **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
 - **Global period filter** — Today / 7 Days / 30 Days / All Time, applies to all tabs
 - **Sortable tables** — all data tables sortable by clicking column headers
 - **CSS-only tooltips** with explanations on KPI labels and chart titles
@@ -50,7 +50,9 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Autostart** — install script automatically sets up launchd (macOS) or systemd (Linux)
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
-- **109 automated tests** (unit + integration + multi-user API)
+- **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
+- **100 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond)
+- **124 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Architecture
 
@@ -77,11 +79,12 @@ Multi-User:
 |--------|-------------|
 | `lib/parser.js` | Reads JSONL files, extracts token counts, tools, model, and lines-of-code from `type: 'assistant'` messages |
 | `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly` maps |
-| `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions` tables |
+| `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements` tables |
 | `lib/pricing.js` | Model pricing (input/output/cacheRead/cacheCreate per 1M tokens) |
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
+| `lib/achievements.js` | 100 achievement definitions with check logic, stats builder, and unlock tracking |
 | `server.js` | Vanilla `http.createServer` with 20+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
 
@@ -262,6 +265,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Stop reason distribution |
 | `/api/session-efficiency` | GET | Tokens/message and cost/message |
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
+| `/api/achievements` | GET | All 100 achievements with unlock status |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
 | `/api/export` | GET | Full JSON export |
@@ -273,7 +277,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters.
 ## Development
 
 ```bash
-npm test              # Run all 109 tests (vitest)
+npm test              # Run all 124 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

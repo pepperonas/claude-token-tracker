@@ -497,6 +497,7 @@ async function loadOverview() {
   createDailyCostChart('chart-daily-cost', daily);
   createModelDoughnut('chart-model-dist', models, false);
   createHourlyChart('chart-hourly', hourly);
+  createOverviewLinesChart('chart-overview-lines', daily, hourly, state.period);
 }
 
 async function loadSessions() {

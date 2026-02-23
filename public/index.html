@@ -177,22 +177,22 @@
 
       <div class="kpi-grid kpi-detail-grid kpi-lines-grid">
         <div class="kpi-card kpi-detail kpi-detail-lines-written">
-          <div class="kpi-label" data-i18n="linesWritten">Write</div>
+          <div class="kpi-label" data-i18n="linesWritten" data-tooltip-key="tooltipLinesWritten">Write</div>
           <div class="kpi-value" id="kpi-lines-written">-</div>
           <div class="kpi-sub" id="kpi-lines-written-sub"></div>
         </div>
         <div class="kpi-card kpi-detail kpi-detail-lines-edited">
-          <div class="kpi-label" data-i18n="linesEdited">Edit</div>
+          <div class="kpi-label" data-i18n="linesEdited" data-tooltip-key="tooltipLinesEdited">Edit</div>
           <div class="kpi-value" id="kpi-lines-edited">-</div>
           <div class="kpi-sub" id="kpi-lines-edited-sub"></div>
         </div>
         <div class="kpi-card kpi-detail kpi-detail-lines-deleted">
-          <div class="kpi-label" data-i18n="linesDeleted">Delete</div>
+          <div class="kpi-label" data-i18n="linesDeleted" data-tooltip-key="tooltipLinesDeleted">Delete</div>
           <div class="kpi-value" id="kpi-lines-deleted">-</div>
           <div class="kpi-sub" id="kpi-lines-deleted-sub"></div>
         </div>
         <div class="kpi-card kpi-detail kpi-detail-lines-net">
-          <div class="kpi-label" data-i18n="linesNet">Net Change</div>
+          <div class="kpi-label" data-i18n="linesNet" data-tooltip-key="tooltipLinesNet">Net Change</div>
           <div class="kpi-value" id="kpi-lines-net">-</div>
           <div class="kpi-sub" id="kpi-lines-net-sub"></div>
         </div>
@@ -233,6 +233,15 @@
           <h3 data-i18n="activityByHour" data-tooltip-key="tooltipHourly">Aktivität nach Uhrzeit</h3>
           <div class="chart-container small">
             <canvas id="chart-hourly"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="linesAndMessages" data-tooltip-key="tooltipLinesAndMessages">Lines of Code &amp; Messages</h3>
+          <div class="chart-container">
+            <canvas id="chart-overview-lines"></canvas>
           </div>
         </div>
       </div>
@@ -545,7 +554,7 @@ pm2 save</code></pre>
 
   <footer class="footer">
     <div class="footer-inner">
-      <span class="footer-version">v0.0.1</span>
+      <span class="footer-version">v0.0.2</span>
       <span class="footer-dev">
         Built by <a href="https://celox.io" target="_blank" rel="noopener">Martin Pfeffer</a>
       </span>

@@ -408,6 +408,131 @@ function createModelAreaChart(canvasId, data) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+// --- Overview: adaptive lines + messages chart ---
+
+function createOverviewLinesChart(canvasId, daily, hourly, period) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  if (period === 'today') {
+    // Hourly: stacked bar for lines by hour
+    const totalLines = hourly.map(h => (h.linesWritten || 0) + (h.linesAdded || 0) + (h.linesRemoved || 0));
+    chartInstances[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: hourly.map(h => h.hour + ':00'),
+        datasets: [
+          {
+            label: t('linesWritten'),
+            data: hourly.map(h => h.linesWritten || 0),
+            backgroundColor: '#3fb950',
+            stack: 'lines'
+          },
+          {
+            label: t('linesEdited'),
+            data: hourly.map(h => h.linesAdded || 0),
+            backgroundColor: '#d29922',
+            stack: 'lines'
+          },
+          {
+            label: t('linesDeleted'),
+            data: hourly.map(h => h.linesRemoved || 0),
+            backgroundColor: '#f85149',
+            stack: 'lines'
+          },
+          {
+            label: t('messagesLabel'),
+            data: hourly.map(h => h.messages || 0),
+            type: 'line',
+            borderColor: COLORS.input,
+            backgroundColor: COLORS.input + '20',
+            tension: 0.3,
+            pointRadius: 2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        animation: chartAnimateNext ? undefined : false,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.dataset.yAxisID === 'y1') return `${ctx.dataset.label}: ${formatNumber(ctx.raw)}`;
+                return `${ctx.dataset.label}: ${formatNumber(ctx.raw)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, position: 'left', ticks: { callback: v => formatNumber(v) } },
+          y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { callback: v => formatNumber(v) } }
+        }
+      }
+    });
+  } else {
+    // Daily: stacked bar for lines per day + messages line
+    if (!daily || daily.length === 0) return;
+    chartInstances[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: daily.map(d => formatChartDate(d.date)),
+        datasets: [
+          {
+            label: t('linesWritten'),
+            data: daily.map(d => d.linesWritten || 0),
+            backgroundColor: '#3fb950',
+            stack: 'lines'
+          },
+          {
+            label: t('linesEdited'),
+            data: daily.map(d => d.linesAdded || 0),
+            backgroundColor: '#d29922',
+            stack: 'lines'
+          },
+          {
+            label: t('linesDeleted'),
+            data: daily.map(d => d.linesRemoved || 0),
+            backgroundColor: '#f85149',
+            stack: 'lines'
+          },
+          {
+            label: t('messagesLabel'),
+            data: daily.map(d => d.messages || 0),
+            type: 'line',
+            borderColor: COLORS.input,
+            backgroundColor: COLORS.input + '20',
+            tension: 0.3,
+            pointRadius: 2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        animation: chartAnimateNext ? undefined : false,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${formatNumber(ctx.raw)}`
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, position: 'left', ticks: { callback: v => formatNumber(v) } },
+          y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { callback: v => formatNumber(v) } }
+        }
+      }
+    });
+  }
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 // --- Insights chart creators ---
 
 function createCostBreakdownChart(canvasId, data, includeCache) {

@@ -12,10 +12,10 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/version-0.0.1-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.2-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-124%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
@@ -43,12 +43,14 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **12 interactive charts** across 7 tabs with real-time SSE updates
-- **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with Net Change calculation
+- **13 interactive charts** across 8 tabs with real-time SSE updates
+- **100 achievements** — gamification system across 12 categories (tokens, sessions, cost, streaks, ...) with 5 tiers
+- **Demo mode** — non-logged-in visitors see sample data with a login button to switch to their own
+- **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
 - **Global period filter** — Today / 7 Days / 30 Days / All Time across all tabs
-- **109 automated tests** — unit, integration, and multi-user API tests
+- **124 automated tests** — unit, integration, and multi-user API tests
 
 ## Architecture
 
