@@ -16,6 +16,10 @@
 
 ---
 
+<p align="center">
+  <img src="public/og-image.png" alt="Claude Token Tracker" width="720">
+</p>
+
 # Claude Token Tracker
 
 Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungsdateien von Claude Code, berechnet API-äquivalente Kosten, trackt Codezeilen und zeigt alles in Echtzeit an. Unterstützt **Single-User** (lokal) und **Multi-User** (gehostet mit GitHub OAuth + Sync Agent).

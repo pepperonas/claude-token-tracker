@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/favicon.svg" alt="Claude Token Tracker" width="80" height="80">
+  <img src="public/og-image.png" alt="Claude Token Tracker" width="720">
 </p>
 
 <h1 align="center">Claude Token Tracker</h1>
