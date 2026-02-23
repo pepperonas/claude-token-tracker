@@ -11,26 +11,26 @@
 
 ## Claude Token Tracker
 
-Ein lokales Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungsdateien aus `~/.claude/projects/`, berechnet API-aequivalente Kosten und zeigt alles in Echtzeit an.
+Ein lokales Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungsdateien aus `~/.claude/projects/`, berechnet API-äquivalente Kosten und zeigt alles in Echtzeit an.
 
 ### Features
 
-- **11 interaktive Charts** ueber 7 Tabs (Uebersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Info)
-- **Cache-Token-Toggle** — gecachte Tokens standardmaessig ausgeblendet, per Klick einblendbar
-- **Info-Tab** mit Erklaerungen aller Token-Typen, Kostenberechnung und Modell-Preistabelle
-- **SQLite-Datenbank** fuer persistente Speicherung und schnelle Abfragen
+- **11 interaktive Charts** über 7 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Info)
+- **Cache-Token-Toggle** — gecachte Tokens standardmäßig ausgeblendet, per Klick einblendbar
+- **Info-Tab** mit Erklärungen aller Token-Typen, Kostenberechnung und Modell-Preistabelle
+- **SQLite-Datenbank** für persistente Speicherung und schnelle Abfragen
 - **Echtzeit-Updates** via Server-Sent Events (Live-Indikator)
 - **Automatisches Backup** (konfigurierbar, z.B. in Google Drive)
 - **Zweisprachige UI** (Deutsch / Englisch)
-- **API-aequivalente Kostenschaetzung** fuer alle Claude-Modelle (Opus, Sonnet, Haiku)
+- **API-äquivalente Kostenschätzung** für alle Claude-Modelle (Opus, Sonnet, Haiku)
 - **Inkrementelles Parsing** — nur neue Daten werden verarbeitet
-- **CSS-only Tooltips** mit Erklaerungen auf KPI-Labels und Chart-Titeln
+- **CSS-only Tooltips** mit Erklärungen auf KPI-Labels und Chart-Titeln
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **84 automatisierte Tests** (Unit + Integration)
 
 ### Screenshot
 
-*Platzhalter — wird nach erstem Release ergaenzt*
+*Platzhalter — wird nach erstem Release ergänzt*
 
 ### Installation
 
@@ -41,7 +41,7 @@ npm install
 npm start
 ```
 
-Dashboard oeffnen: [http://localhost:5010](http://localhost:5010)
+Dashboard öffnen: [http://localhost:5010](http://localhost:5010)
 
 ### Konfiguration
 
@@ -51,7 +51,7 @@ Erstelle eine `.env` Datei (optional):
 |----------|----------|-------------|
 | `PORT` | `5010` | Server-Port |
 | `CLAUDE_DIR` | `~/.claude` | Pfad zum Claude-Verzeichnis |
-| `BACKUP_PATH` | *(leer)* | Zielverzeichnis fuer automatische Backups |
+| `BACKUP_PATH` | *(leer)* | Zielverzeichnis für automatische Backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup-Intervall in Stunden |
 
 ### Backup einrichten
@@ -64,10 +64,10 @@ Erstelle eine `.env` Datei (optional):
 ### Entwicklung
 
 ```bash
-npm test              # Alle Tests ausfuehren
+npm test              # Alle Tests ausführen
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
-npm run lint          # ESLint ausfuehren
+npm run lint          # ESLint ausführen
 ```
 
 ### Lizenz
