@@ -786,8 +786,13 @@ async function loadInfo() {
 }
 
 // --- SSE Live Updates ---
+let sseConnection = null;
+
 function connectSSE() {
+  if (sseConnection) sseConnection.close();
+
   const evtSource = new EventSource('/api/live');
+  sseConnection = evtSource;
   const dot = document.getElementById('live-dot');
 
   evtSource.onopen = () => { dot.classList.remove('disconnected'); };
@@ -802,6 +807,10 @@ function connectSSE() {
 
   evtSource.onerror = () => { dot.classList.add('disconnected'); };
 }
+
+window.addEventListener('beforeunload', () => {
+  if (sseConnection) sseConnection.close();
+});
 
 // --- Rebuild ---
 async function rebuild() {

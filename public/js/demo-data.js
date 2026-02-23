@@ -210,7 +210,7 @@ const DEMO_DATA = (() => {
   let cumCost = 0;
   const cumulativeCostData = dailyData.map(d => {
     cumCost += d.cost;
-    return { date: d.date, cumulativeCost: Math.round(cumCost * 100) / 100 };
+    return { date: d.date, cost: Math.round(cumCost * 100) / 100 };
   });
 
   // --- Day of week ---
@@ -230,7 +230,7 @@ const DEMO_DATA = (() => {
     const total = d.inputTokens + d.cacheReadTokens + d.cacheCreateTokens;
     return {
       date: d.date,
-      cacheRate: total > 0 ? Math.round(d.cacheReadTokens / total * 1000) / 10 : 0
+      cacheHitRate: total > 0 ? Math.round(d.cacheReadTokens / total * 1000) / 10 : 0
     };
   });
 

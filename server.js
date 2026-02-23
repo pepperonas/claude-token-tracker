@@ -77,19 +77,22 @@ if (newMessages.length > 0) {
 // 4. Save parse state
 setParseState(parseState);
 
+// DB helper for achievements module
+const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch };
+
 // 5. Check achievements on startup (single-user)
 if (!MULTI_USER) {
   try {
     const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
     if (newAch.length > 0) console.log(`Unlocked ${newAch.length} new achievements`);
-  } catch (_e) { /* ignore on startup */ }
+  } catch (e) { console.error('Achievement check failed on startup:', e.message); }
 }
 
 // Start file watcher (single-user only)
 const watcher = new Watcher(aggregator, parseState, (newMsgs) => {
   insertMessages(newMsgs, calculateCost);
   setParseState(parseState);
-  try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (_e) { /* */ }
+  try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (e) { console.error('Achievement check failed:', e.message); }
 });
 if (!MULTI_USER) {
   watcher.start();
@@ -97,9 +100,6 @@ if (!MULTI_USER) {
 
 // Multi-user aggregator cache
 const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser) : null;
-
-// DB helper for achievements module
-const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch };
 
 // Clean expired sessions periodically (multi-user)
 let sessionCleanupTimer = null;
@@ -145,10 +145,15 @@ function serveStatic(res, filePath) {
 /**
  * Read request body as JSON
  */
-function readBody(req) {
+function readBody(req, maxBytes = 10 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', chunk => { data += chunk; });
+    let bytes = 0;
+    req.on('data', chunk => {
+      bytes += chunk.length;
+      if (bytes > maxBytes) { req.destroy(); return reject(new Error('Body too large')); }
+      data += chunk;
+    });
     req.on('end', () => {
       try { resolve(JSON.parse(data)); }
       catch (e) { reject(e); }
@@ -422,7 +427,7 @@ const server = http.createServer((req, res) => {
       try {
         const userAgg = aggregatorCache.get(user.id);
         achievements.checkAchievements(userAgg, user.id, achievementsDb);
-      } catch (_e) { /* */ }
+      } catch (e) { console.error('Achievement check failed for user', user.id, ':', e.message); }
 
       // Broadcast SSE update to this user's clients
       watcher.broadcast({ type: 'update', count: messages.length, userId: user.id });
@@ -601,7 +606,7 @@ const server = http.createServer((req, res) => {
     aggregator.addMessages(messages);
     insertMessages(messages, calculateCost);
     setParseState(parseState);
-    try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (_e) { /* */ }
+    try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (e) { console.error('Achievement check failed on rebuild:', e.message); }
     return sendJSON(res, { rebuilt: true, messages: messages.length, timeMs: Date.now() - _t0 });
   }
 
