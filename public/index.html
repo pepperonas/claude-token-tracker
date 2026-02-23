@@ -1,13 +1,47 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claude Token Tracker</title>
+  <title>Claude Token Tracker — Dashboard for Claude Code Token Usage</title>
+  <meta name="description" content="Real-time dashboard for tracking Claude Code token usage. Analyze API-equivalent costs, session statistics, model distribution, and tool usage across all your Claude Code projects.">
+  <meta name="keywords" content="Claude Code, token tracker, Anthropic, API usage, token analytics, Claude dashboard, developer tools">
+  <meta name="author" content="Martin Pfeffer">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="color-scheme" content="dark">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Claude Token Tracker">
+  <meta property="og:description" content="Real-time dashboard for tracking Claude Code token usage. Analyze costs, sessions, models, and tools across all your projects.">
+  <meta property="og:site_name" content="Claude Token Tracker">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="de_DE">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Claude Token Tracker">
+  <meta name="twitter:description" content="Real-time dashboard for tracking Claude Code token usage. Analyze costs, sessions, models, and tools.">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <!-- Canonical -->
+  <link rel="canonical" href="https://tracker.celox.io">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- Login Overlay (multi-user mode only) -->
+  <div id="login-overlay" class="login-overlay" style="display:none;">
+    <div class="login-card">
+      <div class="login-logo">C</div>
+      <h2 data-i18n="title">Claude Token Tracker</h2>
+      <p class="login-desc" data-i18n="loginDesc">Melde dich an, um deine Token-Nutzung zu sehen.</p>
+      <a href="/auth/github" class="login-btn" id="login-github-btn">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span data-i18n="loginWithGithub">Mit GitHub anmelden</span>
+      </a>
+    </div>
+  </div>
 
   <!-- Header -->
   <header class="header">
@@ -16,6 +50,12 @@
       <span data-i18n="title">Claude Token Tracker</span>
     </h1>
     <div class="header-right">
+      <!-- User info (multi-user mode) -->
+      <div class="user-info" id="user-info" style="display:none;">
+        <img class="user-avatar" id="user-avatar" src="" alt="">
+        <span class="user-name" id="user-name"></span>
+        <button class="logout-btn" id="logout-btn" data-i18n="logout">Abmelden</button>
+      </div>
       <div class="lang-switch">
         <button class="lang-btn" data-lang="de">DE</button>
         <button class="lang-btn" data-lang="en">EN</button>
@@ -26,7 +66,6 @@
         <button class="period-btn active" data-period="30d" data-i18n="days30">30 Tage</button>
         <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
       </div>
-      <button class="cache-toggle" id="cache-toggle">Cache: Off</button>
       <span class="live-label">
         <span class="live-dot" id="live-dot"></span>
         <span data-i18n="live">Live</span>
@@ -51,6 +90,16 @@
 
     <!-- Tab 1: Overview -->
     <div id="tab-overview" class="tab-panel active">
+      <!-- Active Sessions -->
+      <div class="active-sessions" id="active-sessions" style="display:none;">
+        <div class="active-sessions-header">
+          <span class="active-dot"></span>
+          <span data-i18n="activeSessions">Aktive Sitzungen</span>
+          <span class="active-count" id="active-count"></span>
+        </div>
+        <div class="active-sessions-grid" id="active-sessions-grid"></div>
+      </div>
+
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label" data-i18n="totalTokens" data-tooltip-key="tooltipTotalTokens">Tokens gesamt</div>
@@ -71,6 +120,29 @@
           <div class="kpi-label" data-i18n="messagesLabel" data-tooltip-key="tooltipMessages">Nachrichten</div>
           <div class="kpi-value" id="kpi-messages">-</div>
           <div class="kpi-sub" data-i18n="assistantResponses">Assistenten-Antworten</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid kpi-detail-grid">
+        <div class="kpi-card kpi-detail kpi-detail-input">
+          <div class="kpi-label" data-tooltip-key="tooltipInputTokens">Input Tokens</div>
+          <div class="kpi-value" id="kpi-input-tokens">-</div>
+          <div class="kpi-sub" id="kpi-input-cost"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-output">
+          <div class="kpi-label" data-tooltip-key="tooltipOutputTokens">Output Tokens</div>
+          <div class="kpi-value" id="kpi-output-tokens">-</div>
+          <div class="kpi-sub" id="kpi-output-cost"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-cache-read">
+          <div class="kpi-label" data-tooltip-key="tooltipCacheReadTokens">Cache Read</div>
+          <div class="kpi-value" id="kpi-cache-read-tokens">-</div>
+          <div class="kpi-sub" id="kpi-cache-read-cost"></div>
+        </div>
+        <div class="kpi-card kpi-detail kpi-detail-cache-create">
+          <div class="kpi-label" data-tooltip-key="tooltipCacheCreateTokens">Cache Create</div>
+          <div class="kpi-value" id="kpi-cache-create-tokens">-</div>
+          <div class="kpi-sub" id="kpi-cache-create-cost"></div>
         </div>
       </div>
 
@@ -274,6 +346,38 @@
       <div class="info-container">
         <h2 data-i18n="infoTitle">So funktioniert das Token-Tracking</h2>
 
+        <!-- Sync Agent Setup (multi-user only) -->
+        <div class="info-section sync-setup" id="sync-setup" style="display:none;">
+          <h3 data-i18n="syncSetupTitle">Sync Agent einrichten</h3>
+          <p data-i18n="syncSetupDesc"></p>
+          <div class="api-key-box">
+            <label data-i18n="apiKey">API-Key</label>
+            <div class="api-key-row">
+              <code class="api-key-value" id="api-key-value">Wird geladen...</code>
+              <button class="btn-small" id="copy-api-key" data-i18n="copy">Kopieren</button>
+              <button class="btn-small btn-danger" id="regenerate-api-key" data-i18n="regenerate">Neu generieren</button>
+            </div>
+          </div>
+          <p class="sync-install-desc" data-i18n="syncInstallDesc">Kopiere den Befehl unten und f&uuml;hre ihn im Terminal aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
+          <div class="sync-curl-box">
+            <label data-i18n="syncCurlLabel">Installations-Befehl</label>
+            <div class="sync-curl-row">
+              <code class="sync-curl-value" id="sync-curl-value">...</code>
+              <button class="btn-small" id="copy-curl-cmd" data-i18n="copy">Kopieren</button>
+            </div>
+          </div>
+          <div class="sync-download-row">
+            <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
+            <button class="btn-small btn-download" id="download-install-script" data-i18n="syncDownloadBtn">Install-Script herunterladen</button>
+          </div>
+          <div class="sync-pm2-box">
+            <h4 data-i18n="syncPm2Title">Autostart</h4>
+            <p data-i18n="syncAutostartDesc">Das Script richtet automatisch einen Autostart ein (launchd auf macOS, systemd auf Linux). Falls du PM2 bevorzugst:</p>
+            <pre><code>pm2 start ~/claude-sync-agent/index.js --name claude-sync
+pm2 save</code></pre>
+          </div>
+        </div>
+
         <div class="info-grid">
           <div class="info-card info-card-input">
             <div class="info-card-icon">I</div>
@@ -337,6 +441,17 @@
     </div>
 
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-dev">
+        Built by <a href="https://celox.io" target="_blank" rel="noopener">Martin Pfeffer</a>
+      </span>
+      <a href="https://github.com/pepperonas/claude-token-tracker" target="_blank" rel="noopener" class="footer-github" aria-label="GitHub Repository">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    </div>
+  </footer>
 
   <script src="js/i18n.js"></script>
   <script src="js/charts.js"></script>

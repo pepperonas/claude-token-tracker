@@ -19,7 +19,8 @@ module.exports = [
         Promise: 'readonly',
         Set: 'readonly',
         Map: 'readonly',
-        URL: 'readonly'
+        URL: 'readonly',
+        URLSearchParams: 'readonly'
       }
     },
     rules: {

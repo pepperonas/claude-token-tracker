@@ -7,3 +7,8 @@ data/
 .env
 coverage/
 .DS_Store
+
+# Sync agent runtime files
+sync-agent/config.json
+sync-agent/.sync-state.json
+sync-agent/node_modules/

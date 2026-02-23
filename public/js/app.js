@@ -1,9 +1,11 @@
 // App state
 let state = {
-  period: '30d',
+  period: localStorage.getItem('period') || '30d',
   activeTab: 'overview',
   sessionFilter: { project: '', model: '' },
-  includeCache: localStorage.getItem('includeCache') === 'true' // default: false
+  includeCache: false,
+  multiUser: false,
+  user: null
 };
 
 // --- Cache toggle helpers ---
@@ -26,24 +28,13 @@ function getDisplayCost(obj) {
   return obj.estimatedCost !== undefined ? obj.estimatedCost : (obj.cost || 0);
 }
 
-function toggleCache() {
-  state.includeCache = !state.includeCache;
-  localStorage.setItem('includeCache', state.includeCache);
-  updateCacheToggleUI();
-  loadTab(state.activeTab);
-}
-
-function updateCacheToggleUI() {
-  const btn = document.getElementById('cache-toggle');
-  if (btn) {
-    btn.classList.toggle('active', state.includeCache);
-    btn.textContent = state.includeCache ? t('cacheOn') : t('cacheOff');
-  }
-}
-
 // --- API helpers ---
 async function api(path) {
   const res = await fetch('/api/' + path);
+  if (res.status === 401 && state.multiUser) {
+    showLoginOverlay();
+    throw new Error('Unauthorized');
+  }
   return res.json();
 }
 
@@ -83,9 +74,244 @@ function buildTableRows(tbody, rows, cellDefs) {
   }
 }
 
+// --- Sortable tables ---
+const tableState = {};
+
+function parseSortValue(str) {
+  if (typeof str !== 'string') return str;
+  str = str.trim();
+  if (str === '-') return -Infinity;
+  if (str.startsWith('$')) str = str.slice(1);
+  if (str.endsWith('%')) str = str.slice(0, -1);
+  const suffixMatch = str.match(/^([\d,.]+)\s*([KMB])$/i);
+  if (suffixMatch) {
+    const num = parseFloat(suffixMatch[1].replace(/,/g, ''));
+    const mult = { K: 1e3, M: 1e6, B: 1e9 }[suffixMatch[2].toUpperCase()];
+    return num * mult;
+  }
+  const durMatch = str.match(/^(\d+)m$/);
+  if (durMatch) return parseInt(durMatch[1]);
+  const num = parseFloat(str.replace(/,/g, ''));
+  if (!isNaN(num)) return num;
+  if (/^\d{4}-\d{2}/.test(str)) return new Date(str).getTime() || 0;
+  return null;
+}
+
+function storeTableData(tbodyId, rows, cellDefs, limit) {
+  if (!tableState[tbodyId]) {
+    tableState[tbodyId] = { sortCol: -1, sortAsc: true };
+  }
+  if (tableState[tbodyId].cellDefs && tableState[tbodyId].cellDefs.length !== cellDefs.length) {
+    tableState[tbodyId].sortCol = -1;
+    tableState[tbodyId].sortAsc = true;
+  }
+  tableState[tbodyId].rows = rows;
+  tableState[tbodyId].cellDefs = cellDefs;
+  tableState[tbodyId].limit = limit || 0;
+  renderSortedTable(tbodyId);
+  initTableSort(tbodyId);
+}
+
+function renderSortedTable(tbodyId) {
+  const ts = tableState[tbodyId];
+  if (!ts) return;
+  let rows = ts.rows;
+  if (ts.sortCol >= 0 && ts.cellDefs[ts.sortCol]) {
+    const cellDef = ts.cellDefs[ts.sortCol];
+    rows = [...rows].sort((a, b) => {
+      const aStr = cellDef.value(a);
+      const bStr = cellDef.value(b);
+      const aNum = parseSortValue(aStr);
+      const bNum = parseSortValue(bStr);
+      if (aNum !== null && bNum !== null) {
+        return ts.sortAsc ? aNum - bNum : bNum - aNum;
+      }
+      return ts.sortAsc ? String(aStr).localeCompare(String(bStr)) : String(bStr).localeCompare(String(aStr));
+    });
+  }
+  if (ts.limit > 0) rows = rows.slice(0, ts.limit);
+  const tbody = document.getElementById(tbodyId);
+  buildTableRows(tbody, rows, ts.cellDefs);
+  updateSortIndicators(tbodyId);
+}
+
+function handleSort(tbodyId, colIndex) {
+  const ts = tableState[tbodyId];
+  if (!ts) return;
+  if (ts.sortCol === colIndex) {
+    ts.sortAsc = !ts.sortAsc;
+  } else {
+    ts.sortCol = colIndex;
+    ts.sortAsc = true;
+  }
+  renderSortedTable(tbodyId);
+}
+
+function updateSortIndicators(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  const table = tbody.closest('table');
+  if (!table) return;
+  const ths = table.querySelectorAll('thead th');
+  const ts = tableState[tbodyId];
+  ths.forEach((th, i) => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (ts && ts.sortCol === i) {
+      th.classList.add(ts.sortAsc ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+function initTableSort(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  const table = tbody.closest('table');
+  if (!table) return;
+  const thead = table.querySelector('thead');
+  if (thead._sortInit) return;
+  thead._sortInit = true;
+  thead.addEventListener('click', (e) => {
+    const th = e.target.closest('th');
+    if (!th) return;
+    const ths = [...thead.querySelectorAll('th')];
+    const colIndex = ths.indexOf(th);
+    if (colIndex >= 0) handleSort(tbodyId, colIndex);
+  });
+}
+
+// --- Auth / Login ---
+function showLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+
+function updateUserUI(user) {
+  const userInfo = document.getElementById('user-info');
+  if (user && state.multiUser) {
+    userInfo.style.display = 'flex';
+    document.getElementById('user-avatar').src = user.avatarUrl || '';
+    document.getElementById('user-name').textContent = user.displayName || user.username;
+  } else {
+    userInfo.style.display = 'none';
+  }
+}
+
+async function checkAuth() {
+  try {
+    // Check if multi-user mode
+    const config = await fetch('/api/config').then(r => r.json());
+    state.multiUser = config.multiUser;
+
+    if (!state.multiUser) {
+      // Single-user mode — no auth needed
+      hideLoginOverlay();
+      return true;
+    }
+
+    // Multi-user: check auth status
+    const authRes = await fetch('/auth/me').then(r => r.json());
+    if (authRes.authenticated) {
+      state.user = authRes.user;
+      hideLoginOverlay();
+      updateUserUI(authRes.user);
+      return true;
+    } else {
+      showLoginOverlay();
+      return false;
+    }
+  } catch {
+    // If config endpoint fails, assume single-user
+    hideLoginOverlay();
+    return true;
+  }
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST' });
+  state.user = null;
+  updateUserUI(null);
+  showLoginOverlay();
+}
+
+// --- Sync Key management ---
+async function loadSyncKey() {
+  if (!state.multiUser) return;
+  const syncSetup = document.getElementById('sync-setup');
+  if (!syncSetup) return;
+
+  syncSetup.style.display = '';
+  try {
+    const data = await api('sync-key');
+    const key = data.apiKey || '-';
+    document.getElementById('api-key-value').textContent = key;
+    updateCurlCommand(key);
+  } catch {
+    document.getElementById('api-key-value').textContent = '-';
+    updateCurlCommand(null);
+  }
+}
+
+async function regenerateSyncKey() {
+  try {
+    const data = await fetch('/api/sync-key', { method: 'POST' }).then(r => r.json());
+    const key = data.apiKey || '-';
+    document.getElementById('api-key-value').textContent = key;
+    updateCurlCommand(key);
+  } catch {
+    // ignore
+  }
+}
+
+function copySyncKey() {
+  const key = document.getElementById('api-key-value').textContent;
+  if (key && key !== '-') {
+    navigator.clipboard.writeText(key);
+    flashCopyButton('copy-api-key');
+  }
+}
+
+function updateCurlCommand(apiKey) {
+  const el = document.getElementById('sync-curl-value');
+  if (!el) return;
+  if (!apiKey || apiKey === '-') {
+    el.textContent = '...';
+    return;
+  }
+  el.textContent = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
+}
+
+function copyCurlCommand() {
+  const el = document.getElementById('sync-curl-value');
+  if (el && el.textContent !== '...') {
+    navigator.clipboard.writeText(el.textContent);
+    flashCopyButton('copy-curl-cmd');
+  }
+}
+
+function flashCopyButton(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = t('copied');
+  btn.classList.add('btn-copied');
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.classList.remove('btn-copied');
+  }, 1500);
+}
+
+function downloadInstallScript() {
+  const key = document.getElementById('api-key-value').textContent;
+  if (key && key !== '-') {
+    window.location.href = `/api/sync-agent/install.sh?key=${encodeURIComponent(key)}`;
+  }
+}
+
 // --- Tab switching ---
 function switchTab(tab) {
   state.activeTab = tab;
+  localStorage.setItem('activeTab', tab);
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   loadTab(tab);
@@ -94,6 +320,7 @@ function switchTab(tab) {
 // --- Period switching ---
 function setPeriod(period) {
   state.period = period;
+  localStorage.setItem('period', period);
   document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
   loadTab(state.activeTab);
 }
@@ -107,7 +334,51 @@ async function loadTab(tab) {
     case 'tools': return loadTools();
     case 'models': return loadModels();
     case 'insights': return loadInsights();
-    case 'info': return; // static content
+    case 'info': return loadInfo();
+  }
+}
+
+async function loadActiveSessions() {
+  try {
+    const sessions = await api('active-sessions');
+    const container = document.getElementById('active-sessions');
+    const grid = document.getElementById('active-sessions-grid');
+    const countEl = document.getElementById('active-count');
+
+    if (!sessions || sessions.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = '';
+    countEl.textContent = sessions.length;
+    grid.textContent = '';
+
+    for (const s of sessions) {
+      const card = document.createElement('div');
+      card.className = 'active-session-card';
+
+      const project = document.createElement('div');
+      project.className = 'active-session-project';
+      project.textContent = s.project;
+
+      const meta = document.createElement('div');
+      meta.className = 'active-session-meta';
+      meta.textContent = `${s.models.join(', ')} · ${s.durationMin}m · ${formatNumber(s.messages)} msgs · ${formatCost(s.cost)}`;
+
+      const ago = document.createElement('div');
+      ago.className = 'active-session-ago';
+      const secsAgo = Math.round((Date.now() - new Date(s.lastTs).getTime()) / 1000);
+      if (secsAgo < 60) ago.textContent = `${secsAgo}s ago`;
+      else ago.textContent = `${Math.round(secsAgo / 60)}m ago`;
+
+      card.appendChild(project);
+      card.appendChild(meta);
+      card.appendChild(ago);
+      grid.appendChild(card);
+    }
+  } catch {
+    // ignore
   }
 }
 
@@ -119,6 +390,8 @@ async function loadOverview() {
     api('hourly'),
     api('stats-cache').catch(() => null)
   ]);
+
+  loadActiveSessions();
 
   // KPI Cards — respect cache toggle
   const displayTokens = getDisplayTokens(overview);
@@ -137,7 +410,17 @@ async function loadOverview() {
   document.getElementById('kpi-sessions').textContent = formatNumber(overview.sessions);
   document.getElementById('kpi-messages').textContent = formatNumber(overview.messages);
 
-  // Stats-cache banner (official Claude totals)
+  // Detail KPI cards
+  document.getElementById('kpi-input-tokens').textContent = formatTokens(overview.inputTokens);
+  document.getElementById('kpi-input-cost').textContent = formatCost(overview.inputCost || 0);
+  document.getElementById('kpi-output-tokens').textContent = formatTokens(overview.outputTokens);
+  document.getElementById('kpi-output-cost').textContent = formatCost(overview.outputCost || 0);
+  document.getElementById('kpi-cache-read-tokens').textContent = formatTokens(overview.cacheReadTokens);
+  document.getElementById('kpi-cache-read-cost').textContent = formatCost(overview.cacheReadCost || 0);
+  document.getElementById('kpi-cache-create-tokens').textContent = formatTokens(overview.cacheCreateTokens);
+  document.getElementById('kpi-cache-create-cost').textContent = formatCost(overview.cacheCreateCost || 0);
+
+  // Stats-cache banner (official Claude totals — single-user only)
   const banner = document.getElementById('stats-banner');
   const bannerItems = document.getElementById('stats-banner-items');
   if (statsCache && !statsCache.error) {
@@ -197,8 +480,7 @@ async function loadSessions() {
     filtered = filtered.filter(s => s.project === state.sessionFilter.project);
   }
 
-  const tbody = document.getElementById('sessions-tbody');
-  buildTableRows(tbody, filtered.slice(0, 100), [
+  storeTableData('sessions-tbody', filtered, [
     { value: s => s.firstTs ? s.firstTs.slice(0, 16).replace('T', ' ') : '-' },
     { value: s => s.project },
     { value: s => s.models.join(', ') },
@@ -207,7 +489,7 @@ async function loadSessions() {
     { value: s => formatNumber(s.toolCalls), className: 'num' },
     { value: s => formatTokens(getDisplayTokens(s)), className: 'num' },
     { value: s => formatCost(s.cost), className: 'num' }
-  ]);
+  ], 100);
 }
 
 async function loadProjects() {
@@ -256,15 +538,14 @@ async function loadProjects() {
     }
   }
 
-  buildTableRows(tbody, projects, cellDefs);
+  storeTableData('projects-tbody', projects, cellDefs);
 }
 
 async function loadTools() {
   const tools = await api('tools');
   createToolBarChart('chart-tools', tools);
 
-  const tbody = document.getElementById('tools-tbody');
-  buildTableRows(tbody, tools, [
+  storeTableData('tools-tbody', tools, [
     { value: t => t.name },
     { value: t => formatNumber(t.count), className: 'num' },
     { value: t => t.percentage + '%', className: 'num' }
@@ -323,7 +604,7 @@ async function loadModels() {
     }
   }
 
-  buildTableRows(tbody, models, cellDefs);
+  storeTableData('models-tbody', models, cellDefs);
 }
 
 async function loadInsights() {
@@ -345,6 +626,13 @@ async function loadInsights() {
   createSessionEfficiencyChart('chart-session-efficiency', sessionEfficiency);
 }
 
+async function loadInfo() {
+  // Load sync key if multi-user
+  if (state.multiUser) {
+    loadSyncKey();
+  }
+}
+
 // --- SSE Live Updates ---
 function connectSSE() {
   const evtSource = new EventSource('/api/live');
@@ -355,6 +643,7 @@ function connectSSE() {
   evtSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'update' || data.type === 'new-session') {
+      chartAnimateNext = false;
       loadTab(state.activeTab);
     }
   };
@@ -390,11 +679,13 @@ function applyTooltips() {
 }
 
 // --- Init ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initChartDefaults();
   applyTranslations();
   applyTooltips();
-  updateCacheToggleUI();
+
+  // Check auth before loading data
+  const authed = await checkAuth();
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -409,7 +700,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       setLang(btn.dataset.lang);
       applyTooltips();
-      updateCacheToggleUI();
       loadTab(state.activeTab);
     });
   });
@@ -420,8 +710,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('rebuild-btn')?.addEventListener('click', rebuild);
-  document.getElementById('cache-toggle')?.addEventListener('click', toggleCache);
+  document.getElementById('logout-btn')?.addEventListener('click', logout);
+  document.getElementById('copy-api-key')?.addEventListener('click', copySyncKey);
+  document.getElementById('regenerate-api-key')?.addEventListener('click', regenerateSyncKey);
+  document.getElementById('copy-curl-cmd')?.addEventListener('click', copyCurlCommand);
+  document.getElementById('download-install-script')?.addEventListener('click', downloadInstallScript);
 
-  switchTab('overview');
-  connectSSE();
+  if (authed) {
+    // Restore saved period
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === state.period));
+    const savedTab = localStorage.getItem('activeTab') || 'overview';
+    switchTab(savedTab);
+    connectSSE();
+  }
 });

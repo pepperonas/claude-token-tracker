@@ -43,6 +43,7 @@ function formatNumber(n) {
 // --- Chart creators ---
 
 let chartInstances = {};
+let chartAnimateNext = true;
 
 function destroyChart(id) {
   if (chartInstances[id]) {
@@ -88,6 +89,7 @@ function createDailyTokenChart(canvasId, data, includeCache) {
     type: 'bar',
     data: { labels: data.map(d => d.date.slice(5)), datasets },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -127,6 +129,7 @@ function createDailyCostChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -164,6 +167,7 @@ function createModelDoughnut(canvasId, data, includeCache) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -195,6 +199,7 @@ function createHourlyChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -229,6 +234,7 @@ function createProjectBarChart(canvasId, data, includeCache) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       indexAxis: 'y',
@@ -265,6 +271,7 @@ function createToolBarChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       indexAxis: 'y',
@@ -310,6 +317,7 @@ function createModelAreaChart(canvasId, data) {
       }))
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -385,6 +393,7 @@ function createCostBreakdownChart(canvasId, data, includeCache) {
       datasets
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -425,6 +434,7 @@ function createCumulativeCostChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -472,6 +482,7 @@ function createWeekdayChart(canvasId, data) {
       ]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -518,6 +529,7 @@ function createCacheEfficiencyChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -554,6 +566,7 @@ function createStopReasonsChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -588,6 +601,7 @@ function createSessionEfficiencyChart(canvasId, data) {
       }]
     },
     options: {
+      animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
