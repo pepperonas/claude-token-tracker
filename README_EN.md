@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/version-0.0.2-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-124%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-125%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
@@ -51,8 +51,8 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
-- **100 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond)
-- **124 automated tests** (unit + integration + multi-user API + achievements)
+- **250 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond)
+- **125 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Architecture
 
@@ -84,7 +84,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
-| `lib/achievements.js` | 100 achievement definitions with check logic, stats builder, and unlock tracking |
+| `lib/achievements.js` | 250 achievement definitions with check logic, stats builder, and unlock tracking |
 | `server.js` | Vanilla `http.createServer` with 20+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
 
@@ -265,7 +265,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Stop reason distribution |
 | `/api/session-efficiency` | GET | Tokens/message and cost/message |
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
-| `/api/achievements` | GET | All 100 achievements with unlock status |
+| `/api/achievements` | GET | All 250 achievements with unlock status |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
 | `/api/export` | GET | Full JSON export |
@@ -277,7 +277,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters.
 ## Development
 
 ```bash
-npm test              # Run all 124 tests (vitest)
+npm test              # Run all 125 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

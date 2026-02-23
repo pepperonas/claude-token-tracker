@@ -1032,25 +1032,39 @@ body {
 
 /* Demo banner */
 .demo-banner {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 16px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  color: var(--text-muted);
+  background: linear-gradient(135deg, #1a2332 0%, #1c2a3a 100%);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  font-size: 15px;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.15);
 }
 .demo-banner a {
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(88, 166, 255, 0.3);
 }
 .demo-banner a:hover {
-  text-decoration: underline;
+  background: #79b8ff;
+  box-shadow: 0 4px 16px rgba(88, 166, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Footer */

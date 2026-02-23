@@ -719,7 +719,7 @@ async function loadAchievements() {
     catMap[a.category].push(a);
   }
 
-  const tierIcons = {
+  const tierFallback = {
     bronze: '\u{1F7E4}',    // brown circle
     silver: '\u26AA',       // white circle
     gold: '\u{1F7E1}',     // yellow circle
@@ -745,7 +745,7 @@ async function loadAchievements() {
 
       const icon = document.createElement('div');
       icon.className = 'achievement-icon';
-      icon.textContent = tierIcons[ach.tier] || '\u2B50';
+      icon.textContent = ach.emoji || tierFallback[ach.tier] || '\u2B50';
 
       const info = document.createElement('div');
       info.className = 'achievement-info';

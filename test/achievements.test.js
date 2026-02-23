@@ -47,13 +47,13 @@ function createMockDb() {
 
 describe('Achievements', () => {
   describe('ACHIEVEMENTS array', () => {
-    it('should have exactly 100 achievements', () => {
-      expect(ACHIEVEMENTS.length).toBe(100);
+    it('should have exactly 250 achievements', () => {
+      expect(ACHIEVEMENTS.length).toBe(250);
     });
 
     it('should have unique keys', () => {
       const keys = ACHIEVEMENTS.map(a => a.key);
-      expect(new Set(keys).size).toBe(100);
+      expect(new Set(keys).size).toBe(250);
     });
 
     it('should have valid tiers', () => {
@@ -103,6 +103,15 @@ describe('Achievements', () => {
       expect(stats).toHaveProperty('activeDays');
       expect(stats).toHaveProperty('projectCount');
       expect(stats).toHaveProperty('avgCacheRate');
+      // New stats for extended achievements
+      expect(stats).toHaveProperty('totalOutputTokens');
+      expect(stats).toHaveProperty('totalInputTokens');
+      expect(stats).toHaveProperty('longestSessionMin');
+      expect(stats).toHaveProperty('maxMessagesInSession');
+      expect(stats).toHaveProperty('maxDayTokens');
+      expect(stats).toHaveProperty('toolCallsByName');
+      expect(stats).toHaveProperty('monthsActive');
+      expect(stats).toHaveProperty('fullWeekendCount');
     });
 
     it('should calculate total tokens correctly', () => {
@@ -227,13 +236,20 @@ describe('Achievements', () => {
   });
 
   describe('getAchievementsResponse', () => {
-    it('should return all 100 achievements with unlock status', () => {
+    it('should have emoji field on all achievements', () => {
+      for (const a of ACHIEVEMENTS) {
+        expect(typeof a.emoji).toBe('string');
+        expect(a.emoji.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should return all 250 achievements with unlock status', () => {
       const db = createMockDb();
       db.unlockAchievementsBatch(0, ['tokens_1k', 'sessions_1']);
 
       const response = getAchievementsResponse(0, db);
 
-      expect(response.length).toBe(100);
+      expect(response.length).toBe(250);
 
       const tokens1k = response.find(a => a.key === 'tokens_1k');
       expect(tokens1k.unlocked).toBe(true);
@@ -252,6 +268,7 @@ describe('Achievements', () => {
         expect(a).toHaveProperty('key');
         expect(a).toHaveProperty('category');
         expect(a).toHaveProperty('tier');
+        expect(a).toHaveProperty('emoji');
         expect(a).toHaveProperty('unlocked');
         expect(a).toHaveProperty('unlockedAt');
       }

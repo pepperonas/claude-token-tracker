@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm start                # Start server on port 5010
-npm test                 # Run all 124 tests (vitest)
+npm test                 # Run all 125 tests (vitest)
 npm run test:watch       # Tests in watch mode
 npm run test:coverage    # Coverage report
 npm run lint             # ESLint (lib/ + server.js only)
@@ -49,7 +49,7 @@ sync-agent (client machine) → POST /api/sync (API key auth)
 - **`lib/auth.js`** — GitHub OAuth flow (server-side, native `https.request`), session management (`crypto.randomBytes` tokens, HttpOnly cookies, 30-day expiry), `authenticateRequest()` middleware. Single-user mode returns DUMMY_USER.
 - **`lib/pricing.js`** — Per-model pricing (input/output/cacheRead/cacheCreate per 1M tokens). Unknown models fall back to Sonnet 4.5 pricing.
 - **`lib/watcher.js`** — Chokidar file watcher with `awaitWriteFinish` debouncing. On file change: incremental parse → update aggregator → broadcast SSE (with userId filtering in multi-user mode).
-- **`lib/achievements.js`** — 100 achievement definitions across 12 categories with 5 tiers. `buildStats(agg)` computes comprehensive stats from aggregator. `checkAchievements()` inserts newly unlocked achievements. `getAchievementsResponse()` returns all 100 with unlock status.
+- **`lib/achievements.js`** — 250 achievement definitions across 12 categories with 5 tiers. `buildStats(agg)` computes comprehensive stats from aggregator. `checkAchievements()` inserts newly unlocked achievements. `getAchievementsResponse()` returns all 250 with unlock status.
 - **`lib/backup.js`** — SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies.
 - **`server.js`** — Vanilla `http.createServer`. Exports `startServer()` for test use. Routes: auth (`/auth/*`), sync (`/api/sync`), sync-agent install (`/api/sync-agent/install.sh`), active sessions (`/api/active-sessions`), config (`/api/config`), all analytics endpoints. Auth gate on `/api/*` in multi-user mode. `generateInstallScript()` embeds sync-agent files + config into a self-contained bash installer.
 

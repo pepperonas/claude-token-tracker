@@ -253,7 +253,35 @@ const DEMO_DATA = (() => {
   // --- Active sessions (empty for demo — no live sessions) ---
   const activeSessionsData = [];
 
-  // --- Achievements (35/100 unlocked for demo) ---
+  // --- Achievements (35/250 unlocked for demo) ---
+  // Compact definition: [key, category, tier, emoji]
+  const achDefs = [
+    ['tokens_1k','tokens','bronze','\u{1F524}'],['tokens_10k','tokens','bronze','\u{1F4DD}'],['tokens_100k','tokens','silver','\u{1F50D}'],['tokens_500k','tokens','silver','\u{1F3AF}'],['tokens_1m','tokens','gold','\u{1F4B0}'],['tokens_5m','tokens','gold','\u{1F4AA}'],['tokens_10m','tokens','platinum','\u{1F3D4}'],['tokens_50m','tokens','platinum','\u{1F30B}'],['tokens_100m','tokens','diamond','\u{1F3C6}'],['tokens_500m','tokens','diamond','\u{1F451}'],
+    ['sessions_1','sessions','bronze','\u{1F680}'],['sessions_5','sessions','bronze','\u{1F3AE}'],['sessions_10','sessions','silver','\u{1F4C5}'],['sessions_25','sessions','silver','\u{1F3AA}'],['sessions_50','sessions','gold','\u2B50'],['sessions_100','sessions','gold','\u{1F4AF}'],['sessions_250','sessions','platinum','\u26A1'],['sessions_500','sessions','diamond','\u{1F3C5}'],
+    ['messages_10','messages','bronze','\u{1F4AC}'],['messages_50','messages','bronze','\u{1F5E8}'],['messages_100','messages','silver','\u{1F4E8}'],['messages_500','messages','silver','\u{1F4EB}'],['messages_1k','messages','gold','\u{1F4EC}'],['messages_5k','messages','gold','\u{1F4EE}'],['messages_10k','messages','platinum','\u{1F396}'],['messages_50k','messages','diamond','\u{1F31F}'],
+    ['cost_1','cost','bronze','\u{1F4B5}'],['cost_5','cost','bronze','\u{1F4B6}'],['cost_10','cost','silver','\u{1F4B7}'],['cost_25','cost','silver','\u{1F4B4}'],['cost_50','cost','gold','\u{1F4B0}'],['cost_100','cost','gold','\u{1F911}'],['cost_250','cost','platinum','\u{1F48E}'],['cost_500','cost','diamond','\u{1F3E6}'],
+    ['lines_written_100','lines','bronze','\u270F'],['lines_written_1k','lines','silver','\u{1F4DD}'],['lines_written_10k','lines','gold','\u{1F4C4}'],['lines_written_50k','lines','platinum','\u{1F4DA}'],['lines_edited_100','lines','bronze','\u2702'],['lines_edited_1k','lines','silver','\u{1F527}'],['lines_edited_10k','lines','gold','\u2699'],['lines_deleted_100','lines','bronze','\u{1F5D1}'],['lines_deleted_1k','lines','silver','\u{1F4A5}'],['lines_deleted_10k','lines','gold','\u{1F9F9}'],['lines_net_1k','lines','silver','\u{1F4C8}'],['lines_net_10k','lines','gold','\u{1F680}'],
+    ['model_sonnet','models','bronze','\u{1F3B5}'],['model_opus','models','bronze','\u{1F3AD}'],['model_haiku','models','bronze','\u{1F338}'],['model_diversity_2','models','silver','\u{1F3A8}'],['model_diversity_3','models','gold','\u{1F308}'],['model_diversity_4','models','platinum','\u{1FA84}'],['model_sonnet_1k','models','silver','\u{1F3B6}'],['model_opus_1k','models','gold','\u{1F3BC}'],['model_opus_100','models','silver','\u{1F3BB}'],['model_haiku_100','models','silver','\u{1F343}'],
+    ['tool_read','tools','bronze','\u{1F4D6}'],['tool_write','tools','bronze','\u270D'],['tool_edit','tools','bronze','\u{1F58A}'],['tool_bash','tools','bronze','\u{1F4BB}'],['tool_grep','tools','bronze','\u{1F50E}'],['tool_glob','tools','bronze','\u{1F4C1}'],['tool_diversity_5','tools','silver','\u{1F528}'],['tool_diversity_10','tools','gold','\u{1F9F0}'],['tool_diversity_15','tools','platinum','\u{1F6E0}'],['tool_1k_calls','tools','silver','\u26A1'],['tool_10k_calls','tools','gold','\u{1F50C}'],['tool_50k_calls','tools','platinum','\u2699'],
+    ['early_bird_1','time','bronze','\u{1F426}'],['early_bird_10','time','silver','\u{1F305}'],['night_owl_1','time','bronze','\u{1F989}'],['night_owl_10','time','silver','\u{1F319}'],['marathon_1','time','silver','\u{1F3C3}'],['marathon_5','time','gold','\u{1F3C3}\u200D\u2642'],['marathon_10','time','platinum','\u{1F947}'],['peak_50_msgs','time','silver','\u{1F4CA}'],['peak_100_msgs','time','gold','\u{1F525}'],['peak_200_msgs','time','platinum','\u{1F321}'],
+    ['project_1','projects','bronze','\u{1F4C2}'],['project_3','projects','silver','\u{1F4C1}'],['project_5','projects','gold','\u{1F5C2}'],['project_10','projects','platinum','\u{1F3E2}'],['project_15','projects','diamond','\u{1F3D7}'],['project_20','projects','diamond','\u{1F306}'],
+    ['streak_3','streaks','bronze','\u{1F525}'],['streak_7','streaks','silver','\u{1F5D3}'],['streak_14','streaks','gold','\u{1F4C6}'],['streak_30','streaks','platinum','\u{1F3C6}'],['streak_60','streaks','diamond','\u{1F48E}'],['active_days_7','streaks','bronze','\u{1F4C5}'],['active_days_30','streaks','silver','\u{1F5D3}'],['active_days_100','streaks','gold','\u{1F3AF}'],
+    ['cache_rate_50','cache','silver','\u{1F4BE}'],['cache_rate_70','cache','gold','\u{1F5C4}'],['cache_rate_80','cache','platinum','\u{1F3CE}'],['cache_rate_90','cache','diamond','\u26A1'],
+    ['holiday_coding','special','silver','\u{1F384}'],['palindrome_date','special','gold','\u{1F504}'],['weekend_warrior','special','bronze','\u2694'],['all_hours','special','platinum','\u{1F550}'],
+    // 150 new achievements (101-250)
+    ['tokens_1b','tokens','diamond','\u{1F30C}'],['output_1m','tokens','gold','\u{1F4E4}'],['output_5m','tokens','platinum','\u{1F4E6}'],['output_10m','tokens','platinum','\u{1F6F8}'],['output_50m','tokens','diamond','\u{1F4AB}'],['output_100m','tokens','diamond','\u{1F320}'],['input_10m','tokens','gold','\u{1F4E5}'],['input_50m','tokens','platinum','\u{1F4E8}'],['input_100m','tokens','diamond','\u{1F4E9}'],['input_500m','tokens','diamond','\u{1F3AF}'],['cache_tokens_10m','tokens','gold','\u{1F4BE}'],['cache_tokens_100m','tokens','diamond','\u{1F5C4}'],
+    ['sessions_750','sessions','diamond','\u{1F3C5}'],['sessions_1k','sessions','diamond','\u{1F451}'],['sessions_2k','sessions','diamond','\u{1F531}'],['sessions_5k','sessions','diamond','\u{1F320}'],['sessions_10k','sessions','diamond','\u{1F30C}'],['session_longest_4h','sessions','gold','\u23F0'],['session_longest_8h','sessions','platinum','\u23F1'],['session_longest_12h','sessions','diamond','\u{1F570}'],['session_max_200_msgs','sessions','platinum','\u{1F5E3}'],['session_max_500_msgs','sessions','diamond','\u{1F4E2}'],
+    ['messages_100k','messages','diamond','\u{1F4EC}'],['messages_250k','messages','diamond','\u{1F4EE}'],['messages_500k','messages','diamond','\u{1F48C}'],['messages_1m','messages','diamond','\u2709'],['avg_msgs_session_20','messages','gold','\u{1F4CA}'],['avg_msgs_session_50','messages','platinum','\u{1F4C8}'],['avg_msgs_session_100','messages','diamond','\u{1F3AF}'],
+    ['cost_750','cost','diamond','\u{1F4B0}'],['cost_1000','cost','diamond','\u{1F4B8}'],['cost_2500','cost','diamond','\u{1F911}'],['cost_5000','cost','diamond','\u{1F3E6}'],['cost_10000','cost','diamond','\u{1F3DB}'],['cost_day_10','cost','gold','\u{1F4C8}'],['cost_day_25','cost','platinum','\u{1F4CA}'],['cost_day_50','cost','diamond','\u{1F4B9}'],['cost_day_100','cost','diamond','\u{1F3E7}'],['cost_session_10','cost','gold','\u{1F4B3}'],['cost_session_50','cost','diamond','\u{1F48E}'],
+    ['lines_written_100k','lines','platinum','\u{1F4DC}'],['lines_written_250k','lines','diamond','\u{1F4CB}'],['lines_written_500k','lines','diamond','\u{1F5DE}'],['lines_written_1m','lines','diamond','\u{1F4DA}'],['lines_edited_50k','lines','platinum','\u270F'],['lines_edited_100k','lines','diamond','\u{1F58A}'],['lines_deleted_50k','lines','platinum','\u{1F5D1}'],['lines_deleted_100k','lines','diamond','\u267B'],['lines_net_50k','lines','platinum','\u{1F4C8}'],['lines_net_100k','lines','diamond','\u{1F3D7}'],['lines_net_250k','lines','diamond','\u{1F306}'],['lines_day_1k','lines','gold','\u26A1'],['lines_day_5k','lines','platinum','\u{1F329}'],['lines_day_10k','lines','diamond','\u{1F30B}'],['lines_day_25k','lines','diamond','\u{1F525}'],
+    ['model_sonnet_5k','models','gold','\u{1F3B5}'],['model_sonnet_10k','models','platinum','\u{1F3B6}'],['model_opus_5k','models','platinum','\u{1F3AD}'],['model_opus_10k','models','diamond','\u{1F3BB}'],['model_haiku_1k','models','gold','\u{1F338}'],['model_haiku_5k','models','platinum','\u{1F33A}'],['model_diversity_5','models','diamond','\u{1F3A8}'],
+    ['tool_diversity_20','tools','diamond','\u{1F9F0}'],['tool_100k_calls','tools','diamond','\u2699'],['tool_250k_calls','tools','diamond','\u{1F527}'],['tool_500k_calls','tools','diamond','\u{1F6E0}'],['tool_bash_1k','tools','gold','\u{1F4BB}'],['tool_bash_10k','tools','platinum','\u{1F5A5}'],['tool_bash_50k','tools','diamond','\u2328'],['tool_read_10k','tools','gold','\u{1F4D6}'],['tool_read_50k','tools','platinum','\u{1F4D7}'],['tool_edit_10k','tools','gold','\u{1F50F}'],['tool_edit_50k','tools','platinum','\u{1F4D0}'],['tool_write_10k','tools','gold','\u{1F4DD}'],['tool_write_50k','tools','platinum','\u{1F4D8}'],['tool_grep_10k','tools','gold','\u{1F50D}'],['tool_glob_10k','tools','gold','\u{1F5FA}'],['tool_task_1k','tools','gold','\u{1F4CB}'],
+    ['early_bird_50','time','gold','\u{1F305}'],['early_bird_100','time','platinum','\u{1F304}'],['early_bird_500','time','diamond','\u2600'],['night_owl_50','time','gold','\u{1F319}'],['night_owl_100','time','platinum','\u{1F311}'],['night_owl_500','time','diamond','\u{1F987}'],['marathon_25','time','platinum','\u{1F3C3}'],['marathon_50','time','diamond','\u{1F3CB}'],['marathon_100','time','diamond','\u{1F9BE}'],['marathon_4h','time','gold','\u23F0'],['marathon_4h_10','time','platinum','\u23F1'],['marathon_8h','time','diamond','\u{1F550}'],['peak_300_msgs','time','platinum','\u{1F4CA}'],['peak_500_msgs','time','diamond','\u{1F4A5}'],['peak_1000_msgs','time','diamond','\u2604'],['peak_tokens_1m','time','platinum','\u{1F321}'],['peak_tokens_5m','time','diamond','\u{1FAE0}'],
+    ['project_25','projects','diamond','\u{1F3D8}'],['project_50','projects','diamond','\u{1F307}'],['project_75','projects','diamond','\u{1F303}'],['project_100','projects','diamond','\u{1F30D}'],
+    ['streak_90','streaks','diamond','\u{1F525}'],['streak_120','streaks','diamond','\u{1F31F}'],['streak_180','streaks','diamond','\u{1F4AB}'],['streak_365','streaks','diamond','\u2B50'],['active_days_200','streaks','platinum','\u{1F4C6}'],['active_days_365','streaks','diamond','\u{1F5D3}'],['active_days_500','streaks','diamond','\u{1F4C5}'],['active_days_730','streaks','diamond','\u{1F3AF}'],['active_days_1000','streaks','diamond','\u{1F3C6}'],['months_active_6','streaks','gold','\u{1F4C5}'],['months_active_12','streaks','platinum','\u{1F4C6}'],['months_active_24','streaks','diamond','\u{1F5D3}'],['months_active_36','streaks','diamond','\u{1F3DB}'],
+    ['cache_rate_95','cache','diamond','\u{1F3CE}'],['cache_rate_99','cache','diamond','\u{1F680}'],['cache_tokens_50m','cache','platinum','\u{1F4BD}'],['cache_tokens_500m','cache','diamond','\u{1F5B2}'],
+    ['new_years_coding','special','gold','\u{1F386}'],['friday_13th','special','gold','\u{1F52E}'],['leap_day','special','diamond','\u{1F998}'],['pi_day','special','gold','\u{1F967}'],['star_wars_day','special','gold','\u2694'],['summer_solstice','special','gold','\u2600'],['halloween_night','special','platinum','\u{1F383}'],['christmas_coding','special','gold','\u{1F381}'],['new_years_eve','special','gold','\u{1F387}'],['midnight_marathon','special','gold','\u{1F313}'],['full_weekend_5','special','gold','\u{1F3D6}'],['full_weekend_10','special','platinum','\u26F1'],['full_weekend_25','special','diamond','\u{1F3DD}'],['full_weekend_52','special','diamond','\u{1F334}'],['sunday_coder_10','special','silver','\u2615'],['seven_day_week','special','gold','\u{1F4C5}'],['consec_weekends_4','special','platinum','\u{1F3AA}'],['consec_weekends_8','special','diamond','\u{1F3A1}'],['tokens_session_1m','special','platinum','\u{1F48E}'],['tokens_session_5m','special','diamond','\u{1F31F}'],['tokens_session_10m','special','diamond','\u2728'],['multi_proj_day_3','special','gold','\u{1F500}'],['multi_proj_day_5','special','platinum','\u{1F504}'],['multi_proj_day_10','special','diamond','\u{1F300}'],['century_session','special','gold','\u{1F4AF}'],['output_ratio_60','special','gold','\u{1F4E4}'],['all_weekdays','special','gold','\u{1F4C5}'],['triple_model_day','special','platinum','\u{1F3A8}'],['dawn_dusk_session','special','gold','\u{1F317}'],['efficiency_master','special','gold','\u{1F3AF}'],['big_session_cost_25','special','platinum','\u{1F4B0}'],['lines_session_1k','special','gold','\u{1F4D1}'],['lines_session_5k','special','platinum','\u{1F4D7}'],['millennium','special','diamond','\u{1F3C6}']
+  ];
   const unlockedKeys = new Set([
     'tokens_1k', 'tokens_10k', 'tokens_100k', 'tokens_500k', 'tokens_1m',
     'sessions_1', 'sessions_5', 'sessions_10', 'sessions_25',
@@ -266,61 +294,11 @@ const DEMO_DATA = (() => {
     'tool_diversity_5', 'tool_diversity_10',
     'project_1'
   ]);
-  const allAchievementKeys = [
-    'tokens_1k','tokens_10k','tokens_100k','tokens_500k','tokens_1m','tokens_5m','tokens_10m','tokens_50m','tokens_100m','tokens_500m',
-    'sessions_1','sessions_5','sessions_10','sessions_25','sessions_50','sessions_100','sessions_250','sessions_500',
-    'messages_10','messages_50','messages_100','messages_500','messages_1k','messages_5k','messages_10k','messages_50k',
-    'cost_1','cost_5','cost_10','cost_25','cost_50','cost_100','cost_250','cost_500',
-    'lines_written_100','lines_written_1k','lines_written_10k','lines_written_50k',
-    'lines_edited_100','lines_edited_1k','lines_edited_10k',
-    'lines_deleted_100','lines_deleted_1k','lines_deleted_10k',
-    'lines_net_1k','lines_net_10k',
-    'model_sonnet','model_opus','model_haiku','model_diversity_2','model_diversity_3','model_diversity_4',
-    'model_sonnet_1k','model_opus_1k','model_opus_100','model_haiku_100',
-    'tool_read','tool_write','tool_edit','tool_bash','tool_grep','tool_glob',
-    'tool_diversity_5','tool_diversity_10','tool_diversity_15',
-    'tool_1k_calls','tool_10k_calls','tool_50k_calls',
-    'early_bird_1','early_bird_10','night_owl_1','night_owl_10',
-    'marathon_1','marathon_5','marathon_10',
-    'peak_50_msgs','peak_100_msgs','peak_200_msgs',
-    'project_1','project_3','project_5','project_10','project_15','project_20',
-    'streak_3','streak_7','streak_14','streak_30','streak_60',
-    'active_days_7','active_days_30','active_days_100',
-    'cache_rate_50','cache_rate_70','cache_rate_80','cache_rate_90',
-    'holiday_coding','palindrome_date','weekend_warrior','all_hours'
-  ];
-  const catMap = {
-    tokens: ['tokens_1k','tokens_10k','tokens_100k','tokens_500k','tokens_1m','tokens_5m','tokens_10m','tokens_50m','tokens_100m','tokens_500m'],
-    sessions: ['sessions_1','sessions_5','sessions_10','sessions_25','sessions_50','sessions_100','sessions_250','sessions_500'],
-    messages: ['messages_10','messages_50','messages_100','messages_500','messages_1k','messages_5k','messages_10k','messages_50k'],
-    cost: ['cost_1','cost_5','cost_10','cost_25','cost_50','cost_100','cost_250','cost_500'],
-    lines: ['lines_written_100','lines_written_1k','lines_written_10k','lines_written_50k','lines_edited_100','lines_edited_1k','lines_edited_10k','lines_deleted_100','lines_deleted_1k','lines_deleted_10k','lines_net_1k','lines_net_10k'],
-    models: ['model_sonnet','model_opus','model_haiku','model_diversity_2','model_diversity_3','model_diversity_4','model_sonnet_1k','model_opus_1k','model_opus_100','model_haiku_100'],
-    tools: ['tool_read','tool_write','tool_edit','tool_bash','tool_grep','tool_glob','tool_diversity_5','tool_diversity_10','tool_diversity_15','tool_1k_calls','tool_10k_calls','tool_50k_calls'],
-    time: ['early_bird_1','early_bird_10','night_owl_1','night_owl_10','marathon_1','marathon_5','marathon_10','peak_50_msgs','peak_100_msgs','peak_200_msgs'],
-    projects: ['project_1','project_3','project_5','project_10','project_15','project_20'],
-    streaks: ['streak_3','streak_7','streak_14','streak_30','streak_60','active_days_7','active_days_30','active_days_100'],
-    cache: ['cache_rate_50','cache_rate_70','cache_rate_80','cache_rate_90'],
-    special: ['holiday_coding','palindrome_date','weekend_warrior','all_hours']
-  };
-  const tierMap = {};
-  const tiers = ['bronze','bronze','silver','silver','gold','gold','platinum','platinum','diamond','diamond'];
-  for (const [cat, keys] of Object.entries(catMap)) {
-    keys.forEach((k, i) => { tierMap[k] = tiers[i % tiers.length] || 'bronze'; });
-  }
-  const achievementsData = allAchievementKeys.map(key => {
-    let category = 'special';
-    for (const [cat, keys] of Object.entries(catMap)) {
-      if (keys.includes(key)) { category = cat; break; }
-    }
-    return {
-      key,
-      category,
-      tier: tierMap[key] || 'bronze',
-      unlocked: unlockedKeys.has(key),
-      unlockedAt: unlockedKeys.has(key) ? days[Math.floor(Math.random() * days.length)] + 'T12:00:00Z' : null
-    };
-  });
+  const achievementsData = achDefs.map(([key, category, tier, emoji]) => ({
+    key, category, tier, emoji,
+    unlocked: unlockedKeys.has(key),
+    unlockedAt: unlockedKeys.has(key) ? days[Math.floor(Math.random() * days.length)] + 'T12:00:00Z' : null
+  }));
 
   // Build lookup table keyed by API endpoint path
   return {
