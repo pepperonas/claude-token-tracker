@@ -622,6 +622,31 @@ body {
   margin-top: 12px;
 }
 
+.date-format-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.date-format-toggle span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.date-fmt-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.date-fmt-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 @media (max-width: 600px) {
   .info-grid { grid-template-columns: 1fr; }
 }
@@ -931,4 +956,17 @@ body {
 
 .footer-github:hover {
   color: var(--text);
+}
+
+.footer-donate {
+  color: var(--text-muted);
+  transition: color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  font-size: 12px;
+}
+.footer-donate:hover {
+  color: #f85149;
 }

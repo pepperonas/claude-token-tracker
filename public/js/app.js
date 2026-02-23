@@ -426,9 +426,9 @@ async function loadOverview() {
   document.getElementById('kpi-lines-written').textContent = formatNumber(lW);
   document.getElementById('kpi-lines-written-sub').textContent = `~${formatNumber(Math.round(lW / dayCount))} ${t('linesPerDay')}`;
   document.getElementById('kpi-lines-edited').textContent = formatNumber(lA);
-  document.getElementById('kpi-lines-edited-sub').textContent = `~${formatNumber(Math.round(lA / sessCount))} ${t('linesPerSession')}`;
+  document.getElementById('kpi-lines-edited-sub').textContent = `~${formatNumber(Math.round(lA / dayCount))} ${t('linesPerDay')}`;
   document.getElementById('kpi-lines-deleted').textContent = formatNumber(lR);
-  document.getElementById('kpi-lines-deleted-sub').textContent = `~${formatNumber(Math.round(lR / sessCount))} ${t('linesPerSession')}`;
+  document.getElementById('kpi-lines-deleted-sub').textContent = `~${formatNumber(Math.round(lR / dayCount))} ${t('linesPerDay')}`;
   document.getElementById('kpi-lines-net').textContent = (netLines >= 0 ? '+' : '') + formatNumber(netLines);
   document.getElementById('kpi-lines-net-sub').textContent = t('netChangeDesc');
 
@@ -737,6 +737,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.addEventListener('click', () => {
       setLang(btn.dataset.lang);
       applyTooltips();
+      loadTab(state.activeTab);
+    });
+  });
+
+  // Date format toggle
+  const savedFmt = localStorage.getItem('dateFormat') || 'us';
+  document.querySelectorAll('.date-fmt-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.fmt === savedFmt);
+    btn.addEventListener('click', () => {
+      setChartDateFormat(btn.dataset.fmt);
+      document.querySelectorAll('.date-fmt-btn').forEach(b => b.classList.toggle('active', b.dataset.fmt === btn.dataset.fmt));
       loadTab(state.activeTab);
     });
   });

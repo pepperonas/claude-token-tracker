@@ -167,10 +167,10 @@ BLUE='\\033[0;34m'
 BOLD='\\033[1m'
 NC='\\033[0m'
 
-info() { echo -e "\$BLUE\\u25b8\$NC \$1"; }
-ok()   { echo -e "\$GREEN\\u2713\$NC \$1"; }
-warn() { echo -e "\$YELLOW!\\041\$NC \$1"; }
-err()  { echo -e "\$RED\\u2717\$NC \$1"; }
+info() { echo -e "\$BLUE▸\$NC \$1"; }
+ok()   { echo -e "\$GREEN✓\$NC \$1"; }
+warn() { echo -e "\$YELLOW⚠\$NC \$1"; }
+err()  { echo -e "\$RED✗\$NC \$1"; }
 
 INSTALL_DIR="\$HOME/claude-sync-agent"
 
@@ -341,7 +341,7 @@ SERVICEEOF
 
 echo ""
 if [ "\$OS" = "Darwin" ] || [ "\$OS" = "Linux" ]; then
-  read -p "\$(echo -e "\$BLUE\\u25b8\$NC") Set up autostart? [Y/n] " -n 1 -r
+  read -p "\$(echo -e "\$BLUE▸\$NC") Set up autostart? [Y/n] " -n 1 -r
   echo
   if [[ ! \$REPLY =~ ^[Nn]\$ ]]; then
     if [ "\$OS" = "Darwin" ]; then
@@ -366,7 +366,7 @@ else
 fi
 
 echo ""
-echo -e "\$GREEN\$BOLD""=== Installation complete ===""\\$NC"
+echo -e "\$GREEN\$BOLD=== Installation complete ===\$NC"
 echo "  Directory: \$INSTALL_DIR"
 echo "  Server:    ${serverUrl}"
 echo ""

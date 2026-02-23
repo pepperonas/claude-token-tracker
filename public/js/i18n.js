@@ -57,6 +57,9 @@ const LANG = {
     dailyLinesChart: 'Daily Lines of Code',
     tooltipLinesOfCode: 'Lines changed via Write (new files) and Edit (replacements/deletions) tool calls',
     tooltipDailyLines: 'Daily lines of code: green = Write, yellow = Edit, red = Delete',
+    // Settings
+    infoSettingsTitle: 'Settings',
+    dateFormatLabel: 'Date Format:',
     // Info section extras
     infoLinesTitle: 'Lines of Code',
     infoLinesDesc: 'The dashboard tracks three types of code line changes from Claude\'s tool calls: Write (green) counts lines from the Write tool when creating or overwriting files. Edit (yellow) counts lines from the Edit tool\'s replacement text. Delete (red) counts lines from the Edit tool\'s removed text. Net Change = write + edit - delete.',
@@ -137,6 +140,7 @@ const LANG = {
     syncSetupTitle: 'Sync Agent Setup',
     syncSetupDesc: 'Install the sync agent on your machine to automatically upload token data to this server. The agent watches your local Claude session files and sends new data via API.',
     apiKey: 'API Key',
+    donate: 'Donate',
     copy: 'Copy',
     regenerate: 'Regenerate',
     syncInstallTitle: 'Installation',
@@ -206,6 +210,9 @@ const LANG = {
     dailyLinesChart: 'Tägliche Zeilen Code',
     tooltipLinesOfCode: 'Geänderte Zeilen via Write (neue Dateien) und Edit (Ersetzungen/Löschungen) Tool-Aufrufe',
     tooltipDailyLines: 'Tägliche Codezeilen: grün = Write, gelb = Edit, rot = Delete',
+    // Settings
+    infoSettingsTitle: 'Einstellungen',
+    dateFormatLabel: 'Datumsformat:',
     // Info section extras
     infoLinesTitle: 'Lines of Code',
     infoLinesDesc: 'Das Dashboard erfasst drei Arten von Codezeilen-Änderungen aus Claudes Tool-Aufrufen: Write (grün) zählt Zeilen vom Write-Tool beim Erstellen oder Überschreiben von Dateien. Edit (gelb) zählt Zeilen aus dem Ersetzungstext des Edit-Tools. Delete (rot) zählt Zeilen aus dem entfernten Text des Edit-Tools. Netto-Änderung = write + edit - delete.',
@@ -286,6 +293,7 @@ const LANG = {
     syncSetupTitle: 'Sync Agent einrichten',
     syncSetupDesc: 'Installiere den Sync-Agent auf deinem Rechner, um Token-Daten automatisch an diesen Server zu übertragen. Der Agent überwacht deine lokalen Claude-Sitzungsdateien und sendet neue Daten per API.',
     apiKey: 'API-Key',
+    donate: 'Spenden',
     copy: 'Kopieren',
     regenerate: 'Neu generieren',
     syncInstallTitle: 'Installation',

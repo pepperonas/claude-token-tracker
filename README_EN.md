@@ -300,6 +300,12 @@ npm run lint          # ESLint (lib/ + server.js)
 - Costs: rounded to 2 decimal places
 - Unused variables: prefix `_` (ESLint)
 
+## Support
+
+If you find this project useful, consider buying me a coffee:
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR)
+
 ## Author
 
 Built by [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)

@@ -301,6 +301,12 @@ npm run lint          # ESLint (lib/ + server.js)
 - Unbenutzte Variablen: Prefix `_` (ESLint)
 - Deutsche Texte: richtige Umlaute (ü, ö, ä, ß), niemals ASCII-Ersatz
 
+## Unterstützung
+
+Wenn dir dieses Projekt gefällt, freue ich mich über eine kleine Spende:
+
+[![Spenden](https://img.shields.io/badge/Spenden-PayPal-blue.svg)](https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR)
+
 ## Autor
 
 Entwickelt von [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)

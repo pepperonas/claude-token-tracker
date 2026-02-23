@@ -1,5 +1,20 @@
 // Chart.js configuration and helpers
 
+/** Date format for chart axis labels: 'us' = MM-DD, 'de' = DD.MM. */
+let chartDateFormat = localStorage.getItem('dateFormat') || 'us';
+
+function formatChartDate(dateStr) {
+  // dateStr is YYYY-MM-DD
+  const mm = dateStr.slice(5, 7);
+  const dd = dateStr.slice(8, 10);
+  return chartDateFormat === 'de' ? `${dd}.${mm}.` : `${mm}-${dd}`;
+}
+
+function setChartDateFormat(fmt) {
+  chartDateFormat = fmt;
+  localStorage.setItem('dateFormat', fmt);
+}
+
 const COLORS = {
   input: '#58a6ff',
   output: '#3fb950',
@@ -135,7 +150,7 @@ function createDailyTokenChart(canvasId, data, includeCache) {
   }
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
-    data: { labels: data.map(d => d.date.slice(5)), datasets },
+    data: { labels: data.map(d => formatChartDate(d.date)), datasets },
     options: {
       animation: chartAnimateNext ? undefined : false,
       responsive: true,
@@ -165,7 +180,7 @@ function createDailyCostChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets: [{
         label: 'API-equivalent Cost',
         data: data.map(d => d.cost),
@@ -359,7 +374,7 @@ function createModelAreaChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets: models.map((model, i) => ({
         label: model,
         data: data.map(d => d[model] || 0),
@@ -444,7 +459,7 @@ function createCostBreakdownChart(canvasId, data, includeCache) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets
     },
     options: {
@@ -477,7 +492,7 @@ function createCumulativeCostChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets: [{
         label: t('cumulativeCost'),
         data: data.map(d => d.cost),
@@ -574,7 +589,7 @@ function createCacheEfficiencyChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets: [{
         label: 'Cache Hit Rate %',
         data: data.map(d => d.cacheHitRate),
@@ -617,7 +632,7 @@ function createDailyLinesChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.map(d => d.date.slice(5)),
+      labels: data.map(d => formatChartDate(d.date)),
       datasets: [
         {
           label: t('linesWritten'),

@@ -65,4 +65,5 @@ Open [http://localhost:5010](http://localhost:5010)
 
 - **Live Demo**: [tracker.celox.io](https://tracker.celox.io)
 - **Author**: [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)
+- **Donate**: [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR)
 - **License**: [MIT](LICENSE)
