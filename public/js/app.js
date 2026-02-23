@@ -45,14 +45,18 @@ async function api(path) {
   return res.json();
 }
 
+function toLocalDate(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
+
 function getPeriodRange() {
   const now = new Date();
-  const to = now.toISOString().slice(0, 10);
+  const to = toLocalDate(now);
   let from = '';
   switch (state.period) {
     case 'today': from = to; break;
-    case '7d': from = new Date(now - 7 * 86400000).toISOString().slice(0, 10); break;
-    case '30d': from = new Date(now - 30 * 86400000).toISOString().slice(0, 10); break;
+    case '7d': from = toLocalDate(new Date(now - 7 * 86400000)); break;
+    case '30d': from = toLocalDate(new Date(now - 30 * 86400000)); break;
     case 'all': from = ''; break;
   }
   return { from, to };
