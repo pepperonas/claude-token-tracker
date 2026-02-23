@@ -215,14 +215,8 @@ fi
 
 # --- 2. Handle existing installation ---
 if [ -d "\$INSTALL_DIR" ]; then
-  warn "Directory \$INSTALL_DIR already exists."
-  read -p "   Overwrite? [y/N] " -n 1 -r
-  echo
-  if [[ ! \$REPLY =~ ^[Yy]\$ ]]; then
-    echo "Aborted."
-    exit 0
-  fi
-  # Stop existing service
+  info "Updating existing installation at \$INSTALL_DIR ..."
+  # Stop existing service before overwriting
   OS_PRE=\$(uname -s)
   if [ "\$OS_PRE" = "Darwin" ]; then
     PLIST_PRE="\$HOME/Library/LaunchAgents/io.celox.claude-sync-agent.plist"
