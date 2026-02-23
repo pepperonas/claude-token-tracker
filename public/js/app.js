@@ -5,7 +5,8 @@ let state = {
   sessionFilter: { project: '', model: '' },
   includeCache: true,
   multiUser: false,
-  user: null
+  user: null,
+  demoMode: false
 };
 
 // --- Cache toggle helpers ---
@@ -30,6 +31,12 @@ function getDisplayCost(obj) {
 
 // --- API helpers ---
 async function api(path) {
+  if (state.demoMode && typeof DEMO_DATA !== 'undefined') {
+    const basePath = path.replace(/\?.*$/, '');
+    if (DEMO_DATA[basePath] !== undefined) {
+      return JSON.parse(JSON.stringify(DEMO_DATA[basePath]));
+    }
+  }
   const res = await fetch('/api/' + path);
   if (res.status === 401 && state.multiUser) {
     showLoginOverlay();
@@ -213,18 +220,42 @@ async function checkAuth() {
     const authRes = await fetch('/auth/me').then(r => r.json());
     if (authRes.authenticated) {
       state.user = authRes.user;
+      state.demoMode = false;
       hideLoginOverlay();
+      hideDemoBanner();
       updateUserUI(authRes.user);
       return true;
     } else {
-      showLoginOverlay();
-      return false;
+      // Not authenticated — enter demo mode
+      state.demoMode = true;
+      hideLoginOverlay();
+      showDemoBanner();
+      return true;
     }
   } catch {
     // If config endpoint fails, assume single-user
     hideLoginOverlay();
     return true;
   }
+}
+
+function showDemoBanner() {
+  const banner = document.getElementById('demo-banner');
+  if (banner) banner.style.display = '';
+  const headerLogin = document.getElementById('header-login-btn');
+  if (headerLogin) headerLogin.style.display = '';
+  // Hide rebuild button and sync-setup in demo mode
+  const rebuildBtn = document.getElementById('rebuild-btn');
+  if (rebuildBtn) rebuildBtn.style.display = 'none';
+  const syncSetup = document.getElementById('sync-setup');
+  if (syncSetup) syncSetup.style.display = 'none';
+}
+
+function hideDemoBanner() {
+  const banner = document.getElementById('demo-banner');
+  if (banner) banner.style.display = 'none';
+  const headerLogin = document.getElementById('header-login-btn');
+  if (headerLogin) headerLogin.style.display = 'none';
 }
 
 async function logout() {
@@ -334,6 +365,7 @@ async function loadTab(tab) {
     case 'tools': return loadTools();
     case 'models': return loadModels();
     case 'insights': return loadInsights();
+    case 'achievements': return loadAchievements();
     case 'info': return loadInfo();
   }
 }
@@ -663,6 +695,88 @@ async function loadInsights() {
   createDailyLinesChart('chart-daily-lines', daily);
 }
 
+async function loadAchievements() {
+  const data = await api('achievements');
+  const unlocked = data.filter(a => a.unlocked).length;
+  const total = data.length;
+
+  document.getElementById('achievements-unlocked').textContent = unlocked;
+  document.getElementById('achievements-total').textContent = total;
+  document.getElementById('achievements-progress-fill').style.width = (total > 0 ? (unlocked / total * 100) : 0) + '%';
+
+  const grid = document.getElementById('achievements-grid');
+  grid.textContent = '';
+
+  // Group by category
+  const categories = [];
+  const catMap = {};
+  for (const a of data) {
+    if (!catMap[a.category]) {
+      catMap[a.category] = [];
+      categories.push(a.category);
+    }
+    catMap[a.category].push(a);
+  }
+
+  const tierIcons = {
+    bronze: '\u{1F7E4}',    // brown circle
+    silver: '\u26AA',       // white circle
+    gold: '\u{1F7E1}',     // yellow circle
+    platinum: '\u{1F535}',  // blue circle
+    diamond: '\u{1F48E}'   // gem
+  };
+
+  for (const cat of categories) {
+    const section = document.createElement('div');
+    section.className = 'achievements-category';
+
+    const header = document.createElement('h3');
+    header.className = 'achievements-category-title';
+    header.textContent = t('achievementCat_' + cat) || cat;
+    section.appendChild(header);
+
+    const cards = document.createElement('div');
+    cards.className = 'achievements-cards';
+
+    for (const ach of catMap[cat]) {
+      const card = document.createElement('div');
+      card.className = 'achievement-card' + (ach.unlocked ? ' unlocked' : ' locked') + ' tier-' + ach.tier;
+
+      const icon = document.createElement('div');
+      icon.className = 'achievement-icon';
+      icon.textContent = tierIcons[ach.tier] || '\u2B50';
+
+      const info = document.createElement('div');
+      info.className = 'achievement-info';
+
+      const name = document.createElement('div');
+      name.className = 'achievement-name';
+      name.textContent = t('ach_' + ach.key) || ach.key;
+
+      const desc = document.createElement('div');
+      desc.className = 'achievement-desc';
+      desc.textContent = t('ach_' + ach.key + '_desc') || '';
+
+      info.appendChild(name);
+      info.appendChild(desc);
+      card.appendChild(icon);
+      card.appendChild(info);
+
+      if (ach.unlocked && ach.unlockedAt) {
+        const date = document.createElement('div');
+        date.className = 'achievement-date';
+        date.textContent = ach.unlockedAt.slice(0, 10);
+        card.appendChild(date);
+      }
+
+      cards.appendChild(card);
+    }
+
+    section.appendChild(cards);
+    grid.appendChild(section);
+  }
+}
+
 async function loadInfo() {
   // Load sync key if multi-user
   if (state.multiUser) {
@@ -769,6 +883,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === state.period));
     const savedTab = localStorage.getItem('activeTab') || 'overview';
     switchTab(savedTab);
-    connectSSE();
+    if (!state.demoMode) connectSSE();
   }
 });

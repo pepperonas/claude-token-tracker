@@ -239,7 +239,7 @@ pm2 save
 
 Nginx Reverse Proxy mit SSL (certbot) empfohlen für den Multi-User-Modus.
 
-### Live-Demo
+### Hosted Version
 
 Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 

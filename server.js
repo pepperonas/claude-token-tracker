@@ -11,8 +11,10 @@ const { calculateCost } = require('./lib/pricing');
 const {
   initDB, insertMessages, getAllMessages, getParseState, setParseState, closeDB,
   insertMessagesForUser, getMessagesForUser,
-  regenerateApiKey, cleanExpiredSessions, findUserByApiKey
+  regenerateApiKey, cleanExpiredSessions, findUserByApiKey,
+  getUnlockedAchievements, unlockAchievementsBatch
 } = require('./lib/db');
+const achievements = require('./lib/achievements');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 
@@ -75,10 +77,19 @@ if (newMessages.length > 0) {
 // 4. Save parse state
 setParseState(parseState);
 
+// 5. Check achievements on startup (single-user)
+if (!MULTI_USER) {
+  try {
+    const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
+    if (newAch.length > 0) console.log(`Unlocked ${newAch.length} new achievements`);
+  } catch (_e) { /* ignore on startup */ }
+}
+
 // Start file watcher (single-user only)
 const watcher = new Watcher(aggregator, parseState, (newMsgs) => {
   insertMessages(newMsgs, calculateCost);
   setParseState(parseState);
+  try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (_e) { /* */ }
 });
 if (!MULTI_USER) {
   watcher.start();
@@ -86,6 +97,9 @@ if (!MULTI_USER) {
 
 // Multi-user aggregator cache
 const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser) : null;
+
+// DB helper for achievements module
+const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch };
 
 // Clean expired sessions periodically (multi-user)
 let sessionCleanupTimer = null;
@@ -404,6 +418,12 @@ const server = http.createServer((req, res) => {
       // Invalidate aggregator cache for this user
       if (aggregatorCache) aggregatorCache.invalidateUser(user.id);
 
+      // Check achievements for this user
+      try {
+        const userAgg = aggregatorCache.get(user.id);
+        achievements.checkAchievements(userAgg, user.id, achievementsDb);
+      } catch (_e) { /* */ }
+
       // Broadcast SSE update to this user's clients
       watcher.broadcast({ type: 'update', count: messages.length, userId: user.id });
 
@@ -581,6 +601,7 @@ const server = http.createServer((req, res) => {
     aggregator.addMessages(messages);
     insertMessages(messages, calculateCost);
     setParseState(parseState);
+    try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (_e) { /* */ }
     return sendJSON(res, { rebuilt: true, messages: messages.length, timeMs: Date.now() - _t0 });
   }
 
@@ -594,6 +615,12 @@ const server = http.createServer((req, res) => {
     if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
     const newKey = regenerateApiKey(user.id);
     return sendJSON(res, { apiKey: newKey });
+  }
+
+  // Achievements endpoint
+  if (pathname === '/api/achievements') {
+    const userId = MULTI_USER ? user.id : 0;
+    return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb));
   }
 
   // Backup endpoints
