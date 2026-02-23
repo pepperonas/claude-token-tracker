@@ -420,7 +420,7 @@ async function loadOverview() {
     api('daily' + periodQuery()),
     api('models' + periodQuery()),
     api('hourly' + periodQuery()),
-    api('stats-cache').catch(() => null)
+    (state.multiUser || state.demoMode) ? Promise.resolve(null) : api('stats-cache').catch(() => null)
   ]);
 
   loadActiveSessions();
