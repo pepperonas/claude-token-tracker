@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Token Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h1>
+      <span class="logo">C</span>
+      <span data-i18n="title">Claude Token Tracker</span>
+    </h1>
+    <div class="header-right">
+      <div class="lang-switch">
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <div class="period-filter">
+        <button class="period-btn" data-period="today" data-i18n="today">Heute</button>
+        <button class="period-btn" data-period="7d" data-i18n="days7">7 Tage</button>
+        <button class="period-btn active" data-period="30d" data-i18n="days30">30 Tage</button>
+        <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
+      </div>
+      <span class="live-label">
+        <span class="live-dot" id="live-dot"></span>
+        <span data-i18n="live">Live</span>
+      </span>
+      <button class="rebuild-btn" id="rebuild-btn" data-i18n="rebuildCache">Cache neu aufbauen</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="overview" data-i18n="overview">Uebersicht</button>
+    <button class="tab-btn" data-tab="sessions" data-i18n="sessions">Sitzungen</button>
+    <button class="tab-btn" data-tab="projects" data-i18n="projects">Projekte</button>
+    <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
+    <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
+    <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
+  </nav>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- Tab 1: Overview -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="totalTokens" data-tooltip-key="tooltipTotalTokens">Tokens gesamt</div>
+          <div class="kpi-value" id="kpi-tokens">-</div>
+          <div class="kpi-sub" id="kpi-tokens-sub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="estimatedCost" data-tooltip-key="tooltipEstimatedCost">Geschaetzte Kosten</div>
+          <div class="kpi-value" id="kpi-cost">-</div>
+          <div class="kpi-sub" id="kpi-cost-sub" data-i18n="costSubLabel">API-aequivalente Schaetzung</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="sessionsLabel" data-tooltip-key="tooltipSessions">Sitzungen</div>
+          <div class="kpi-value" id="kpi-sessions">-</div>
+          <div class="kpi-sub" data-i18n="uniqueSessions">Einzigartige Sitzungen</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="messagesLabel" data-tooltip-key="tooltipMessages">Nachrichten</div>
+          <div class="kpi-value" id="kpi-messages">-</div>
+          <div class="kpi-sub" data-i18n="assistantResponses">Assistenten-Antworten</div>
+        </div>
+      </div>
+
+      <!-- Official stats banner -->
+      <div class="stats-banner" id="stats-banner" style="display:none;">
+        <div class="stats-banner-title" data-i18n="officialStats">Claude Stats (gesamt)</div>
+        <div class="stats-banner-items" id="stats-banner-items"></div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="dailyTokenUsage" data-tooltip-key="tooltipDailyTokens">Taeglicher Token-Verbrauch</h3>
+          <div class="chart-container">
+            <canvas id="chart-daily-tokens"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="dailyCostTrend" data-tooltip-key="tooltipDailyCost">Taeglicher Kosten-Trend</h3>
+          <div class="chart-container">
+            <canvas id="chart-daily-cost"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="modelDistribution" data-tooltip-key="tooltipModelDist">Modell-Verteilung</h3>
+          <div class="chart-container">
+            <canvas id="chart-model-dist"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="activityByHour" data-tooltip-key="tooltipHourly">Aktivitaet nach Uhrzeit</h3>
+          <div class="chart-container small">
+            <canvas id="chart-hourly"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Sessions -->
+    <div id="tab-sessions" class="tab-panel">
+      <div class="filter-bar">
+        <select id="filter-project">
+          <option value="" data-i18n="allProjects">Alle Projekte</option>
+        </select>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-i18n="date">Datum</th>
+              <th data-i18n="project">Projekt</th>
+              <th data-i18n="model">Modell</th>
+              <th class="num" data-i18n="duration">Dauer</th>
+              <th class="num" data-i18n="messages">Nachrichten</th>
+              <th class="num" data-i18n="toolCalls">Tools</th>
+              <th class="num" data-i18n="tokens">Tokens</th>
+              <th class="num" data-i18n="cost">Kosten</th>
+            </tr>
+          </thead>
+          <tbody id="sessions-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Projects -->
+    <div id="tab-projects" class="tab-panel">
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="tokensByProject">Tokens nach Projekt</h3>
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="chart-projects"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-i18n="project">Projekt</th>
+              <th class="num" data-i18n="totalTokensH">Tokens gesamt</th>
+              <th class="num" data-i18n="input">Input</th>
+              <th class="num" data-i18n="output">Output</th>
+              <th class="num" data-i18n="cacheRead">Cache Read</th>
+              <th class="num" data-i18n="sessionsLabel">Sitzungen</th>
+              <th class="num" data-i18n="messagesLabel">Nachrichten</th>
+              <th class="num" data-i18n="cost">Kosten</th>
+            </tr>
+          </thead>
+          <tbody id="projects-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 4: Tools -->
+    <div id="tab-tools" class="tab-panel">
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="toolUsage">Tool-Nutzung</h3>
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="chart-tools"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-i18n="tool">Tool</th>
+              <th class="num" data-i18n="calls">Aufrufe</th>
+              <th class="num" data-i18n="pctTotal">% gesamt</th>
+            </tr>
+          </thead>
+          <tbody id="tools-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 5: Models -->
+    <div id="tab-models" class="tab-panel">
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="modelUsageOverTime">Modell-Nutzung im Zeitverlauf</h3>
+          <div class="chart-container">
+            <canvas id="chart-model-area"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-i18n="model">Modell</th>
+              <th class="num" data-i18n="input">Input</th>
+              <th class="num" data-i18n="output">Output</th>
+              <th class="num" data-i18n="cacheRead">Cache Read</th>
+              <th class="num" data-i18n="cacheCreate">Cache Create</th>
+              <th class="num" data-i18n="messagesLabel">Nachrichten</th>
+              <th class="num" data-i18n="cost">Kosten</th>
+            </tr>
+          </thead>
+          <tbody id="models-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 6: Insights -->
+    <div id="tab-insights" class="tab-panel">
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="costBreakdown" data-tooltip-key="tooltipCostBreakdown">Kostenaufschluesselung</h3>
+          <div class="chart-container">
+            <canvas id="chart-cost-breakdown"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="cumulativeCost" data-tooltip-key="tooltipCumulativeCost">Kumulative Kosten</h3>
+          <div class="chart-container">
+            <canvas id="chart-cumulative-cost"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="weekdayActivity" data-tooltip-key="tooltipWeekday">Wochentags-Aktivitaet</h3>
+          <div class="chart-container">
+            <canvas id="chart-weekday"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="cacheEfficiency" data-tooltip-key="tooltipCacheEfficiency">Cache-Effizienz</h3>
+          <div class="chart-container">
+            <canvas id="chart-cache-efficiency"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="stopReasons" data-tooltip-key="tooltipStopReasons">Stop Reasons</h3>
+          <div class="chart-container">
+            <canvas id="chart-stop-reasons"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="sessionEfficiency" data-tooltip-key="tooltipSessionEfficiency">Session-Effizienz</h3>
+          <div class="chart-container">
+            <canvas id="chart-session-efficiency"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

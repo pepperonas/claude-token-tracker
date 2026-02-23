@@ -1,0 +1,42 @@
+{
+  "name": "claude-token-tracker",
+  "version": "0.0.1",
+  "description": "Token usage dashboard for Claude Code — tracks costs, sessions, models, and tools with real-time updates",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint lib/ server.js",
+    "postinstall": "node scripts/setup.js"
+  },
+  "author": "Martin Pfeffer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pepperonas/claude-token-tracker.git"
+  },
+  "keywords": [
+    "claude",
+    "token",
+    "tracker",
+    "dashboard",
+    "usage",
+    "cost",
+    "anthropic",
+    "claude-code"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "chokidar": "^4.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "supertest": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
+}
