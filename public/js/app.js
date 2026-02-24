@@ -8,8 +8,7 @@ let state = {
   multiUser: false,
   user: null,
   demoMode: false,
-  compareActive: false,
-  periodB: localStorage.getItem('periodB') || 'prev',
+  periodB: localStorage.getItem('periodB') || 'off',
   periodBFrom: localStorage.getItem('periodBFrom') || '',
   periodBTo: localStorage.getItem('periodBTo') || ''
 };
@@ -910,7 +909,7 @@ async function loadProductivity() {
   createSessionDepthChart('chart-session-depth', sessionDepth);
 
   // Period comparison
-  if (state.compareActive) {
+  if (state.periodB !== 'off') {
     loadPeriodComparison();
   }
 }
@@ -933,16 +932,6 @@ function setTrendIndicator(elementId, pctChange, invertColors) {
 }
 
 // --- Period Comparison ---
-function toggleComparison() {
-  state.compareActive = !state.compareActive;
-  const btn = document.getElementById('compare-toggle-btn');
-  const section = document.getElementById('period-comparison-section');
-  if (btn) btn.classList.toggle('active', state.compareActive);
-  if (section) section.style.display = state.compareActive ? '' : 'none';
-  if (state.compareActive) {
-    loadPeriodComparison();
-  }
-}
 
 function getPeriodBRange() {
   const { from: aFrom, to: aTo } = getPeriodRange();
@@ -978,7 +967,15 @@ function formatPeriodLabel(from, to) {
 }
 
 async function loadPeriodComparison() {
-  if (!state.compareActive) return;
+  const isActive = state.periodB !== 'off';
+  const labels = document.getElementById('period-comparison-labels');
+  const grid = document.getElementById('period-comparison-grid');
+  if (!isActive) {
+    if (labels) labels.style.display = 'none';
+    if (grid) grid.textContent = '';
+    return;
+  }
+  if (labels) labels.style.display = '';
 
   const { from: aFrom, to: aTo } = getPeriodRange();
   const { from: bFrom, to: bTo } = getPeriodBRange();
@@ -1123,7 +1120,14 @@ function setPeriodB(periodB) {
   document.querySelectorAll('.period-btn-b').forEach(b => b.classList.toggle('active', b.dataset.periodB === periodB));
   const customEl = document.getElementById('period-b-custom');
   if (customEl) customEl.style.display = periodB === 'custom' ? '' : 'none';
-  loadPeriodComparison();
+  if (periodB === 'off') {
+    const labels = document.getElementById('period-comparison-labels');
+    const grid = document.getElementById('period-comparison-grid');
+    if (labels) labels.style.display = 'none';
+    if (grid) grid.textContent = '';
+  } else {
+    loadPeriodComparison();
+  }
 }
 
 async function exportHtml() {
@@ -1350,7 +1354,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('download-install-script')?.addEventListener('click', downloadInstallScript);
 
   // Period comparison
-  document.getElementById('compare-toggle-btn')?.addEventListener('click', toggleComparison);
   document.querySelectorAll('.period-btn-b').forEach(btn => {
     btn.addEventListener('click', () => setPeriodB(btn.dataset.periodB));
   });

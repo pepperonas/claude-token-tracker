@@ -1147,63 +1147,34 @@ body {
   color: var(--text);
 }
 
-/* --- Productivity toolbar --- */
-.productivity-toolbar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.compare-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.compare-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
 /* --- Period Comparison --- */
-.period-comparison-section { margin: 16px 0 24px; }
-.period-comparison-header {
+.period-comparison-section {
+  margin: 8px 0 20px;
+}
+.comparison-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
-.period-comparison-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
-.period-b-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.period-b-label {
-  font-size: 12px;
+.comparison-bar-title {
+  font-size: 13px;
   color: var(--text-muted);
+  white-space: nowrap;
 }
-.period-b-tabs {
+.comparison-pills {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   background: var(--bg);
   border-radius: 8px;
   padding: 3px;
 }
 .period-btn-b {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -1211,9 +1182,11 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 }
-.period-btn-b:hover { color: var(--text); }
+.period-btn-b:hover { color: var(--text); background: var(--surface2); }
 .period-btn-b.active { background: var(--accent); color: #fff; }
+.period-btn-b[data-period-b="off"].active { background: var(--surface2); color: var(--text-muted); }
 .period-b-custom {
   display: flex;
   align-items: center;
@@ -1240,7 +1213,7 @@ body {
 .period-comparison-labels {
   display: flex;
   gap: 16px;
-  margin-bottom: 8px;
+  margin: 10px 0 6px;
   font-size: 12px;
   color: var(--text-muted);
 }

@@ -432,9 +432,7 @@
 
     <!-- Tab 7: Productivity -->
     <div id="tab-productivity" class="tab-panel">
-      <div class="productivity-toolbar">
-        <button id="compare-toggle-btn" class="compare-btn" data-i18n="compareToggle">Compare Periods</button>
-      </div>
+      <!-- compare-toggle-btn removed: comparison selector is always visible below KPIs -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label" data-i18n="tokensPerMin" data-tooltip-key="tooltipTokensPerMin">Tokens/Min</div>
@@ -503,26 +501,24 @@
         </div>
       </div>
 
-      <div id="period-comparison-section" class="period-comparison-section" style="display:none;">
-        <div class="period-comparison-header">
-          <h3 data-i18n="periodComparison">Period Comparison</h3>
-          <div class="period-b-selector">
-            <span class="period-b-label" data-i18n="compareTo">Compare to:</span>
-            <div class="period-tabs period-b-tabs">
-              <button class="period-btn-b" data-period-b="prev" data-i18n="previousPeriod">&#8592; Previous</button>
-              <button class="period-btn-b" data-period-b="7">7d</button>
-              <button class="period-btn-b" data-period-b="30">30d</button>
-              <button class="period-btn-b" data-period-b="90">90d</button>
-              <button class="period-btn-b" data-period-b="custom">Custom</button>
-            </div>
-            <div class="period-b-custom" id="period-b-custom" style="display:none;">
-              <input type="date" id="period-b-from">
-              <span>&ndash;</span>
-              <input type="date" id="period-b-to">
-            </div>
+      <div id="period-comparison-section" class="period-comparison-section">
+        <div class="comparison-bar">
+          <span class="comparison-bar-title" data-i18n="compareTo">Compare to:</span>
+          <div class="comparison-pills">
+            <button class="period-btn-b" data-period-b="off" data-i18n="compareOff">Off</button>
+            <button class="period-btn-b" data-period-b="prev" data-i18n="prevPeriod">Prev. period</button>
+            <button class="period-btn-b" data-period-b="7" data-i18n="compare7d">Last 7d</button>
+            <button class="period-btn-b" data-period-b="30" data-i18n="compare30d">Last 30d</button>
+            <button class="period-btn-b" data-period-b="90" data-i18n="compare90d">Last 90d</button>
+            <button class="period-btn-b" data-period-b="custom" data-i18n="compareCustom">Custom</button>
+          </div>
+          <div class="period-b-custom" id="period-b-custom" style="display:none;">
+            <input type="date" id="period-b-from">
+            <span>&ndash;</span>
+            <input type="date" id="period-b-to">
           </div>
         </div>
-        <div class="period-comparison-labels">
+        <div class="period-comparison-labels" id="period-comparison-labels" style="display:none;">
           <span class="period-a-tag" id="period-a-label"></span>
           <span class="period-b-tag" id="period-b-label"></span>
         </div>
