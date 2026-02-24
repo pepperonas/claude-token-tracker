@@ -45,7 +45,7 @@ Open [http://localhost:5010](http://localhost:5010)
 
 - **16 interactive charts** across 9 tabs with real-time SSE updates
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
-- **Period comparison** — compare any two time periods side-by-side (8 metrics with delta % and color-coded improvements)
+- **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
 - **HTML export** — download self-contained dark-theme report with KPI cards, charts, and tables
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **500 achievements** — gamification system across 12 categories with 5 tiers

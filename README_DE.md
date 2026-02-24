@@ -57,7 +57,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
 - **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant)
 - **Produktivitäts-Tab** — Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Cache-Ersparnis, Code-Anteil mit Trend-Indikatoren
-- **Perioden-Vergleich** — beliebige zwei Zeiträume nebeneinander vergleichen mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen
+- **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — selbstständiges Dark-Theme-Dokument mit KPI-Cards, Charts und Tabellen herunterladen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
 - **148 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
