@@ -7,7 +7,11 @@ let state = {
   includeCache: true,
   multiUser: false,
   user: null,
-  demoMode: false
+  demoMode: false,
+  compareActive: false,
+  periodB: localStorage.getItem('periodB') || 'prev',
+  periodBFrom: localStorage.getItem('periodBFrom') || '',
+  periodBTo: localStorage.getItem('periodBTo') || ''
 };
 
 // --- Cache toggle helpers ---
@@ -70,6 +74,14 @@ function periodQuery() {
   if (from) params.push('from=' + from);
   if (to) params.push('to=' + to);
   return params.length ? '?' + params.join('&') : '';
+}
+
+function isSingleDay() {
+  return state.period === 'today' || (state.period === 'custom' && !!state.customDate);
+}
+
+function hourlyToChartData(hourly) {
+  return hourly.map(h => ({ ...h, date: String(h.hour).padStart(2, '0') + ':00' }));
 }
 
 // --- Safe DOM table builder ---
@@ -504,12 +516,18 @@ async function loadOverview() {
     banner.style.display = 'none';
   }
 
-  // Charts — pass includeCache flag
-  createDailyTokenChart('chart-daily-tokens', daily, false);
-  createDailyCostChart('chart-daily-cost', daily);
+  // Charts — use hourly breakdown when viewing a single day
+  if (isSingleDay()) {
+    const hd = hourlyToChartData(hourly);
+    createDailyTokenChart('chart-daily-tokens', hd, false);
+    createDailyCostChart('chart-daily-cost', hd);
+  } else {
+    createDailyTokenChart('chart-daily-tokens', daily, false);
+    createDailyCostChart('chart-daily-cost', daily);
+  }
   createModelDoughnut('chart-model-dist', models, false);
   createHourlyChart('chart-hourly', hourly);
-  createOverviewLinesChart('chart-overview-lines', daily, hourly, state.period);
+  createOverviewLinesChart('chart-overview-lines', daily, hourly, isSingleDay() ? 'today' : state.period);
 
   loadGlobalComparison();
 }
@@ -643,12 +661,15 @@ async function loadTools() {
 }
 
 async function loadModels() {
-  const [models, dailyByModel] = await Promise.all([
-    api('models' + periodQuery()),
-    api('daily-by-model' + periodQuery())
+  const pq = periodQuery();
+  const singleDay = isSingleDay();
+  const [models, dailyByModel, hourlyByModel] = await Promise.all([
+    api('models' + pq),
+    singleDay ? Promise.resolve(null) : api('daily-by-model' + pq),
+    singleDay ? api('hourly-by-model' + pq) : Promise.resolve(null)
   ]);
 
-  createModelAreaChart('chart-model-area', dailyByModel);
+  createModelAreaChart('chart-model-area', singleDay ? hourlyByModel : dailyByModel);
 
   const tbody = document.getElementById('models-tbody');
   const cellDefs = [
@@ -691,23 +712,40 @@ async function loadModels() {
 
 async function loadInsights() {
   const pq = periodQuery();
-  const [costBreakdown, cumulativeCost, weekday, cacheEfficiency, stopReasons, sessionEfficiency, daily] = await Promise.all([
-    api('daily-cost-breakdown' + pq),
-    api('cumulative-cost' + pq),
+  const singleDay = isSingleDay();
+
+  const [costBreakdown, cumulativeCost, weekday, cacheEfficiency, stopReasons, sessionEfficiency, daily, hourly] = await Promise.all([
+    singleDay ? Promise.resolve(null) : api('daily-cost-breakdown' + pq),
+    singleDay ? Promise.resolve(null) : api('cumulative-cost' + pq),
     api('day-of-week' + pq),
-    api('cache-efficiency' + pq),
+    singleDay ? Promise.resolve(null) : api('cache-efficiency' + pq),
     api('stop-reasons' + pq),
     api('session-efficiency' + pq),
-    api('daily' + pq)
+    singleDay ? Promise.resolve(null) : api('daily' + pq),
+    singleDay ? api('hourly' + pq) : Promise.resolve(null)
   ]);
 
-  createCostBreakdownChart('chart-cost-breakdown', costBreakdown, false);
-  createCumulativeCostChart('chart-cumulative-cost', cumulativeCost);
+  if (singleDay) {
+    const hd = hourlyToChartData(hourly);
+    createCostBreakdownChart('chart-cost-breakdown', hd, false);
+    let cum = 0;
+    const cumData = hd.map(h => { cum += h.cost || 0; return { date: h.date, cost: Math.round(cum * 100) / 100 }; });
+    createCumulativeCostChart('chart-cumulative-cost', cumData);
+    const cacheData = hd.map(h => {
+      const totalIn = (h.inputTokens || 0) + (h.cacheReadTokens || 0) + (h.cacheCreateTokens || 0);
+      return { date: h.date, cacheHitRate: totalIn > 0 ? Math.round((h.cacheReadTokens || 0) / totalIn * 1000) / 10 : 0 };
+    });
+    createCacheEfficiencyChart('chart-cache-efficiency', cacheData);
+    createDailyLinesChart('chart-daily-lines', hd);
+  } else {
+    createCostBreakdownChart('chart-cost-breakdown', costBreakdown, false);
+    createCumulativeCostChart('chart-cumulative-cost', cumulativeCost);
+    createCacheEfficiencyChart('chart-cache-efficiency', cacheEfficiency);
+    createDailyLinesChart('chart-daily-lines', daily);
+  }
   createWeekdayChart('chart-weekday', weekday);
-  createCacheEfficiencyChart('chart-cache-efficiency', cacheEfficiency);
   createStopReasonsChart('chart-stop-reasons', stopReasons);
   createSessionEfficiencyChart('chart-session-efficiency', sessionEfficiency);
-  createDailyLinesChart('chart-daily-lines', daily);
 }
 
 async function loadAchievements() {
@@ -793,8 +831,18 @@ async function loadAchievements() {
 }
 
 async function loadProductivity() {
-  const data = await api('productivity' + periodQuery());
+  const pq = periodQuery();
+  const singleDay = isSingleDay();
+  const [data, effTrend, modelEff, sessionDepth, hourly, daily] = await Promise.all([
+    api('productivity' + pq),
+    singleDay ? Promise.resolve(null) : api('efficiency-trend' + pq),
+    api('model-efficiency' + pq),
+    api('session-depth' + pq),
+    singleDay ? api('hourly' + pq) : Promise.resolve(null),
+    singleDay ? Promise.resolve(null) : api('daily' + pq)
+  ]);
 
+  // Existing KPIs
   document.getElementById('kpi-tokens-per-min').textContent = formatNumber(data.tokensPerMin);
   setTrendIndicator('kpi-tokens-per-min-trend', data.trends.tokensPerMin);
 
@@ -813,9 +861,58 @@ async function loadProductivity() {
   document.getElementById('kpi-coding-hours').textContent = data.codingHours.toFixed(1) + 'h';
   document.getElementById('kpi-total-lines').textContent = formatNumber(data.totalLines);
 
-  createProductivityDailyChart('chart-productivity-daily', data.dailyProductivity);
-  createCostEfficiencyChart('chart-cost-efficiency', data.dailyProductivity);
+  // New efficiency KPIs
+  document.getElementById('kpi-tokens-per-line').textContent = formatNumber(data.tokensPerLine);
+  document.getElementById('kpi-tools-per-turn').textContent = data.toolsPerTurn.toFixed(1);
+  document.getElementById('kpi-lines-per-turn').textContent = data.linesPerTurn.toFixed(1);
+  document.getElementById('kpi-io-ratio').textContent = data.ioRatio.toFixed(1) + '%';
+
+  // Charts
+  if (singleDay) {
+    const hd = hourlyToChartData(hourly);
+    const prodData = hd.map(h => {
+      const lines = (h.linesWritten || 0) + (h.linesAdded || 0);
+      return {
+        date: h.date,
+        linesPerHour: lines,
+        costPerLine: lines > 0 ? Math.round((h.cost || 0) / lines * 1000) / 1000 : 0
+      };
+    });
+    createProductivityDailyChart('chart-productivity-daily', prodData);
+    createCostEfficiencyChart('chart-cost-efficiency', prodData);
+    // Efficiency trend: compute from hourly data
+    const effDaily = hd.map(h => {
+      const lines = (h.linesWritten || 0) + (h.linesAdded || 0);
+      const msgs = h.messages || 0;
+      return {
+        date: h.date,
+        tokensPerLine: lines > 0 ? Math.round((h.outputTokens || 0) / lines) : 0,
+        linesPerTurn: msgs > 0 ? Math.round((lines / msgs) * 10) / 10 : 0,
+        toolsPerTurn: 0,
+        ioRatio: (h.inputTokens || 0) > 0 ? Math.round(((h.outputTokens || 0) / h.inputTokens) * 1000) / 10 : 0
+      };
+    });
+    createEfficiencyTrendChart('chart-efficiency-trend', effDaily, effDaily);
+    // Tool evolution from hourly (not applicable for single day)
+    destroyChart('chart-tool-evolution');
+  } else {
+    createProductivityDailyChart('chart-productivity-daily', data.dailyProductivity);
+    createCostEfficiencyChart('chart-cost-efficiency', data.dailyProductivity);
+    if (effTrend) {
+      createEfficiencyTrendChart('chart-efficiency-trend', effTrend.daily, effTrend.rolling);
+    }
+    if (daily) {
+      createToolEvolutionChart('chart-tool-evolution', daily);
+    }
+  }
   createCodeRatioChart('chart-code-ratio', data.stopReasons);
+  createModelComparisonChart('chart-model-comparison', modelEff);
+  createSessionDepthChart('chart-session-depth', sessionDepth);
+
+  // Period comparison
+  if (state.compareActive) {
+    loadPeriodComparison();
+  }
 }
 
 function setTrendIndicator(elementId, pctChange, invertColors) {
@@ -833,6 +930,200 @@ function setTrendIndicator(elementId, pctChange, invertColors) {
   el.className = 'kpi-sub kpi-trend';
   if (isUp) el.classList.add(invertColors ? 'trend-down' : 'trend-up');
   else if (isDown) el.classList.add(invertColors ? 'trend-up' : 'trend-down');
+}
+
+// --- Period Comparison ---
+function toggleComparison() {
+  state.compareActive = !state.compareActive;
+  const btn = document.getElementById('compare-toggle-btn');
+  const section = document.getElementById('period-comparison-section');
+  if (btn) btn.classList.toggle('active', state.compareActive);
+  if (section) section.style.display = state.compareActive ? '' : 'none';
+  if (state.compareActive) {
+    loadPeriodComparison();
+  }
+}
+
+function getPeriodBRange() {
+  const { from: aFrom, to: aTo } = getPeriodRange();
+
+  if (state.periodB === 'prev') {
+    // Previous equivalent period (same as _computeTrends logic)
+    const fromDate = aFrom ? new Date(aFrom) : new Date(new Date() - 30 * 86400000);
+    const toDate = aTo ? new Date(aTo) : new Date();
+    const daySpan = Math.round((toDate - fromDate) / 86400000) + 1;
+    const prevTo = new Date(fromDate);
+    prevTo.setDate(prevTo.getDate() - 1);
+    const prevFrom = new Date(prevTo);
+    prevFrom.setDate(prevFrom.getDate() - daySpan + 1);
+    return { from: toLocalDate(prevFrom), to: toLocalDate(prevTo) };
+  }
+
+  if (state.periodB === 'custom') {
+    return { from: state.periodBFrom, to: state.periodBTo };
+  }
+
+  // Numeric: 7, 30, 90 days ending yesterday
+  const days = parseInt(state.periodB);
+  const now = new Date();
+  const to = toLocalDate(now);
+  const from = toLocalDate(new Date(now - days * 86400000));
+  return { from, to };
+}
+
+function formatPeriodLabel(from, to) {
+  if (!from && !to) return t('allTime');
+  if (from === to) return from;
+  return (from || '...') + ' \u2013 ' + (to || '...');
+}
+
+async function loadPeriodComparison() {
+  if (!state.compareActive) return;
+
+  const { from: aFrom, to: aTo } = getPeriodRange();
+  const { from: bFrom, to: bTo } = getPeriodBRange();
+
+  // Update period labels
+  const aLabel = document.getElementById('period-a-label');
+  const bLabel = document.getElementById('period-b-label');
+  if (aLabel) aLabel.textContent = t('periodA') + ': ' + formatPeriodLabel(aFrom, aTo);
+  if (bLabel) bLabel.textContent = t('periodB') + ': ' + formatPeriodLabel(bFrom, bTo);
+
+  // Fetch productivity for both periods
+  const aq = [];
+  if (aFrom) aq.push('from=' + aFrom);
+  if (aTo) aq.push('to=' + aTo);
+  const bq = [];
+  if (bFrom) bq.push('from=' + bFrom);
+  if (bTo) bq.push('to=' + bTo);
+
+  try {
+    const [dataA, dataB] = await Promise.all([
+      api('productivity' + (aq.length ? '?' + aq.join('&') : '')),
+      api('productivity' + (bq.length ? '?' + bq.join('&') : ''))
+    ]);
+    renderComparisonCards(dataA, dataB);
+  } catch {
+    // ignore
+  }
+}
+
+function renderComparisonCards(dataA, dataB) {
+  const grid = document.getElementById('period-comparison-grid');
+  if (!grid) return;
+  grid.textContent = '';
+
+  const metrics = [
+    { label: t('tokensPerMin'), key: 'tokensPerMin', lowerIsBetter: false, format: formatNumber },
+    { label: t('linesPerHour'), key: 'linesPerHour', lowerIsBetter: false, format: formatNumber },
+    { label: t('costPerLine'), key: 'costPerLine', lowerIsBetter: true, format: v => '$' + v.toFixed(3) },
+    { label: t('tokensPerLineLabel'), key: 'tokensPerLine', lowerIsBetter: true, format: formatNumber },
+    { label: t('linesPerTurnLabel'), key: 'linesPerTurn', lowerIsBetter: false, format: v => v.toFixed(1) },
+    { label: t('toolsPerTurnLabel'), key: 'toolsPerTurn', lowerIsBetter: false, format: v => v.toFixed(1) },
+    { label: t('ioRatioLabel'), key: 'ioRatio', lowerIsBetter: false, format: v => v.toFixed(1) + '%' },
+    { label: t('codingHours'), key: 'codingHours', lowerIsBetter: false, format: v => v.toFixed(1) + 'h' }
+  ];
+
+  for (const m of metrics) {
+    const valA = dataA[m.key] || 0;
+    const valB = dataB[m.key] || 0;
+    const maxVal = Math.max(valA, valB) || 1;
+
+    // Delta percentage
+    let deltaPct = 0;
+    if (valB > 0) {
+      deltaPct = Math.round(((valA - valB) / valB) * 1000) / 10;
+    } else if (valA > 0) {
+      deltaPct = 100;
+    }
+
+    // Determine if the change is an improvement
+    const isImprovement = m.lowerIsBetter ? (deltaPct < 0) : (deltaPct > 0);
+    const isRegression = m.lowerIsBetter ? (deltaPct > 0) : (deltaPct < 0);
+
+    const card = document.createElement('div');
+    card.className = 'comparison-card';
+
+    const label = document.createElement('div');
+    label.className = 'comparison-label';
+    label.textContent = m.label;
+
+    const bars = document.createElement('div');
+    bars.className = 'comparison-bars';
+
+    // Period A bar
+    const aBar = document.createElement('div');
+    aBar.className = 'comparison-bar-row';
+    const aBarLabel = document.createElement('span');
+    aBarLabel.className = 'comparison-bar-label';
+    aBarLabel.textContent = 'A';
+    const aTrack = document.createElement('div');
+    aTrack.className = 'comparison-bar-track';
+    const aFill = document.createElement('div');
+    aFill.className = 'comparison-bar-fill you';
+    aFill.style.width = (valA / maxVal * 100) + '%';
+    const aVal = document.createElement('span');
+    aVal.className = 'comparison-bar-value';
+    aVal.textContent = m.format(valA);
+    aTrack.appendChild(aFill);
+    aBar.appendChild(aBarLabel);
+    aBar.appendChild(aTrack);
+    aBar.appendChild(aVal);
+
+    // Period B bar
+    const bBar = document.createElement('div');
+    bBar.className = 'comparison-bar-row';
+    const bBarLabel = document.createElement('span');
+    bBarLabel.className = 'comparison-bar-label';
+    bBarLabel.textContent = 'B';
+    const bTrack = document.createElement('div');
+    bTrack.className = 'comparison-bar-track';
+    const bFill = document.createElement('div');
+    bFill.className = 'comparison-bar-fill avg';
+    bFill.style.width = (valB / maxVal * 100) + '%';
+    const bVal = document.createElement('span');
+    bVal.className = 'comparison-bar-value';
+    bVal.textContent = m.format(valB);
+    bTrack.appendChild(bFill);
+    bBar.appendChild(bBarLabel);
+    bBar.appendChild(bTrack);
+    bBar.appendChild(bVal);
+
+    bars.appendChild(aBar);
+    bars.appendChild(bBar);
+
+    // Delta indicator
+    const delta = document.createElement('div');
+    delta.className = 'comparison-delta';
+    if (deltaPct === 0) {
+      delta.classList.add('neutral');
+      delta.textContent = '\u2192 ' + t('noChange');
+    } else {
+      const arrow = deltaPct > 0 ? '\u2191' : '\u2193';
+      delta.textContent = arrow + ' ' + Math.abs(deltaPct) + '%';
+      delta.classList.add(isImprovement ? 'positive' : isRegression ? 'negative' : 'neutral');
+    }
+
+    // Hint
+    const hint = document.createElement('div');
+    hint.className = 'comparison-hint';
+    hint.textContent = m.lowerIsBetter ? t('betterLower') : t('betterHigher');
+
+    card.appendChild(label);
+    card.appendChild(bars);
+    card.appendChild(delta);
+    card.appendChild(hint);
+    grid.appendChild(card);
+  }
+}
+
+function setPeriodB(periodB) {
+  state.periodB = periodB;
+  localStorage.setItem('periodB', periodB);
+  document.querySelectorAll('.period-btn-b').forEach(b => b.classList.toggle('active', b.dataset.periodB === periodB));
+  const customEl = document.getElementById('period-b-custom');
+  if (customEl) customEl.style.display = periodB === 'custom' ? '' : 'none';
+  loadPeriodComparison();
 }
 
 async function exportHtml() {
@@ -1057,6 +1348,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('regenerate-api-key')?.addEventListener('click', regenerateSyncKey);
   document.getElementById('copy-curl-cmd')?.addEventListener('click', copyCurlCommand);
   document.getElementById('download-install-script')?.addEventListener('click', downloadInstallScript);
+
+  // Period comparison
+  document.getElementById('compare-toggle-btn')?.addEventListener('click', toggleComparison);
+  document.querySelectorAll('.period-btn-b').forEach(btn => {
+    btn.addEventListener('click', () => setPeriodB(btn.dataset.periodB));
+  });
+  // Restore active Period B button
+  document.querySelectorAll('.period-btn-b').forEach(b => b.classList.toggle('active', b.dataset.periodB === state.periodB));
+
+  const periodBFrom = document.getElementById('period-b-from');
+  const periodBTo = document.getElementById('period-b-to');
+  if (periodBFrom) {
+    if (state.periodBFrom) periodBFrom.value = state.periodBFrom;
+    periodBFrom.addEventListener('change', () => {
+      state.periodBFrom = periodBFrom.value;
+      localStorage.setItem('periodBFrom', periodBFrom.value);
+      if (state.periodB === 'custom') loadPeriodComparison();
+    });
+  }
+  if (periodBTo) {
+    if (state.periodBTo) periodBTo.value = state.periodBTo;
+    periodBTo.addEventListener('change', () => {
+      state.periodBTo = periodBTo.value;
+      localStorage.setItem('periodBTo', periodBTo.value);
+      if (state.periodB === 'custom') loadPeriodComparison();
+    });
+  }
 
   // Custom date picker
   const datePicker = document.getElementById('custom-date-picker');

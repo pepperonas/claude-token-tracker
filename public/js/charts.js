@@ -4,7 +4,8 @@
 let chartDateFormat = localStorage.getItem('dateFormat') || 'us';
 
 function formatChartDate(dateStr) {
-  // dateStr is YYYY-MM-DD
+  // dateStr is YYYY-MM-DD or HH:00 (hourly mode)
+  if (dateStr.includes(':')) return dateStr;
   const mm = dateStr.slice(5, 7);
   const dd = dateStr.slice(8, 10);
   return chartDateFormat === 'de' ? `${dd}.${mm}.` : `${mm}-${dd}`;
@@ -984,6 +985,282 @@ function createSessionEfficiencyChart(canvasId, data) {
         y: {
           title: { display: true, text: 'Cost/Message' },
           ticks: { callback: v => '$' + v.toFixed(3) }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** Efficiency trend: tokensPerLine + linesPerTurn with 7-day rolling averages */
+function createEfficiencyTrendChart(canvasId, daily, rolling) {
+  destroyChart(canvasId);
+  if (!daily || daily.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => formatChartDate(d.date)),
+      datasets: [
+        {
+          label: t('tokensPerLineLabel'),
+          data: daily.map(d => d.tokensPerLine),
+          borderColor: COLORS.input + '40',
+          backgroundColor: 'transparent',
+          pointRadius: 2,
+          borderWidth: 1,
+          borderDash: [3, 3],
+          yAxisID: 'y'
+        },
+        {
+          label: t('tokensPerLineLabel') + ' (7d \u00f8)',
+          data: rolling.map(d => d.tokensPerLine),
+          borderColor: COLORS.input,
+          backgroundColor: COLORS.input + '15',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2,
+          yAxisID: 'y'
+        },
+        {
+          label: t('linesPerTurnLabel'),
+          data: daily.map(d => d.linesPerTurn),
+          borderColor: COLORS.output + '40',
+          backgroundColor: 'transparent',
+          pointRadius: 2,
+          borderWidth: 1,
+          borderDash: [3, 3],
+          yAxisID: 'y1'
+        },
+        {
+          label: t('linesPerTurnLabel') + ' (7d \u00f8)',
+          data: rolling.map(d => d.linesPerTurn),
+          borderColor: COLORS.output,
+          backgroundColor: COLORS.output + '15',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'line' } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.datasetIndex <= 1) return ctx.dataset.label + ': ' + formatNumber(ctx.raw) + ' tok/line';
+              return ctx.dataset.label + ': ' + ctx.raw + ' lines/turn';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          position: 'left',
+          title: { display: true, text: t('tokensPerLineLabel'), color: COLORS.input },
+          ticks: { callback: v => formatNumber(v), color: COLORS.input + 'aa' },
+          grid: { color: '#30363d40' }
+        },
+        y1: {
+          position: 'right',
+          title: { display: true, text: t('linesPerTurnLabel'), color: COLORS.output },
+          ticks: { color: COLORS.output + 'aa' },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** Model efficiency comparison — horizontal grouped bar chart */
+function createModelComparisonChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [
+        {
+          label: t('tokensPerLineLabel'),
+          data: data.map(d => d.tokensPerLine),
+          backgroundColor: COLORS.input + '80',
+          borderColor: COLORS.input,
+          borderWidth: 1
+        },
+        {
+          label: t('linesPerTurnLabel'),
+          data: data.map(d => d.linesPerTurn),
+          backgroundColor: COLORS.output + '80',
+          borderColor: COLORS.output,
+          borderWidth: 1
+        },
+        {
+          label: t('toolsPerTurnLabel'),
+          data: data.map(d => d.toolsPerTurn),
+          backgroundColor: COLORS.cacheRead + '80',
+          borderColor: COLORS.cacheRead,
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const d = data[ctx.dataIndex];
+              if (ctx.datasetIndex === 0) return ctx.dataset.label + ': ' + formatNumber(ctx.raw) + ' tok/line (' + formatNumber(d.messages) + ' msgs)';
+              if (ctx.datasetIndex === 1) return ctx.dataset.label + ': ' + ctx.raw + ' lines/turn';
+              return ctx.dataset.label + ': ' + ctx.raw + ' tools/turn';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#30363d40' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** Session depth analysis — bubble: messages (x) vs lines/turn (y), size = total lines */
+function createSessionDepthChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const maxLines = Math.max(...data.map(d => d.totalLines), 1);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: [{
+        label: t('sessionDepthLabel'),
+        data: data.map(d => ({
+          x: d.messages,
+          y: d.linesPerTurn,
+          r: Math.max(3, Math.min(20, (d.totalLines / maxLines) * 20))
+        })),
+        backgroundColor: COLORS.cacheRead + '50',
+        borderColor: COLORS.cacheRead,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const d = data[ctx.dataIndex];
+              return [
+                d.project,
+                t('messages') + ': ' + d.messages,
+                t('linesPerTurnLabel') + ': ' + d.linesPerTurn,
+                t('totalLinesLabel') + ': ' + formatNumber(d.totalLines),
+                t('costPerLine') + ': $' + d.costPerLine.toFixed(3)
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: t('messagesLabel') },
+          ticks: { callback: v => formatNumber(v) },
+          grid: { color: '#30363d40' }
+        },
+        y: {
+          title: { display: true, text: t('linesPerTurnLabel') },
+          beginAtZero: true,
+          grid: { color: '#30363d40' }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** Tool usage evolution — stacked area chart showing tool proportions over time */
+function createToolEvolutionChart(canvasId, daily) {
+  destroyChart(canvasId);
+  if (!daily || daily.length === 0) return;
+
+  // Aggregate tool counts per day from the daily data
+  const toolTotals = {};
+  for (const d of daily) {
+    if (d.tools) {
+      for (const [name, count] of Object.entries(d.tools)) {
+        toolTotals[name] = (toolTotals[name] || 0) + count;
+      }
+    }
+  }
+
+  // Top 8 tools by total count
+  const topTools = Object.entries(toolTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name]) => name);
+
+  if (topTools.length === 0) return;
+
+  const palette = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149', '#39d2c0', '#f0883e', '#8b949e'];
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => formatChartDate(d.date)),
+      datasets: topTools.map((tool, i) => ({
+        label: tool,
+        data: daily.map(d => (d.tools && d.tools[tool]) || 0),
+        borderColor: palette[i % palette.length],
+        backgroundColor: palette[i % palette.length] + '30',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 1.5
+      }))
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': ' + ctx.raw + ' calls'
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { callback: v => formatNumber(v) },
+          grid: { color: '#30363d40' }
         }
       }
     }

@@ -32,6 +32,8 @@ const MIME = {
   '.js': 'application/javascript',
   '.json': 'application/json',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml'
 };
 
@@ -138,7 +140,7 @@ function serveStatic(res, filePath) {
       res.end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': mime });
+    res.writeHead(200, { 'Content-Type': mime, 'Content-Length': data.length });
     res.end(data);
   });
 }
@@ -521,6 +523,10 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getHourly(query.from, query.to));
   }
 
+  if (pathname === '/api/hourly-by-model') {
+    return sendJSON(res, agg.getHourlyByModel(query.from, query.to));
+  }
+
   // Insights API endpoints
   if (pathname === '/api/stop-reasons') {
     return sendJSON(res, agg.getStopReasons(query.from, query.to));
@@ -548,6 +554,15 @@ const server = http.createServer((req, res) => {
 
   if (pathname === '/api/productivity') {
     return sendJSON(res, agg.getProductivity(query.from, query.to));
+  }
+  if (pathname === '/api/efficiency-trend') {
+    return sendJSON(res, agg.getEfficiencyTrend(query.from, query.to));
+  }
+  if (pathname === '/api/model-efficiency') {
+    return sendJSON(res, agg.getModelEfficiency(query.from, query.to));
+  }
+  if (pathname === '/api/session-depth') {
+    return sendJSON(res, agg.getSessionDepthAnalysis(query.from, query.to));
   }
 
   // Claude's own stats-cache with cost calculation (single-user only)

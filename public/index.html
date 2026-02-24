@@ -18,16 +18,16 @@
   <meta property="og:site_name" content="Claude Token Tracker">
   <meta property="og:locale" content="en_US">
   <meta property="og:locale:alternate" content="de_DE">
-  <meta property="og:image" content="https://tracker.celox.io/og-image.png">
+  <meta property="og:image" content="https://tracker.celox.io/og-image.jpg">
   <meta property="og:image:width" content="1024">
   <meta property="og:image:height" content="572">
-  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="Claude Token Tracker — Analytics dashboard with charts and KPIs">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Claude Token Tracker">
   <meta name="twitter:description" content="Real-time dashboard for tracking Claude Code token usage. Analyze costs, sessions, models, and tools.">
-  <meta name="twitter:image" content="https://tracker.celox.io/og-image.png">
+  <meta name="twitter:image" content="https://tracker.celox.io/og-image.jpg">
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <!-- Canonical -->
@@ -432,48 +432,109 @@
 
     <!-- Tab 7: Productivity -->
     <div id="tab-productivity" class="tab-panel">
+      <div class="productivity-toolbar">
+        <button id="compare-toggle-btn" class="tab-btn" data-i18n="compareToggle">Compare Periods</button>
+      </div>
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="tokensPerMin">Tokens/Min</div>
+          <div class="kpi-label" data-i18n="tokensPerMin" data-tooltip-key="tooltipTokensPerMin">Tokens/Min</div>
           <div class="kpi-value" id="kpi-tokens-per-min">-</div>
           <div class="kpi-sub kpi-trend" id="kpi-tokens-per-min-trend"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="linesPerHour">Lines/Hour</div>
+          <div class="kpi-label" data-i18n="linesPerHour" data-tooltip-key="tooltipLinesPerHour">Lines/Hour</div>
           <div class="kpi-value" id="kpi-lines-per-hour">-</div>
           <div class="kpi-sub kpi-trend" id="kpi-lines-per-hour-trend"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="msgsPerSession">Msgs/Session</div>
+          <div class="kpi-label" data-i18n="msgsPerSession" data-tooltip-key="tooltipMsgsPerSession">Msgs/Session</div>
           <div class="kpi-value" id="kpi-msgs-per-session">-</div>
           <div class="kpi-sub" id="kpi-msgs-per-session-sub"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="costPerLine">Cost/Line</div>
+          <div class="kpi-label" data-i18n="costPerLine" data-tooltip-key="tooltipCostPerLine">Cost/Line</div>
           <div class="kpi-value" id="kpi-cost-per-line">-</div>
           <div class="kpi-sub kpi-trend" id="kpi-cost-per-line-trend"></div>
         </div>
       </div>
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="cacheSavings">Cache Savings</div>
+          <div class="kpi-label" data-i18n="cacheSavings" data-tooltip-key="tooltipCacheSavings">Cache Savings</div>
           <div class="kpi-value" id="kpi-cache-savings">-</div>
           <div class="kpi-sub" data-i18n="cacheSavingsDesc">vs. full input pricing</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="codeRatio">Code Ratio</div>
+          <div class="kpi-label" data-i18n="codeRatio" data-tooltip-key="tooltipCodeRatio">Code Ratio</div>
           <div class="kpi-value" id="kpi-code-ratio">-</div>
           <div class="kpi-sub" data-i18n="codeRatioDesc">tool_use vs end_turn</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="codingHours">Coding Hours</div>
+          <div class="kpi-label" data-i18n="codingHours" data-tooltip-key="tooltipCodingHours">Coding Hours</div>
           <div class="kpi-value" id="kpi-coding-hours">-</div>
           <div class="kpi-sub" data-i18n="totalSessionTime">Total session time</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label" data-i18n="totalLinesLabel">Total Lines</div>
+          <div class="kpi-label" data-i18n="totalLinesLabel" data-tooltip-key="tooltipTotalLines">Total Lines</div>
           <div class="kpi-value" id="kpi-total-lines">-</div>
           <div class="kpi-sub" data-i18n="writtenAndEdited">Written + edited</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="tokensPerLineLabel" data-tooltip-key="tooltipTokensPerLine">Tokens/Line</div>
+          <div class="kpi-value" id="kpi-tokens-per-line">-</div>
+          <div class="kpi-sub" data-i18n="tokensPerLineDesc">Output-Tokens pro Codezeile</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="toolsPerTurnLabel" data-tooltip-key="tooltipToolsPerTurn">Tools/Turn</div>
+          <div class="kpi-value" id="kpi-tools-per-turn">-</div>
+          <div class="kpi-sub" data-i18n="toolsPerTurnDesc">Tool-Aufrufe pro Nachricht</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="linesPerTurnLabel" data-tooltip-key="tooltipLinesPerTurn">Lines/Turn</div>
+          <div class="kpi-value" id="kpi-lines-per-turn">-</div>
+          <div class="kpi-sub" data-i18n="linesPerTurnDesc">Codezeilen pro Nachricht</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="ioRatioLabel" data-tooltip-key="tooltipIoRatio">I/O Ratio</div>
+          <div class="kpi-value" id="kpi-io-ratio">-</div>
+          <div class="kpi-sub" data-i18n="ioRatioDesc">Output / Input Tokens</div>
+        </div>
+      </div>
+
+      <div id="period-comparison-section" class="period-comparison-section" style="display:none;">
+        <div class="period-comparison-header">
+          <h3 data-i18n="periodComparison">Period Comparison</h3>
+          <div class="period-b-selector">
+            <span class="period-b-label" data-i18n="compareTo">Compare to:</span>
+            <div class="period-tabs period-b-tabs">
+              <button class="period-btn-b" data-period-b="prev" data-i18n="previousPeriod">&#8592; Previous</button>
+              <button class="period-btn-b" data-period-b="7">7d</button>
+              <button class="period-btn-b" data-period-b="30">30d</button>
+              <button class="period-btn-b" data-period-b="90">90d</button>
+              <button class="period-btn-b" data-period-b="custom">Custom</button>
+            </div>
+            <div class="period-b-custom" id="period-b-custom" style="display:none;">
+              <input type="date" id="period-b-from">
+              <span>&ndash;</span>
+              <input type="date" id="period-b-to">
+            </div>
+          </div>
+        </div>
+        <div class="period-comparison-labels">
+          <span class="period-a-tag" id="period-a-label"></span>
+          <span class="period-b-tag" id="period-b-label"></span>
+        </div>
+        <div class="comparison-grid" id="period-comparison-grid"></div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="efficiencyTrend" data-tooltip-key="tooltipEfficiencyTrend">Effizienz-Trend</h3>
+          <div class="chart-container">
+            <canvas id="chart-efficiency-trend"></canvas>
+          </div>
         </div>
       </div>
 
@@ -497,6 +558,30 @@
           <h3 data-i18n="codeVsChat">Code vs Chat</h3>
           <div class="chart-container">
             <canvas id="chart-code-ratio"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="modelComparison" data-tooltip-key="tooltipModelComparison">Modell-Vergleich</h3>
+          <div class="chart-container">
+            <canvas id="chart-model-comparison"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="sessionDepthLabel" data-tooltip-key="tooltipSessionDepth">Session-Tiefe</h3>
+          <div class="chart-container">
+            <canvas id="chart-session-depth"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="toolEvolution" data-tooltip-key="tooltipToolEvolution">Tool-Nutzung im Zeitverlauf</h3>
+          <div class="chart-container">
+            <canvas id="chart-tool-evolution"></canvas>
           </div>
         </div>
       </div>
@@ -574,6 +659,11 @@
         </div>
 
         <div class="info-section">
+          <h3 data-i18n="infoProductivityTitle">Produktivitäts-Metriken</h3>
+          <p data-i18n="infoProductivityDesc"></p>
+        </div>
+
+        <div class="info-section">
           <h3 data-i18n="infoDataSourceTitle">Datenquelle</h3>
           <p data-i18n="infoDataSourceDesc"></p>
         </div>
@@ -609,9 +699,8 @@
         </div>
 
         <div class="info-section info-settings">
-          <h3 data-i18n="infoSettingsTitle">Settings</h3>
-          <div class="date-format-toggle">
-            <span data-i18n="dateFormatLabel">Date Format:</span>
+          <h3 data-i18n="dateFormatTitle">Datumsformat</h3>
+          <div class="lang-switch-settings">
             <button class="btn-small date-fmt-btn active" data-fmt="us">MM-DD</button>
             <button class="btn-small date-fmt-btn" data-fmt="de">DD.MM.</button>
           </div>
@@ -655,7 +744,7 @@ pm2 save</code></pre>
 
   <footer class="footer">
     <div class="footer-inner">
-      <span class="footer-version">v0.0.3</span>
+      <span class="footer-version">v0.0.4</span>
       <span class="footer-dev">
         Built by <a href="https://celox.io" target="_blank" rel="noopener">Martin Pfeffer</a>
       </span>

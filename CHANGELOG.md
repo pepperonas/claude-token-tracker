@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.4] - 2026-02-24
+
+### Added
+- **Period-over-Period Comparison** in the Productivity tab — compare any two time periods side-by-side
+  - "Compare Periods" toggle button activates the comparison section
+  - Period B selector: Previous (auto-computed same-length preceding window), 7d, 30d, 90d, or Custom date range
+  - 8 comparison metrics: Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours
+  - Visual comparison cards with dual bar charts (Period A blue, Period B grey)
+  - Delta percentage with color-coded indicators (green = improvement, red = regression)
+  - Respects "lower is better" semantics for Cost/Line and Tokens/Line
+  - Hint text below each metric shows whether higher or lower is better
+  - Period labels show exact date ranges for both periods
+  - State persisted in localStorage (active period B selection, custom date range)
+  - Automatically recalculates when global period selector changes
+  - Reuses existing `/api/productivity` endpoint (no backend changes needed)
+- 11 new i18n keys in both EN and DE (periodComparison, compareToggle, compareTo, previousPeriod, periodA, periodB, improvement, regression, noChange, betterLower, betterHigher)
+- 2 new aggregator tests for period-isolated productivity data
+- ~100 lines of CSS for comparison section, Period B selector, delta indicators
+
+### Changed
+- Test count: 146 → 148 (2 new aggregator tests)
+
 ## [0.1.0] - 2026-02-23
 
 ### Added

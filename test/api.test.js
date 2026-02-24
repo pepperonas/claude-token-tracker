@@ -186,6 +186,26 @@ describe('API endpoints', () => {
     expect(typeof body.linesPerHour).toBe('number');
   });
 
+  it('GET /api/efficiency-trend returns daily and rolling data', async () => {
+    const { status, body } = await get('/api/efficiency-trend');
+    expect(status).toBe(200);
+    expect(body).toHaveProperty('daily');
+    expect(body).toHaveProperty('rolling');
+    expect(Array.isArray(body.daily)).toBe(true);
+  });
+
+  it('GET /api/model-efficiency returns per-model data', async () => {
+    const { status, body } = await get('/api/model-efficiency');
+    expect(status).toBe(200);
+    expect(Array.isArray(body)).toBe(true);
+  });
+
+  it('GET /api/session-depth returns session scatter data', async () => {
+    const { status, body } = await get('/api/session-depth');
+    expect(status).toBe(200);
+    expect(Array.isArray(body)).toBe(true);
+  });
+
   it('GET /api/export-html returns HTML document', async () => {
     const res = await new Promise((resolve, reject) => {
       http.get(baseUrl + '/api/export-html', (res) => {

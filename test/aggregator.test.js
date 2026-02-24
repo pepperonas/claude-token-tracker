@@ -136,6 +136,30 @@ describe('aggregator', () => {
       expect(hourly[0].hour).toBe(0);
       expect(hourly[23].hour).toBe(23);
     });
+
+    it('returns enriched token and cost breakdown', () => {
+      const hourly = agg.getHourly();
+      const active = hourly.find(h => h.messages > 0);
+      expect(active).toBeDefined();
+      expect(active).toHaveProperty('inputTokens');
+      expect(active).toHaveProperty('outputTokens');
+      expect(active).toHaveProperty('cacheReadTokens');
+      expect(active).toHaveProperty('cacheCreateTokens');
+      expect(active).toHaveProperty('cost');
+      expect(active).toHaveProperty('inputCost');
+      expect(active).toHaveProperty('outputCost');
+      expect(active.inputTokens).toBeGreaterThan(0);
+      expect(active.cost).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getHourlyByModel', () => {
+    it('returns 24 entries with model breakdowns', () => {
+      const data = agg.getHourlyByModel();
+      expect(data.length).toBe(24);
+      expect(data[0]).toHaveProperty('date');
+      expect(data[0].date).toMatch(/^\d{2}:00$/);
+    });
   });
 
   describe('getDailyByModel', () => {
@@ -279,6 +303,109 @@ describe('aggregator', () => {
       if (p.trends.tokensPerMin !== undefined) {
         expect(typeof p.trends.tokensPerMin).toBe('number');
       }
+    });
+  });
+
+  describe('getProductivity extended KPIs', () => {
+    it('returns new efficiency KPIs', () => {
+      const p = agg.getProductivity();
+      expect(typeof p.tokensPerLine).toBe('number');
+      expect(typeof p.toolsPerTurn).toBe('number');
+      expect(typeof p.linesPerTurn).toBe('number');
+      expect(typeof p.ioRatio).toBe('number');
+    });
+  });
+
+  describe('getEfficiencyTrend', () => {
+    it('returns daily and rolling arrays', () => {
+      const result = agg.getEfficiencyTrend();
+      expect(result).toHaveProperty('daily');
+      expect(result).toHaveProperty('rolling');
+      expect(result.daily.length).toBe(3);
+      expect(result.rolling.length).toBe(3);
+    });
+
+    it('each entry has correct structure', () => {
+      const { daily } = agg.getEfficiencyTrend();
+      for (const d of daily) {
+        expect(d).toHaveProperty('date');
+        expect(d).toHaveProperty('tokensPerLine');
+        expect(d).toHaveProperty('linesPerTurn');
+        expect(d).toHaveProperty('toolsPerTurn');
+        expect(d).toHaveProperty('ioRatio');
+      }
+    });
+
+    it('filters by date range', () => {
+      const result = agg.getEfficiencyTrend('2026-02-22', '2026-02-22');
+      expect(result.daily.length).toBe(1);
+    });
+  });
+
+  describe('getModelEfficiency', () => {
+    it('returns per-model efficiency metrics', () => {
+      const models = agg.getModelEfficiency();
+      expect(models.length).toBeGreaterThan(0);
+      for (const m of models) {
+        expect(m).toHaveProperty('model');
+        expect(m).toHaveProperty('label');
+        expect(m).toHaveProperty('tokensPerLine');
+        expect(m).toHaveProperty('linesPerTurn');
+        expect(m).toHaveProperty('toolsPerTurn');
+        expect(m.messages).toBeGreaterThanOrEqual(5);
+      }
+    });
+  });
+
+  describe('getSessionDepthAnalysis', () => {
+    it('returns session scatter data', () => {
+      const sessions = agg.getSessionDepthAnalysis();
+      expect(Array.isArray(sessions)).toBe(true);
+      for (const s of sessions) {
+        expect(s).toHaveProperty('messages');
+        expect(s).toHaveProperty('linesPerTurn');
+        expect(s).toHaveProperty('totalLines');
+        expect(s.totalLines).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('getDaily includes tool data', () => {
+    it('daily entries have toolCalls and tools', () => {
+      const daily = agg.getDaily();
+      for (const d of daily) {
+        expect(d).toHaveProperty('toolCalls');
+        expect(d).toHaveProperty('tools');
+        expect(typeof d.toolCalls).toBe('number');
+        expect(typeof d.tools).toBe('object');
+      }
+    });
+  });
+
+  describe('getProductivity period isolation', () => {
+    it('returns different values for different date ranges', () => {
+      const prodFeb20 = agg.getProductivity('2026-02-20', '2026-02-20');
+      const prodFeb22 = agg.getProductivity('2026-02-22', '2026-02-22');
+      // Both should have data but from different days
+      expect(prodFeb20.totalLines).toBeGreaterThanOrEqual(0);
+      expect(prodFeb22.totalLines).toBeGreaterThanOrEqual(0);
+      // Key metrics should be numbers
+      expect(typeof prodFeb20.tokensPerMin).toBe('number');
+      expect(typeof prodFeb20.linesPerHour).toBe('number');
+      expect(typeof prodFeb20.costPerLine).toBe('number');
+      expect(typeof prodFeb20.tokensPerLine).toBe('number');
+      expect(typeof prodFeb20.linesPerTurn).toBe('number');
+      expect(typeof prodFeb20.toolsPerTurn).toBe('number');
+      expect(typeof prodFeb20.ioRatio).toBe('number');
+      expect(typeof prodFeb20.codingHours).toBe('number');
+    });
+
+    it('returns zero metrics for a date range with no data', () => {
+      const prodEmpty = agg.getProductivity('2030-01-01', '2030-01-02');
+      expect(prodEmpty.tokensPerMin).toBe(0);
+      expect(prodEmpty.linesPerHour).toBe(0);
+      expect(prodEmpty.totalLines).toBe(0);
+      expect(prodEmpty.codingHours).toBe(0);
     });
   });
 

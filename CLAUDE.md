@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm start                # Start server on port 5010
-npm test                 # Run all 134 tests (vitest)
+npm test                 # Run all 148 tests (vitest)
 npm run test:watch       # Tests in watch mode
 npm run test:coverage    # Coverage report
 npm run lint             # ESLint (lib/ + server.js only)

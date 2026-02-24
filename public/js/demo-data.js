@@ -184,7 +184,21 @@ const DEMO_DATA = (() => {
     let msgs = 0;
     if (h >= 9 && h <= 18) msgs = 30 + Math.round(Math.sin((h - 9) / 9 * Math.PI) * 40);
     else if (h >= 7 && h <= 22) msgs = 5 + Math.round(Math.random() * 10);
-    return { hour: h, messages: msgs, tokens: msgs * 8200, linesWritten: Math.round(msgs * 6.4), linesAdded: Math.round(msgs * 3.8), linesRemoved: Math.round(msgs * 1.4) };
+    const input = msgs * 2200;
+    const output = msgs * 740;
+    const cacheRead = msgs * 5100;
+    const cacheCreate = msgs * 380;
+    const cost = Math.round((input * 3 / 1e6 + output * 15 / 1e6 + cacheRead * 0.3 / 1e6 + cacheCreate * 3.75 / 1e6) * 100) / 100;
+    return {
+      hour: h, messages: msgs, tokens: msgs * 8200,
+      inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead, cacheCreateTokens: cacheCreate,
+      cost,
+      inputCost: Math.round(input * 3 / 1e6 * 100) / 100,
+      outputCost: Math.round(output * 15 / 1e6 * 100) / 100,
+      cacheReadCost: Math.round(cacheRead * 0.3 / 1e6 * 100) / 100,
+      cacheCreateCost: Math.round(cacheCreate * 3.75 / 1e6 * 100) / 100,
+      linesWritten: Math.round(msgs * 6.4), linesAdded: Math.round(msgs * 3.8), linesRemoved: Math.round(msgs * 1.4)
+    };
   });
 
   // --- Daily by model ---
@@ -323,6 +337,15 @@ const DEMO_DATA = (() => {
     'tools': toolsData,
     'hourly': hourlyData,
     'daily-by-model': dailyByModelData,
+    'hourly-by-model': Array.from({ length: 24 }, (_, h) => {
+      const entry = { date: String(h).padStart(2, '0') + ':00' };
+      for (const m of models) {
+        const base = m.id.includes('sonnet') ? 4000 : m.id.includes('opus') ? 2500 : 1200;
+        const activity = (h >= 9 && h <= 18) ? 1 + Math.sin((h - 9) / 9 * Math.PI) : (h >= 7 && h <= 22 ? 0.2 : 0);
+        entry[m.label] = Math.round(base * activity * (0.7 + Math.random() * 0.6));
+      }
+      return entry;
+    }),
     'daily-cost-breakdown': dailyCostBreakdownData,
     'cumulative-cost': cumulativeCostData,
     'day-of-week': dayOfWeekData,
@@ -349,10 +372,55 @@ const DEMO_DATA = (() => {
         codeRatio: 34.8,
         codingHours: 56.3,
         totalLines: 8660,
+        tokensPerLine: 285,
+        toolsPerTurn: 2.4,
+        linesPerTurn: 3.8,
+        ioRatio: 12.5,
         trends: { tokensPerMin: 12, linesPerHour: -5, costPerLine: -8 },
         dailyProductivity: dailyProd,
         stopReasons: stopReasonsData
       };
+    })(),
+    'efficiency-trend': (() => {
+      const daily = dailyData.map(d => {
+        const lines = (d.linesWritten || 0) + (d.linesAdded || 0);
+        return {
+          date: d.date,
+          tokensPerLine: lines > 0 ? Math.round(d.outputTokens / lines) : 0,
+          linesPerTurn: d.messages > 0 ? Math.round((lines / d.messages) * 10) / 10 : 0,
+          toolsPerTurn: d.messages > 0 ? Math.round((2.5 * d.messages / d.messages) * 10) / 10 : 0,
+          ioRatio: d.inputTokens > 0 ? Math.round((d.outputTokens / d.inputTokens) * 1000) / 10 : 0
+        };
+      });
+      const rolling = daily.map((entry, i) => {
+        const w = daily.slice(Math.max(0, i - 6), i + 1);
+        const avg = (f) => { const v = w.filter(x => x[f] > 0).map(x => x[f]); return v.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length * 10) / 10 : 0; };
+        return { date: entry.date, tokensPerLine: avg('tokensPerLine'), linesPerTurn: avg('linesPerTurn'), toolsPerTurn: avg('toolsPerTurn'), ioRatio: avg('ioRatio') };
+      });
+      return { daily, rolling };
+    })(),
+    'model-efficiency': [
+      { model: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5', messages: 520, totalLines: 5200, tokensPerLine: 240, costPerLine: 0.002, linesPerTurn: 4.2, toolsPerTurn: 2.8, ioRatio: 14.2 },
+      { model: 'claude-opus-4-6', label: 'Opus 4.6', messages: 280, totalLines: 3100, tokensPerLine: 380, costPerLine: 0.005, linesPerTurn: 3.1, toolsPerTurn: 2.1, ioRatio: 10.8 },
+      { model: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', messages: 47, totalLines: 360, tokensPerLine: 120, costPerLine: 0.001, linesPerTurn: 2.6, toolsPerTurn: 1.9, ioRatio: 18.5 }
+    ],
+    'session-depth': (() => {
+      const projects = ['token/tracker', 'claude/remote', 'smart-home', 'website'];
+      return Array.from({ length: 30 }, (_, i) => {
+        const msgs = 5 + Math.floor(Math.random() * 80);
+        const lines = Math.floor(msgs * (1 + Math.random() * 4));
+        return {
+          id: 'sess-' + i,
+          project: projects[i % projects.length],
+          messages: msgs,
+          durationMin: msgs * 2 + Math.floor(Math.random() * 60),
+          totalLines: lines,
+          tokensPerLine: 150 + Math.floor(Math.random() * 300),
+          costPerLine: Math.round((0.001 + Math.random() * 0.008) * 1000) / 1000,
+          linesPerTurn: Math.round((lines / msgs) * 10) / 10,
+          toolsPerTurn: Math.round((1.5 + Math.random() * 2) * 10) / 10
+        };
+      });
     })(),
     'global-averages': {
       you: { totalTokens: 6994380, totalCost: 22.71, totalSessions: 42, totalMessages: 847, totalLines: 8660, cacheEfficiency: 62.4 },
