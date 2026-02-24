@@ -1154,15 +1154,17 @@ body {
   margin-bottom: 16px;
 }
 
-.productivity-toolbar .tab-btn {
+.compare-btn {
   padding: 8px 16px;
   font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  border-bottom: none;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
 }
 
-.productivity-toolbar .tab-btn.active {
+.compare-btn.active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
