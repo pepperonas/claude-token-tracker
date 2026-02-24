@@ -330,6 +330,35 @@ const DEMO_DATA = (() => {
     'stop-reasons': stopReasonsData,
     'session-efficiency': sessionEfficiencyData,
     'active-sessions': activeSessionsData,
+    'productivity': (() => {
+      const dailyProd = dailyData.map(d => {
+        const dayLines = (d.linesWritten || 0) + (d.linesAdded || 0);
+        const dayHours = 2 + Math.random() * 4;
+        return {
+          date: d.date,
+          linesPerHour: dayHours > 0 ? Math.round(dayLines / dayHours) : 0,
+          costPerLine: dayLines > 0 ? Math.round(d.cost / dayLines * 1000) / 1000 : 0
+        };
+      });
+      return {
+        tokensPerMin: 842,
+        linesPerHour: 156,
+        msgsPerSession: 20.2,
+        costPerLine: 0.003,
+        cacheSavings: 8.45,
+        codeRatio: 34.8,
+        codingHours: 56.3,
+        totalLines: 8660,
+        trends: { tokensPerMin: 12, linesPerHour: -5, costPerLine: -8 },
+        dailyProductivity: dailyProd,
+        stopReasons: stopReasonsData
+      };
+    })(),
+    'global-averages': {
+      you: { totalTokens: 6994380, totalCost: 22.71, totalSessions: 42, totalMessages: 847, totalLines: 8660, cacheEfficiency: 62.4 },
+      avg: { totalTokens: 5200000, totalCost: 18.50, totalSessions: 35, totalMessages: 680, totalLines: 6200, cacheEfficiency: 55.1 },
+      userCount: 8
+    },
     'stats-cache': { error: 'Not available in demo mode' },
     'achievements': achievementsData
   };

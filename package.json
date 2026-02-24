@@ -1,6 +1,6 @@
 {
   "name": "claude-token-tracker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Token usage dashboard for Claude Code — tracks costs, sessions, models, and tools with real-time updates",
   "main": "server.js",
   "scripts": {

@@ -16,6 +16,7 @@ const LANG = {
     models: 'Models',
     insights: 'Insights',
     info: 'Info',
+    settings: 'Settings',
     // KPI
     totalTokens: 'Total Tokens',
     estimatedCost: 'Estimated Cost',
@@ -62,8 +63,11 @@ const LANG = {
     linesAndMessages: 'Lines of Code & Messages',
     tooltipLinesAndMessages: 'Lines of code (stacked bars) and messages (line) — adapts to selected period',
     // Settings
+    settingsTitle: 'Settings',
     infoSettingsTitle: 'Settings',
+    languageLabel: 'Language:',
     dateFormatLabel: 'Date Format:',
+    pickDate: 'Pick a date',
     // Info section extras
     infoLinesTitle: 'Lines of Code',
     infoLinesDesc: 'The dashboard tracks three types of code line changes from Claude\'s tool calls: Write (green) counts lines from the Write tool when creating or overwriting files. Edit (yellow) counts lines from the Edit tool\'s replacement text. Delete (red) counts lines from the Edit tool\'s removed text. Net Change = write + edit - delete.',
@@ -1181,6 +1185,30 @@ const LANG = {
     ach_proj_above_100s_3_desc: '3 projects with 100+ sessions each',
     ach_multi_proj_day_20_desc: '20+ projects in one day',
     ach_sessions_500_msgs_5_desc: '5 sessions with 500+ messages',
+    // Productivity tab
+    productivity: 'Productivity',
+    tokensPerMin: 'Tokens/Min',
+    linesPerHour: 'Lines/Hour',
+    msgsPerSession: 'Msgs/Session',
+    costPerLine: 'Cost/Line',
+    cacheSavings: 'Cache Savings',
+    cacheSavingsDesc: 'vs. full input pricing',
+    codeRatio: 'Code Ratio',
+    codeRatioDesc: 'tool_use vs end_turn',
+    codingHours: 'Coding Hours',
+    totalSessionTime: 'Total session time',
+    totalLinesLabel: 'Total Lines',
+    writtenAndEdited: 'Written + edited',
+    dailyProductivity: 'Daily Productivity',
+    costEfficiency: 'Cost Efficiency',
+    codeVsChat: 'Code vs Chat',
+    avgPerSession: 'Average per session',
+    // Export
+    exportHtml: 'Export HTML',
+    // Global comparison
+    youVsAverage: 'You vs Average',
+    you: 'You',
+    avg: 'Avg',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -1199,6 +1227,7 @@ const LANG = {
     models: 'Modelle',
     insights: 'Insights',
     info: 'Info',
+    settings: 'Einstellungen',
     // KPI
     totalTokens: 'Tokens gesamt',
     estimatedCost: 'Gesch\u00e4tzte Kosten',
@@ -1245,8 +1274,11 @@ const LANG = {
     linesAndMessages: 'Codezeilen & Nachrichten',
     tooltipLinesAndMessages: 'Codezeilen (gestapelte Balken) und Nachrichten (Linie) \u2014 passt sich dem Zeitraum an',
     // Settings
+    settingsTitle: 'Einstellungen',
     infoSettingsTitle: 'Einstellungen',
+    languageLabel: 'Sprache:',
     dateFormatLabel: 'Datumsformat:',
+    pickDate: 'Datum wählen',
     // Info section extras
     infoLinesTitle: 'Lines of Code',
     infoLinesDesc: 'Das Dashboard erfasst drei Arten von Codezeilen-\u00c4nderungen aus Claudes Tool-Aufrufen: Write (gr\u00fcn) z\u00e4hlt Zeilen vom Write-Tool beim Erstellen oder \u00dcberschreiben von Dateien. Edit (gelb) z\u00e4hlt Zeilen aus dem Ersetzungstext des Edit-Tools. Delete (rot) z\u00e4hlt Zeilen aus dem entfernten Text des Edit-Tools. Netto-\u00c4nderung = write + edit - delete.',
@@ -2364,6 +2396,30 @@ const LANG = {
     ach_proj_above_100s_3_desc: '3 Projekte mit jeweils 100+ Sitzungen',
     ach_multi_proj_day_20_desc: '20+ Projekte an einem Tag',
     ach_sessions_500_msgs_5_desc: '5 Sitzungen mit 500+ Nachrichten',
+    // Productivity tab
+    productivity: 'Produktivit\u00e4t',
+    tokensPerMin: 'Tokens/Min',
+    linesPerHour: 'Zeilen/Stunde',
+    msgsPerSession: 'Nachr./Sitzung',
+    costPerLine: 'Kosten/Zeile',
+    cacheSavings: 'Cache-Ersparnis',
+    cacheSavingsDesc: 'vs. volle Input-Preise',
+    codeRatio: 'Code-Anteil',
+    codeRatioDesc: 'tool_use vs end_turn',
+    codingHours: 'Coding-Stunden',
+    totalSessionTime: 'Gesamte Sitzungszeit',
+    totalLinesLabel: 'Zeilen gesamt',
+    writtenAndEdited: 'Geschrieben + bearbeitet',
+    dailyProductivity: 'T\u00e4gliche Produktivit\u00e4t',
+    costEfficiency: 'Kosteneffizienz',
+    codeVsChat: 'Code vs Chat',
+    avgPerSession: 'Durchschnitt pro Sitzung',
+    // Export
+    exportHtml: 'HTML exportieren',
+    // Global comparison
+    youVsAverage: 'Du vs Durchschnitt',
+    you: 'Du',
+    avg: 'Durchschnitt',
   }
 };
 

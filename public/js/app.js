@@ -1,6 +1,7 @@
 // App state
 let state = {
-  period: localStorage.getItem('period') || '30d',
+  period: localStorage.getItem('customDate') ? 'custom' : (localStorage.getItem('period') || '30d'),
+  customDate: localStorage.getItem('customDate') || '',
   activeTab: 'overview',
   sessionFilter: { project: '', model: '' },
   includeCache: true,
@@ -58,6 +59,7 @@ function getPeriodRange() {
     case '7d': from = toLocalDate(new Date(now - 7 * 86400000)); break;
     case '30d': from = toLocalDate(new Date(now - 30 * 86400000)); break;
     case 'all': from = ''; break;
+    case 'custom': return { from: state.customDate, to: state.customDate };
   }
   return { from, to };
 }
@@ -355,7 +357,11 @@ function switchTab(tab) {
 // --- Period switching ---
 function setPeriod(period) {
   state.period = period;
+  state.customDate = '';
   localStorage.setItem('period', period);
+  localStorage.removeItem('customDate');
+  const picker = document.getElementById('custom-date-picker');
+  if (picker) picker.value = '';
   document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
   loadTab(state.activeTab);
 }
@@ -369,8 +375,10 @@ async function loadTab(tab) {
     case 'tools': return loadTools();
     case 'models': return loadModels();
     case 'insights': return loadInsights();
+    case 'productivity': return loadProductivity();
     case 'achievements': return loadAchievements();
     case 'info': return loadInfo();
+    case 'settings': return loadSettings();
   }
 }
 
@@ -502,6 +510,8 @@ async function loadOverview() {
   createModelDoughnut('chart-model-dist', models, false);
   createHourlyChart('chart-hourly', hourly);
   createOverviewLinesChart('chart-overview-lines', daily, hourly, state.period);
+
+  loadGlobalComparison();
 }
 
 async function loadSessions() {
@@ -782,8 +792,163 @@ async function loadAchievements() {
   }
 }
 
+async function loadProductivity() {
+  const data = await api('productivity' + periodQuery());
+
+  document.getElementById('kpi-tokens-per-min').textContent = formatNumber(data.tokensPerMin);
+  setTrendIndicator('kpi-tokens-per-min-trend', data.trends.tokensPerMin);
+
+  document.getElementById('kpi-lines-per-hour').textContent = formatNumber(data.linesPerHour);
+  setTrendIndicator('kpi-lines-per-hour-trend', data.trends.linesPerHour);
+
+  document.getElementById('kpi-msgs-per-session').textContent = data.msgsPerSession.toFixed(1);
+  const msgsPerSessionSub = document.getElementById('kpi-msgs-per-session-sub');
+  if (msgsPerSessionSub) msgsPerSessionSub.textContent = t('avgPerSession');
+
+  document.getElementById('kpi-cost-per-line').textContent = '$' + data.costPerLine.toFixed(3);
+  setTrendIndicator('kpi-cost-per-line-trend', data.trends.costPerLine, true);
+
+  document.getElementById('kpi-cache-savings').textContent = formatCost(data.cacheSavings);
+  document.getElementById('kpi-code-ratio').textContent = data.codeRatio.toFixed(1) + '%';
+  document.getElementById('kpi-coding-hours').textContent = data.codingHours.toFixed(1) + 'h';
+  document.getElementById('kpi-total-lines').textContent = formatNumber(data.totalLines);
+
+  createProductivityDailyChart('chart-productivity-daily', data.dailyProductivity);
+  createCostEfficiencyChart('chart-cost-efficiency', data.dailyProductivity);
+  createCodeRatioChart('chart-code-ratio', data.stopReasons);
+}
+
+function setTrendIndicator(elementId, pctChange, invertColors) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (pctChange === undefined || pctChange === null) {
+    el.textContent = '';
+    return;
+  }
+  const isUp = pctChange > 0;
+  const isDown = pctChange < 0;
+  const arrow = isUp ? '\u2191' : isDown ? '\u2193' : '\u2192';
+  const absVal = Math.abs(pctChange);
+  el.textContent = arrow + ' ' + absVal + '%';
+  el.className = 'kpi-sub kpi-trend';
+  if (isUp) el.classList.add(invertColors ? 'trend-down' : 'trend-up');
+  else if (isDown) el.classList.add(invertColors ? 'trend-up' : 'trend-down');
+}
+
+async function exportHtml() {
+  const btn = document.getElementById('export-html-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/export-html' + periodQuery());
+    if (!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'claude-tracker-export.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (_e) {
+    // ignore
+  }
+  btn.textContent = t('exportHtml');
+  btn.disabled = false;
+}
+
+async function loadGlobalComparison() {
+  const container = document.getElementById('global-comparison');
+  if (!container) return;
+  if (!state.multiUser && !state.demoMode) {
+    container.style.display = 'none';
+    return;
+  }
+  try {
+    const data = await api('global-averages' + periodQuery());
+    if (!data || !data.you || !data.avg || data.userCount < 2) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = '';
+    const grid = document.getElementById('comparison-grid');
+    grid.textContent = '';
+
+    const metrics = [
+      { label: t('totalTokens'), you: data.you.totalTokens, avg: data.avg.totalTokens, format: formatTokens },
+      { label: t('estimatedCost'), you: data.you.totalCost, avg: data.avg.totalCost, format: formatCost },
+      { label: t('sessionsLabel'), you: data.you.totalSessions, avg: data.avg.totalSessions, format: formatNumber },
+      { label: t('messagesLabel'), you: data.you.totalMessages, avg: data.avg.totalMessages, format: formatNumber },
+      { label: t('totalLinesLabel'), you: data.you.totalLines, avg: data.avg.totalLines, format: formatNumber },
+      { label: t('cacheEfficiency'), you: data.you.cacheEfficiency, avg: data.avg.cacheEfficiency, format: v => v.toFixed(1) + '%' }
+    ];
+
+    for (const m of metrics) {
+      const card = document.createElement('div');
+      card.className = 'comparison-card';
+
+      const label = document.createElement('div');
+      label.className = 'comparison-label';
+      label.textContent = m.label;
+
+      const bars = document.createElement('div');
+      bars.className = 'comparison-bars';
+
+      const maxVal = Math.max(m.you, m.avg) || 1;
+
+      const youBar = document.createElement('div');
+      youBar.className = 'comparison-bar-row';
+      const youLabel = document.createElement('span');
+      youLabel.className = 'comparison-bar-label';
+      youLabel.textContent = t('you');
+      const youTrack = document.createElement('div');
+      youTrack.className = 'comparison-bar-track';
+      const youFill = document.createElement('div');
+      youFill.className = 'comparison-bar-fill you';
+      youFill.style.width = (m.you / maxVal * 100) + '%';
+      const youVal = document.createElement('span');
+      youVal.className = 'comparison-bar-value';
+      youVal.textContent = m.format(m.you);
+      youTrack.appendChild(youFill);
+      youBar.appendChild(youLabel);
+      youBar.appendChild(youTrack);
+      youBar.appendChild(youVal);
+
+      const avgBar = document.createElement('div');
+      avgBar.className = 'comparison-bar-row';
+      const avgLabel = document.createElement('span');
+      avgLabel.className = 'comparison-bar-label';
+      avgLabel.textContent = t('avg');
+      const avgTrack = document.createElement('div');
+      avgTrack.className = 'comparison-bar-track';
+      const avgFill = document.createElement('div');
+      avgFill.className = 'comparison-bar-fill avg';
+      avgFill.style.width = (m.avg / maxVal * 100) + '%';
+      const avgVal = document.createElement('span');
+      avgVal.className = 'comparison-bar-value';
+      avgVal.textContent = m.format(m.avg);
+      avgTrack.appendChild(avgFill);
+      avgBar.appendChild(avgLabel);
+      avgBar.appendChild(avgTrack);
+      avgBar.appendChild(avgVal);
+
+      bars.appendChild(youBar);
+      bars.appendChild(avgBar);
+      card.appendChild(label);
+      card.appendChild(bars);
+      grid.appendChild(card);
+    }
+  } catch {
+    container.style.display = 'none';
+  }
+}
+
 async function loadInfo() {
-  // Load sync key if multi-user
+  // Info tab is now documentation-only, no action needed
+}
+
+async function loadSettings() {
   if (state.multiUser) {
     loadSyncKey();
   }
@@ -886,15 +1051,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('rebuild-btn')?.addEventListener('click', rebuild);
+  document.getElementById('export-html-btn')?.addEventListener('click', exportHtml);
   document.getElementById('logout-btn')?.addEventListener('click', logout);
   document.getElementById('copy-api-key')?.addEventListener('click', copySyncKey);
   document.getElementById('regenerate-api-key')?.addEventListener('click', regenerateSyncKey);
   document.getElementById('copy-curl-cmd')?.addEventListener('click', copyCurlCommand);
   document.getElementById('download-install-script')?.addEventListener('click', downloadInstallScript);
 
+  // Custom date picker
+  const datePicker = document.getElementById('custom-date-picker');
+  if (datePicker) {
+    datePicker.addEventListener('change', () => {
+      const val = datePicker.value;
+      if (!val) return;
+      state.period = 'custom';
+      state.customDate = val;
+      localStorage.setItem('customDate', val);
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      loadTab(state.activeTab);
+    });
+  }
+
   if (authed) {
     // Restore saved period
-    document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === state.period));
+    if (state.customDate) {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    } else {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === state.period));
+    }
     const savedTab = localStorage.getItem('activeTab') || 'overview';
     switchTab(savedTab);
     if (!state.demoMode) connectSSE();

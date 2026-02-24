@@ -834,6 +834,116 @@ function createStopReasonsChart(canvasId, data) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+// --- Productivity chart creators ---
+
+function createProductivityDailyChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => formatChartDate(d.date)),
+      datasets: [{
+        label: t('linesPerHour'),
+        data: data.map(d => d.linesPerHour),
+        backgroundColor: COLORS.output + '80',
+        borderColor: COLORS.output,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${formatNumber(ctx.raw)} lines/h`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createCostEfficiencyChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => formatChartDate(d.date)),
+      datasets: [{
+        label: t('costPerLine'),
+        data: data.map(d => d.costPerLine),
+        borderColor: COLORS.cost,
+        backgroundColor: COLORS.cost + '20',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => '$' + ctx.raw.toFixed(3) + '/line'
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(3) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createCodeRatioChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.reason),
+      datasets: [{
+        data: data.map(d => d.count),
+        backgroundColor: [COLORS.output, COLORS.input, COLORS.cacheCreate, COLORS.red, COLORS.cacheRead],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${formatNumber(ctx.raw)} (${data[ctx.dataIndex].percentage}%)`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 function createSessionEfficiencyChart(canvasId, data) {
   destroyChart(canvasId);
   if (!data || data.length === 0) return;

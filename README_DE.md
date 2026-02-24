@@ -6,10 +6,10 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-MIT-blue.svg" alt="Lizenz: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/Version-0.0.2-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.0.3-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-125%20bestanden-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-134%20bestanden-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/Plattform-macOS%20%7C%20Linux-lightgrey" alt="Plattform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-willkommen-brightgreen.svg" alt="PRs willkommen"></a>
 </p>
@@ -28,7 +28,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 
 ### Dashboard & Visualisierung
 
-- **13 interaktive Charts** über 8 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Achievements, Info)
+- **16 interaktive Charts** über 9 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Produktivität, Achievements, Info)
 - **Aktive Sitzungen** — Live-Anzeige aktuell laufender Claude-Code-Sessions mit Projekt, Modell, Dauer und Kosten
 - **Token-Aufschlüsselung** — Detail-KPI-Cards für Input, Output, Cache Read und Cache Create Tokens mit Einzelkosten
 - **Lines of Code** — Write (grün), Edit (gelb), Delete (rot) mit Netto-Änderungsberechnung und adaptivem Stunden-/Tages-Chart
@@ -56,7 +56,10 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
 - **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant)
-- **125 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **Produktivitäts-Tab** — Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Cache-Ersparnis, Code-Anteil mit Trend-Indikatoren
+- **HTML-Export** — selbstständiges Dark-Theme-Dokument mit KPI-Cards, Charts und Tabellen herunterladen
+- **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
+- **134 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
 ## Architektur
 
@@ -89,7 +92,8 @@ Multi-User:
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
 | `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien |
 | `lib/achievements.js` | 500 Achievement-Definitionen mit Check-Logik, Stats-Builder und Unlock-Tracking |
-| `server.js` | Vanilla `http.createServer` mit 20+ API-Routen, SSE und statischen Dateien |
+| `lib/export-html.js` | Selbstständiger HTML-Report-Generator mit Inline-Dark-Theme-CSS |
+| `server.js` | Vanilla `http.createServer` mit 25+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
 
 ## Installation
@@ -270,6 +274,9 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/session-efficiency` | GET | Tokens/Message und Kosten/Message |
 | `/api/active-sessions` | GET | Aktive Sessions (letzte 10 Min.) |
 | `/api/achievements` | GET | Alle 500 Achievements mit Unlock-Status |
+| `/api/productivity` | GET | Produktivitäts-Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Trends) |
+| `/api/export-html` | GET | Selbstständiger HTML-Export |
+| `/api/global-averages` | GET | Eigene vs. durchschnittliche Statistiken (Multi-User) |
 | `/api/rebuild` | POST | Cache neu aufbauen |
 | `/api/backup` | POST | Manuelles Backup erstellen |
 | `/api/export` | GET | Vollständiger JSON-Export |
@@ -281,7 +288,7 @@ Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Paramete
 ## Entwicklung
 
 ```bash
-npm test              # Alle 125 Tests ausführen (vitest)
+npm test              # Alle 134 Tests ausführen (vitest)
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
 npm run lint          # ESLint (lib/ + server.js)

@@ -161,6 +161,45 @@ describe('API endpoints', () => {
     expect(typeof body.messages).toBe('number');
   });
 
+  it('GET /api/productivity returns productivity metrics', async () => {
+    const { status, body } = await get('/api/productivity');
+    expect(status).toBe(200);
+    expect(body).toHaveProperty('tokensPerMin');
+    expect(body).toHaveProperty('linesPerHour');
+    expect(body).toHaveProperty('msgsPerSession');
+    expect(body).toHaveProperty('costPerLine');
+    expect(body).toHaveProperty('cacheSavings');
+    expect(body).toHaveProperty('codeRatio');
+    expect(body).toHaveProperty('codingHours');
+    expect(body).toHaveProperty('totalLines');
+    expect(body).toHaveProperty('trends');
+    expect(body).toHaveProperty('dailyProductivity');
+    expect(body).toHaveProperty('stopReasons');
+    expect(Array.isArray(body.dailyProductivity)).toBe(true);
+    expect(Array.isArray(body.stopReasons)).toBe(true);
+  });
+
+  it('GET /api/productivity supports date filtering', async () => {
+    const { status, body } = await get('/api/productivity?from=2026-02-20&to=2026-02-22');
+    expect(status).toBe(200);
+    expect(typeof body.tokensPerMin).toBe('number');
+    expect(typeof body.linesPerHour).toBe('number');
+  });
+
+  it('GET /api/export-html returns HTML document', async () => {
+    const res = await new Promise((resolve, reject) => {
+      http.get(baseUrl + '/api/export-html', (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, body: data, headers: res.headers }));
+      }).on('error', reject);
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.body).toContain('<!DOCTYPE html>');
+    expect(res.body).toContain('Claude Token Tracker');
+  });
+
   it('prevents path traversal on static files', async () => {
     const { status } = await get('/../package.json');
     // Should either return 403 or a regular 404 (path normalization)

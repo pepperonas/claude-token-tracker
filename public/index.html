@@ -58,10 +58,6 @@
         <span data-i18n="title">Claude Token Tracker</span>
       </h1>
       <div class="header-right">
-        <div class="lang-switch">
-          <button class="lang-btn" data-lang="de">DE</button>
-          <button class="lang-btn" data-lang="en">EN</button>
-        </div>
         <a href="/auth/github" class="header-login-btn" id="header-login-btn" style="display:none;">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           <span data-i18n="loginWithGithub">Sign in with GitHub</span>
@@ -82,8 +78,10 @@
         <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
         <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
         <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
+        <button class="tab-btn" data-tab="productivity" data-i18n="productivity">Produktivität</button>
         <button class="tab-btn" data-tab="achievements" data-i18n="achievements">Achievements</button>
         <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
+        <button class="tab-btn" data-tab="settings" data-i18n="settings">Einstellungen</button>
       </div>
       <div class="tabs-right">
         <span class="live-label">
@@ -95,13 +93,20 @@
           <button class="period-btn" data-period="7d" data-i18n="days7">7 Tage</button>
           <button class="period-btn" data-period="30d" data-i18n="days30">30 Tage</button>
           <button class="period-btn" data-period="all" data-i18n="allTime">Gesamt</button>
+          <input type="date" id="custom-date-picker" class="custom-date-picker">
         </div>
         <script>
         (function() {
+          var cd = localStorage.getItem('customDate');
           var p = localStorage.getItem('period') || '30d';
-          document.querySelectorAll('.period-btn').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.period === p);
-          });
+          if (cd) {
+            document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.getElementById('custom-date-picker').value = cd;
+          } else {
+            document.querySelectorAll('.period-btn').forEach(function(b) {
+              b.classList.toggle('active', b.dataset.period === p);
+            });
+          }
         })();
         </script>
       </div>
@@ -109,6 +114,7 @@
 
     <div class="status-bar">
       <div class="status-bar-right">
+        <button class="rebuild-btn" id="export-html-btn" data-i18n="exportHtml">Export HTML</button>
         <button class="rebuild-btn" id="rebuild-btn" data-i18n="rebuildCache">Cache neu aufbauen</button>
       </div>
     </div>
@@ -251,6 +257,12 @@
             <canvas id="chart-overview-lines"></canvas>
           </div>
         </div>
+      </div>
+
+      <!-- Global Comparison (multi-user only) -->
+      <div id="global-comparison" style="display:none;">
+        <h3 class="section-title" data-i18n="youVsAverage">You vs Average</h3>
+        <div class="comparison-grid" id="comparison-grid"></div>
       </div>
     </div>
 
@@ -418,7 +430,79 @@
       </div>
     </div>
 
-    <!-- Tab 7: Achievements -->
+    <!-- Tab 7: Productivity -->
+    <div id="tab-productivity" class="tab-panel">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="tokensPerMin">Tokens/Min</div>
+          <div class="kpi-value" id="kpi-tokens-per-min">-</div>
+          <div class="kpi-sub kpi-trend" id="kpi-tokens-per-min-trend"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="linesPerHour">Lines/Hour</div>
+          <div class="kpi-value" id="kpi-lines-per-hour">-</div>
+          <div class="kpi-sub kpi-trend" id="kpi-lines-per-hour-trend"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="msgsPerSession">Msgs/Session</div>
+          <div class="kpi-value" id="kpi-msgs-per-session">-</div>
+          <div class="kpi-sub" id="kpi-msgs-per-session-sub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="costPerLine">Cost/Line</div>
+          <div class="kpi-value" id="kpi-cost-per-line">-</div>
+          <div class="kpi-sub kpi-trend" id="kpi-cost-per-line-trend"></div>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="cacheSavings">Cache Savings</div>
+          <div class="kpi-value" id="kpi-cache-savings">-</div>
+          <div class="kpi-sub" data-i18n="cacheSavingsDesc">vs. full input pricing</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="codeRatio">Code Ratio</div>
+          <div class="kpi-value" id="kpi-code-ratio">-</div>
+          <div class="kpi-sub" data-i18n="codeRatioDesc">tool_use vs end_turn</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="codingHours">Coding Hours</div>
+          <div class="kpi-value" id="kpi-coding-hours">-</div>
+          <div class="kpi-sub" data-i18n="totalSessionTime">Total session time</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="totalLinesLabel">Total Lines</div>
+          <div class="kpi-value" id="kpi-total-lines">-</div>
+          <div class="kpi-sub" data-i18n="writtenAndEdited">Written + edited</div>
+        </div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="dailyProductivity">Daily Productivity</h3>
+          <div class="chart-container">
+            <canvas id="chart-productivity-daily"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3 data-i18n="costEfficiency">Cost Efficiency</h3>
+          <div class="chart-container">
+            <canvas id="chart-cost-efficiency"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 data-i18n="codeVsChat">Code vs Chat</h3>
+          <div class="chart-container">
+            <canvas id="chart-code-ratio"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 8: Achievements -->
     <div id="tab-achievements" class="tab-panel">
       <div class="achievements-header">
         <div class="achievements-progress">
@@ -438,47 +522,6 @@
     <div id="tab-info" class="tab-panel">
       <div class="info-container">
         <h2 data-i18n="infoTitle">So funktioniert das Token-Tracking</h2>
-
-        <div class="info-section info-settings">
-          <h3 data-i18n="infoSettingsTitle">Settings</h3>
-          <div class="date-format-toggle">
-            <span data-i18n="dateFormatLabel">Date Format:</span>
-            <button class="btn-small date-fmt-btn active" data-fmt="us">MM-DD</button>
-            <button class="btn-small date-fmt-btn" data-fmt="de">DD.MM.</button>
-          </div>
-        </div>
-
-        <!-- Sync Agent Setup (multi-user only) -->
-        <div class="info-section sync-setup" id="sync-setup" style="display:none;">
-          <h3 data-i18n="syncSetupTitle">Sync Agent einrichten</h3>
-          <p data-i18n="syncSetupDesc"></p>
-          <div class="api-key-box">
-            <label data-i18n="apiKey">API-Key</label>
-            <div class="api-key-row">
-              <code class="api-key-value" id="api-key-value">Wird geladen...</code>
-              <button class="btn-small" id="copy-api-key" data-i18n="copy">Kopieren</button>
-              <button class="btn-small btn-danger" id="regenerate-api-key" data-i18n="regenerate">Neu generieren</button>
-            </div>
-          </div>
-          <p class="sync-install-desc" data-i18n="syncInstallDesc">Kopiere den Befehl unten und f&uuml;hre ihn im Terminal aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
-          <div class="sync-curl-box">
-            <label data-i18n="syncCurlLabel">Installations-Befehl</label>
-            <div class="sync-curl-row">
-              <code class="sync-curl-value" id="sync-curl-value">...</code>
-              <button class="btn-small" id="copy-curl-cmd" data-i18n="copy">Kopieren</button>
-            </div>
-          </div>
-          <div class="sync-download-row">
-            <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
-            <button class="btn-small btn-download" id="download-install-script" data-i18n="syncDownloadBtn">Install-Script herunterladen</button>
-          </div>
-          <div class="sync-pm2-box">
-            <h4 data-i18n="syncPm2Title">Autostart</h4>
-            <p data-i18n="syncAutostartDesc">Das Script richtet automatisch einen Autostart ein (launchd auf macOS, systemd auf Linux). Falls du PM2 bevorzugst:</p>
-            <pre><code>pm2 start ~/claude-sync-agent/index.js --name claude-sync
-pm2 save</code></pre>
-          </div>
-        </div>
 
         <div class="info-grid">
           <div class="info-card info-card-input">
@@ -552,11 +595,67 @@ pm2 save</code></pre>
       </div>
     </div>
 
+    <!-- Tab 9: Settings -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="info-container">
+        <h2 data-i18n="settingsTitle">Einstellungen</h2>
+
+        <div class="info-section">
+          <h3 data-i18n="languageLabel">Sprache:</h3>
+          <div class="lang-switch-settings">
+            <button class="lang-btn" data-lang="de">DE</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
+
+        <div class="info-section info-settings">
+          <h3 data-i18n="infoSettingsTitle">Settings</h3>
+          <div class="date-format-toggle">
+            <span data-i18n="dateFormatLabel">Date Format:</span>
+            <button class="btn-small date-fmt-btn active" data-fmt="us">MM-DD</button>
+            <button class="btn-small date-fmt-btn" data-fmt="de">DD.MM.</button>
+          </div>
+        </div>
+
+        <!-- Sync Agent Setup (multi-user only) -->
+        <div class="info-section sync-setup" id="sync-setup" style="display:none;">
+          <h3 data-i18n="syncSetupTitle">Sync Agent einrichten</h3>
+          <p data-i18n="syncSetupDesc"></p>
+          <div class="api-key-box">
+            <label data-i18n="apiKey">API-Key</label>
+            <div class="api-key-row">
+              <code class="api-key-value" id="api-key-value">Wird geladen...</code>
+              <button class="btn-small" id="copy-api-key" data-i18n="copy">Kopieren</button>
+              <button class="btn-small btn-danger" id="regenerate-api-key" data-i18n="regenerate">Neu generieren</button>
+            </div>
+          </div>
+          <p class="sync-install-desc" data-i18n="syncInstallDesc">Kopiere den Befehl unten und f&uuml;hre ihn im Terminal aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
+          <div class="sync-curl-box">
+            <label data-i18n="syncCurlLabel">Installations-Befehl</label>
+            <div class="sync-curl-row">
+              <code class="sync-curl-value" id="sync-curl-value">...</code>
+              <button class="btn-small" id="copy-curl-cmd" data-i18n="copy">Kopieren</button>
+            </div>
+          </div>
+          <div class="sync-download-row">
+            <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
+            <button class="btn-small btn-download" id="download-install-script" data-i18n="syncDownloadBtn">Install-Script herunterladen</button>
+          </div>
+          <div class="sync-pm2-box">
+            <h4 data-i18n="syncPm2Title">Autostart</h4>
+            <p data-i18n="syncAutostartDesc">Das Script richtet automatisch einen Autostart ein (launchd auf macOS, systemd auf Linux). Falls du PM2 bevorzugst:</p>
+            <pre><code>pm2 start ~/claude-sync-agent/index.js --name claude-sync
+pm2 save</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
-      <span class="footer-version">v0.0.2</span>
+      <span class="footer-version">v0.0.3</span>
       <span class="footer-dev">
         Built by <a href="https://celox.io" target="_blank" rel="noopener">Martin Pfeffer</a>
       </span>

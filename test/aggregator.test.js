@@ -223,6 +223,65 @@ describe('aggregator', () => {
     });
   });
 
+  describe('getProductivity', () => {
+    it('returns all expected fields', () => {
+      const p = agg.getProductivity();
+      expect(p).toHaveProperty('tokensPerMin');
+      expect(p).toHaveProperty('linesPerHour');
+      expect(p).toHaveProperty('msgsPerSession');
+      expect(p).toHaveProperty('costPerLine');
+      expect(p).toHaveProperty('cacheSavings');
+      expect(p).toHaveProperty('codeRatio');
+      expect(p).toHaveProperty('codingHours');
+      expect(p).toHaveProperty('totalLines');
+      expect(p).toHaveProperty('trends');
+      expect(p).toHaveProperty('dailyProductivity');
+      expect(p).toHaveProperty('stopReasons');
+    });
+
+    it('returns numeric values', () => {
+      const p = agg.getProductivity();
+      expect(typeof p.tokensPerMin).toBe('number');
+      expect(typeof p.linesPerHour).toBe('number');
+      expect(typeof p.msgsPerSession).toBe('number');
+      expect(typeof p.costPerLine).toBe('number');
+      expect(typeof p.cacheSavings).toBe('number');
+      expect(typeof p.codeRatio).toBe('number');
+      expect(typeof p.codingHours).toBe('number');
+      expect(typeof p.totalLines).toBe('number');
+    });
+
+    it('filters by date range', () => {
+      const p = agg.getProductivity('2026-02-22', '2026-02-22');
+      expect(p.dailyProductivity.length).toBe(1);
+      expect(p.dailyProductivity[0].date).toBe('2026-02-22');
+    });
+
+    it('returns dailyProductivity with correct structure', () => {
+      const p = agg.getProductivity();
+      expect(Array.isArray(p.dailyProductivity)).toBe(true);
+      for (const d of p.dailyProductivity) {
+        expect(d).toHaveProperty('date');
+        expect(d).toHaveProperty('linesPerHour');
+        expect(d).toHaveProperty('costPerLine');
+      }
+    });
+
+    it('cacheSavings is non-negative', () => {
+      const p = agg.getProductivity();
+      expect(p.cacheSavings).toBeGreaterThanOrEqual(0);
+    });
+
+    it('computes trends with date range', () => {
+      const p = agg.getProductivity('2026-02-21', '2026-02-22');
+      expect(typeof p.trends).toBe('object');
+      // Trends should have numeric values when a date range is given
+      if (p.trends.tokensPerMin !== undefined) {
+        expect(typeof p.trends.tokensPerMin).toBe('number');
+      }
+    });
+  });
+
   describe('reset', () => {
     it('clears all data', () => {
       agg.reset();

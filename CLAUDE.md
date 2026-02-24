@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm start                # Start server on port 5010
-npm test                 # Run all 125 tests (vitest)
+npm test                 # Run all 134 tests (vitest)
 npm run test:watch       # Tests in watch mode
 npm run test:coverage    # Coverage report
 npm run lint             # ESLint (lib/ + server.js only)
@@ -28,7 +28,7 @@ Dashboard that tracks Claude Code token usage. Pure Node.js HTTP server (no Expr
     → lib/parser.js (incremental byte-offset parsing, dedup by message ID)
     → lib/db.js (SQLite with WAL mode, INSERT OR REPLACE)
     → lib/aggregator.js (in-memory stats, pre-computed on startup)
-    → server.js (20+ JSON API endpoints + SSE live updates)
+    → server.js (25+ JSON API endpoints + SSE live updates)
     → public/ (Chart.js charts, i18n DE/EN, cache toggle)
 ```
 
@@ -50,6 +50,7 @@ sync-agent (client machine) → POST /api/sync (API key auth)
 - **`lib/pricing.js`** — Per-model pricing (input/output/cacheRead/cacheCreate per 1M tokens). Unknown models fall back to Sonnet 4.5 pricing.
 - **`lib/watcher.js`** — Chokidar file watcher with `awaitWriteFinish` debouncing. On file change: incremental parse → update aggregator → broadcast SSE (with userId filtering in multi-user mode).
 - **`lib/achievements.js`** — 500 achievement definitions across 12 categories with 5 tiers. `buildStats(agg)` computes comprehensive stats from aggregator. `checkAchievements()` inserts newly unlocked achievements. `getAchievementsResponse()` returns all 500 with unlock status.
+- **`lib/export-html.js`** — Generates self-contained HTML export with inline dark-theme CSS. Contains KPI cards, CSS-only bar chart, sessions/projects/models tables. Called by `GET /api/export-html`.
 - **`lib/backup.js`** — SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies.
 - **`server.js`** — Vanilla `http.createServer`. Exports `startServer()` for test use. Routes: auth (`/auth/*`), sync (`/api/sync`), sync-agent install (`/api/sync-agent/install.sh`), active sessions (`/api/active-sessions`), config (`/api/config`), all analytics endpoints. Auth gate on `/api/*` in multi-user mode. `generateInstallScript()` embeds sync-agent files + config into a self-contained bash installer.
 

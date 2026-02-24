@@ -15,6 +15,7 @@ const {
   getUnlockedAchievements, unlockAchievementsBatch
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
+const { generateExportHTML } = require('./lib/export-html');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 
@@ -545,6 +546,10 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getSessionEfficiency(query.from, query.to));
   }
 
+  if (pathname === '/api/productivity') {
+    return sendJSON(res, agg.getProductivity(query.from, query.to));
+  }
+
   // Claude's own stats-cache with cost calculation (single-user only)
   if (pathname === '/api/stats-cache') {
     if (MULTI_USER) {
@@ -587,6 +592,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (pathname === '/api/export-html' && req.method === 'GET') {
+    const overview = agg.getOverview(query.from, query.to);
+    const daily = agg.getDaily(query.from, query.to);
+    const sessions = agg.getSessions(null, null, query.from, query.to);
+    const projects = agg.getProjects(query.from, query.to);
+    const models = agg.getModels(query.from, query.to);
+    const periodLabel = query.from && query.to
+      ? `${query.from} — ${query.to}`
+      : query.from ? `From ${query.from}` : 'All Time';
+    const html = generateExportHTML({ overview, daily, sessions, projects, models, periodLabel });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': `attachment; filename="claude-tracker-${new Date().toISOString().slice(0, 10)}.html"`,
+      'Cache-Control': 'no-cache'
+    });
+    return res.end(html);
+  }
+
   if (pathname === '/api/rebuild' && req.method === 'POST') {
     if (MULTI_USER) {
       // In multi-user mode, just invalidate the user's cache
@@ -614,6 +637,13 @@ const server = http.createServer((req, res) => {
     if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
     const newKey = regenerateApiKey(user.id);
     return sendJSON(res, { apiKey: newKey });
+  }
+
+  // Global comparison endpoint (multi-user only)
+  if (pathname === '/api/global-averages') {
+    if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
+    const { getGlobalUserStats } = require('./lib/db');
+    return sendJSON(res, getGlobalUserStats(query.from, query.to, user.id));
   }
 
   // Achievements endpoint
