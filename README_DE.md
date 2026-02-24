@@ -62,6 +62,19 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
 - **148 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Übersicht](public/screenshots/01-overview.png) | ![Sitzungen](public/screenshots/02-sessions.png) |
+| **Übersicht** — KPI-Cards, Token-Aufschlüsselung, Codezeilen, Tages-Charts | **Sitzungen** — sortierbare Tabelle mit Projekt, Modell, Dauer, Tokens, Kosten |
+| ![Projekte](public/screenshots/03-projects.png) | ![Tools](public/screenshots/04-tools.png) |
+| **Projekte** — Statistiken und Kostenaufschlüsselung pro Projekt | **Tools** — Nutzungshäufigkeit und Verteilung der Tools |
+| ![Modelle](public/screenshots/05-models.png) | ![Insights](public/screenshots/06-insights.png) |
+| **Modelle** — Modellnutzung, tägliche Tokens pro Modell, Kostenaufschlüsselung | **Insights** — Cache-Effizienz, Stop-Gründe, Lines-of-Code-Chart |
+| ![Produktivität](public/screenshots/07-productivity.png) | ![Achievements](public/screenshots/08-achievements.png) |
+| **Produktivität** — Effizienzmetriken mit Perioden-Vergleich | **Achievements** — 500 Erfolge in 12 Kategorien mit 5 Stufen |
+
 ## Architektur
 
 ```
