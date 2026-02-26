@@ -416,7 +416,135 @@ body {
 @media (max-width: 600px) {
   .kpi-grid { grid-template-columns: 1fr; }
   .content { padding: 16px; }
-  .tabs-left { overflow-x: auto; width: 100%; }
+  .tabs-left {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+  .tabs-left::-webkit-scrollbar { display: none; }
+
+  /* Touch targets */
+  .tab-btn { min-height: 44px; }
+  .period-btn, .period-nav-btn { min-height: 44px; min-width: 44px; }
+  .rebuild-btn, .btn-small { min-height: 44px; }
+  .lang-btn { min-height: 44px; min-width: 44px; }
+  .filter-bar select { min-height: 44px; }
+}
+
+/* --- Large phones (480px) --- */
+@media (max-width: 480px) {
+  .header { padding: 10px 16px; }
+  .header h1 { font-size: 15px; }
+
+  .tabs { padding: 0 12px; }
+  .tab-btn { padding: 10px 14px; font-size: 13px; }
+
+  .tabs-right {
+    padding: 6px 0;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .period-filter { flex-wrap: wrap; }
+
+  .content { padding: 12px; }
+
+  .kpi-value { font-size: 22px; }
+  .kpi-card { padding: 14px; }
+  .kpi-detail .kpi-value { font-size: 18px; }
+
+  .chart-container { height: 220px !important; }
+  .chart-container.small { height: 180px !important; }
+
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 8px; }
+
+  .active-session-card { max-width: 100%; min-width: 0; }
+
+  .comparison-grid { grid-template-columns: 1fr; }
+  .achievements-cards { grid-template-columns: 1fr; }
+
+  .login-card { padding: 32px 24px; }
+
+  .status-bar { padding: 6px 12px; }
+
+  /* Disable CSS tooltips on touch */
+  [data-tooltip]::after { display: none; }
+
+  .chart-box { padding: 14px; }
+  .chart-box h3 { font-size: 13px; margin-bottom: 12px; }
+
+  .info-grid { grid-template-columns: 1fr; }
+
+  .footer { padding: 16px; margin-top: 32px; }
+  .footer-inner { gap: 8px; flex-wrap: wrap; }
+
+  .stats-banner-items { gap: 16px; }
+  .stats-item-value { font-size: 14px; }
+
+  .demo-banner { padding: 12px 16px; font-size: 14px; }
+
+  .comparison-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .comparison-pills { flex-wrap: wrap; }
+}
+
+/* --- Small phones / iPhone 16 (393px) --- */
+@media (max-width: 393px) {
+  .header { padding: 8px 12px; }
+  .header h1 { font-size: 14px; gap: 6px; }
+  .header h1 .logo { width: 20px; height: 20px; font-size: 12px; }
+
+  .tabs { padding: 0 8px; }
+  .tab-btn { padding: 8px 10px; font-size: 12px; }
+
+  .tabs-right { gap: 6px; }
+  .period-btn { padding: 6px 8px; font-size: 11px; flex: 1; text-align: center; }
+  .period-nav-btn { padding: 6px 8px; font-size: 12px; }
+  .custom-date-picker { font-size: 11px; padding: 4px 6px; }
+
+  .content { padding: 8px; }
+
+  .kpi-grid { gap: 8px; }
+  .kpi-card { padding: 12px; }
+  .kpi-value { font-size: 20px; }
+  .kpi-label { font-size: 11px; }
+  .kpi-sub { font-size: 11px; }
+  .kpi-detail .kpi-value { font-size: 16px; }
+
+  .chart-container { height: 200px !important; }
+  .chart-container.small { height: 160px !important; }
+  .chart-box { padding: 12px; }
+  .chart-box h3 { font-size: 12px; margin-bottom: 10px; }
+
+  .data-table { font-size: 11px; }
+  .data-table th, .data-table td { padding: 6px; }
+  .data-table th { font-size: 10px; }
+
+  .login-card { padding: 24px 16px; width: 95%; }
+
+  .achievement-card { padding: 10px 12px; gap: 8px; }
+  .achievement-icon { font-size: 18px; width: 26px; }
+  .achievement-name { font-size: 12px; }
+  .achievement-desc { font-size: 10px; }
+
+  .status-bar { padding: 4px 8px; }
+  .rebuild-btn { font-size: 11px; padding: 4px 8px; }
+
+  .live-label { font-size: 11px; }
+
+  .info-card { padding: 14px; }
+  .info-section { padding: 14px; }
+  .info-card h3 { font-size: 14px; }
+  .info-card p { font-size: 12px; }
+  .info-section h3 { font-size: 14px; }
+  .info-section p { font-size: 12px; }
+
+  .footer { padding: 12px 8px; margin-top: 24px; }
+  .footer-version { font-size: 10px; }
+  .footer-dev { font-size: 11px; }
 }
 
 /* Rebuild button */
@@ -1083,6 +1211,7 @@ body {
 }
 @media (max-width: 600px) {
   .achievements-cards { grid-template-columns: 1fr; }
+  .achievements-stats { gap: 16px; }
 }
 
 /* Header login button (demo mode) */

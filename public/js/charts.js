@@ -67,18 +67,24 @@ function restoreChartLegendState(chartId, chart) {
 }
 
 // Chart.js global defaults
+function isMobile() { return window.innerWidth <= 480; }
+function isNarrow() { return window.innerWidth <= 393; }
+
 function initChartDefaults() {
+  const mobile = isMobile();
   Chart.defaults.color = '#8b949e';
   Chart.defaults.borderColor = '#30363d';
   Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
-  Chart.defaults.font.size = 12;
+  Chart.defaults.font.size = mobile ? 10 : 12;
   Chart.defaults.plugins.legend.labels.usePointStyle = true;
-  Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
+  Chart.defaults.plugins.legend.labels.pointStyleWidth = mobile ? 8 : 10;
   Chart.defaults.plugins.tooltip.backgroundColor = '#1c2128';
   Chart.defaults.plugins.tooltip.borderColor = '#30363d';
   Chart.defaults.plugins.tooltip.borderWidth = 1;
-  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.padding = mobile ? 6 : 10;
   Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.elements.point.radius = mobile ? 1 : 3;
+  Chart.defaults.elements.point.hoverRadius = mobile ? 4 : 6;
 
   const defaultLegendClick = Chart.defaults.plugins.legend.onClick;
   Chart.defaults.plugins.legend.onClick = function(e, legendItem, legend) {
@@ -237,7 +243,7 @@ function createModelDoughnut(canvasId, data, includeCache) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom' },
+        legend: { position: 'bottom', display: !isNarrow() },
         tooltip: {
           callbacks: {
             label: (ctx) => `${ctx.label}: ${formatTokens(ctx.raw)} (${formatCost(data[ctx.dataIndex].cost)})`
@@ -292,7 +298,7 @@ function createProjectBarChart(canvasId, data, includeCache) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: top.map(d => d.name.length > 25 ? d.name.slice(0, 25) + '...' : d.name),
+      labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
       datasets: [{
         label: 'Total Tokens',
         data: tokenValues,
@@ -330,7 +336,7 @@ function createToolBarChart(canvasId, data) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: top.map(d => d.name),
+      labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
       datasets: [{
         label: 'Calls',
         data: top.map(d => d.count),
@@ -1052,7 +1058,7 @@ function createEfficiencyTrendChart(canvasId, daily, rolling) {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'line' } },
+        legend: { position: 'bottom', display: !isNarrow(), labels: { usePointStyle: true, pointStyle: 'line' } },
         tooltip: {
           callbacks: {
             label: (ctx) => {

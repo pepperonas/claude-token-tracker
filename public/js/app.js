@@ -360,7 +360,12 @@ function downloadInstallScript() {
 function switchTab(tab) {
   state.activeTab = tab;
   localStorage.setItem('activeTab', tab);
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+    if (b.dataset.tab === tab && window.innerWidth <= 600) {
+      b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   loadTab(tab);
 }
@@ -1356,6 +1361,17 @@ async function loadSettings() {
     loadSyncKey();
   }
 }
+
+// --- Chart resize handler (debounced) ---
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    for (const key of Object.keys(chartInstances)) {
+      if (chartInstances[key]) chartInstances[key].resize();
+    }
+  }, 250);
+});
 
 // --- SSE Live Updates ---
 let sseConnection = null;
