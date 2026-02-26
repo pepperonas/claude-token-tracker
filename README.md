@@ -68,6 +68,13 @@ Open [http://localhost:5010](http://localhost:5010)
 | ![Productivity](public/screenshots/07-productivity.png) | ![Achievements](public/screenshots/08-achievements.png) |
 | **Productivity** — efficiency metrics with period comparison | **Achievements** — 500 achievements across 12 categories with 5 tiers |
 
+### Mobile (iPhone 16 — 393px)
+
+| | | | |
+|---|---|---|---|
+| ![Overview](public/screenshots/mobile-overview.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
+| **Overview** | **Insights** | **Productivity** | **Achievements** |
+
 ## Architecture
 
 ```

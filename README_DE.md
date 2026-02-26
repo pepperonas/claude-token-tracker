@@ -63,6 +63,13 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
 - **148 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
+## Mobile Screenshots (iPhone 16 — 393px)
+
+| | | | |
+|---|---|---|---|
+| ![Übersicht](public/screenshots/mobile-overview.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Produktivität](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
+| **Übersicht** | **Insights** | **Produktivität** | **Achievements** |
+
 ## Architektur
 
 ```

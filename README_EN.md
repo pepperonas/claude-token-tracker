@@ -63,6 +63,13 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **148 automated tests** (unit + integration + multi-user API + achievements)
 
+## Mobile Screenshots (iPhone 16 — 393px)
+
+| | | | |
+|---|---|---|---|
+| ![Overview](public/screenshots/mobile-overview.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
+| **Overview** | **Insights** | **Productivity** | **Achievements** |
+
 ## Architecture
 
 ```
