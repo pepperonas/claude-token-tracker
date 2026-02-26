@@ -58,7 +58,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **500 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, and daily unlock stats
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
-- **HTML export** — download self-contained dark-theme report with KPI cards, charts, and tables
+- **HTML export** — interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **148 automated tests** (unit + integration + multi-user API + achievements)
 
@@ -93,7 +93,7 @@ Multi-User:
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
 | `lib/achievements.js` | 500 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
-| `lib/export-html.js` | Self-contained HTML report generator with inline dark theme CSS |
+| `lib/export-html.js` | Interactive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, and sortable tables |
 | `server.js` | Vanilla `http.createServer` with 25+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
 
@@ -276,7 +276,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
 | `/api/achievements` | GET | All 500 achievements with unlock status |
 | `/api/productivity` | GET | Productivity metrics (tokens/min, lines/hour, cost/line, trends) |
-| `/api/export-html` | GET | Self-contained HTML export |
+| `/api/export-html` | GET | Interactive HTML snapshot (Chart.js, 8 tabs, 12+ charts) |
 | `/api/global-averages` | GET | Personal vs average stats (multi-user) |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
