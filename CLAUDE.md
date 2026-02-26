@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm start                # Start server on port 5010
-npm test                 # Run all 148 tests (vitest)
+npm test                 # Run all tests (vitest)
 npm run test:watch       # Tests in watch mode
 npm run test:coverage    # Coverage report
 npm run lint             # ESLint (lib/ + server.js only)
@@ -72,6 +72,7 @@ Standalone CLI tool in `sync-agent/` directory. Watches `~/.claude/projects/` on
 - **Active sessions**: `loadActiveSessions()` fetches `/api/active-sessions` and renders cards in overview tab. Sessions with `lastTs` within 10 minutes are shown.
 - **Achievements**: Timeline chart (bar+line) showing daily unlocks and cumulative points. Tier-based point values displayed on each card. Stats header shows total points and average achievements per day.
 - **Tab persistence**: Active tab saved to `localStorage`, restored on page reload.
+- **Mobile-responsive**: CSS breakpoints at 900px, 600px, 480px, 393px. Touch targets (44px min), hidden tab scrollbar with scroll mask, adaptive chart heights via `!important` overrides on `.chart-container`. `isMobile()` / `isNarrow()` helpers in `charts.js` adjust font sizes, point radii, label truncation, and legend visibility. Debounced `window.resize` handler calls `.resize()` on all `chartInstances`.
 
 ## Multi-User Mode
 
