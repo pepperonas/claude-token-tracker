@@ -1267,3 +1267,66 @@ function createToolEvolutionChart(canvasId, daily) {
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
+
+function createAchievementsTimelineChart(canvasId, data) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => formatChartDate(d.date)),
+      datasets: [
+        {
+          label: t('achievementsUnlockedCount') || 'Unlocked',
+          data: data.map(d => d.count),
+          backgroundColor: COLORS.output,
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          label: t('achievementsCumulativePoints') || 'Cumulative Points',
+          data: data.map(d => d.cumulativePoints),
+          borderColor: COLORS.cost,
+          backgroundColor: 'transparent',
+          type: 'line',
+          yAxisID: 'y1',
+          tension: 0.3,
+          pointRadius: 2,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.datasetIndex === 0) return `${ctx.dataset.label}: ${ctx.raw}`;
+              return `${ctx.dataset.label}: ${formatNumber(ctx.raw)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          position: 'left',
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          title: { display: true, text: t('achievementsUnlockedCount') || 'Unlocked' }
+        },
+        y1: {
+          position: 'right',
+          beginAtZero: true,
+          grid: { drawOnChartArea: false },
+          ticks: { callback: v => formatNumber(v) },
+          title: { display: true, text: t('achievementsPoints') || 'Points' }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}

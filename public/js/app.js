@@ -377,6 +377,66 @@ function setPeriod(period) {
   loadTab(state.activeTab);
 }
 
+// --- Period navigation (prev/next) ---
+function navigatePeriod(direction) {
+  // direction: -1 = prev, +1 = next
+  let days = 1;
+  switch (state.period) {
+    case 'today': days = 1; break;
+    case 'custom': days = 1; break;
+    case '7d': days = 7; break;
+    case '30d': days = 30; break;
+    case 'all': return; // no navigation for "all"
+  }
+
+  const offset = direction * days;
+
+  if (state.period === 'today' || state.period === 'custom') {
+    // Navigate the custom date picker
+    const current = state.customDate ? new Date(state.customDate) : new Date();
+    current.setDate(current.getDate() + offset);
+    const newDate = toLocalDate(current);
+    state.period = 'custom';
+    state.customDate = newDate;
+    localStorage.setItem('customDate', newDate);
+    const picker = document.getElementById('custom-date-picker');
+    if (picker) picker.value = newDate;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    if (days === 1) {
+      // Check if it's today
+      const today = toLocalDate(new Date());
+      if (newDate === today) {
+        state.period = 'today';
+        state.customDate = '';
+        localStorage.removeItem('customDate');
+        localStorage.setItem('period', 'today');
+        if (picker) picker.value = '';
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === 'today'));
+      }
+    }
+  } else {
+    // For 7d/30d: shift the window by setting a custom date range via custom date
+    const now = new Date();
+    const currentEnd = toLocalDate(now);
+    const currentStart = toLocalDate(new Date(now - days * 86400000));
+
+    // Calculate new end date
+    const newEnd = new Date(now.getTime() + offset * 86400000);
+    const newDate = toLocalDate(newEnd);
+
+    // If shifting forward would go beyond today, do nothing
+    if (direction > 0 && newEnd > now) return;
+
+    state.period = 'custom';
+    state.customDate = newDate;
+    localStorage.setItem('customDate', newDate);
+    const picker = document.getElementById('custom-date-picker');
+    if (picker) picker.value = newDate;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  }
+  loadTab(state.activeTab);
+}
+
 // --- Data loading ---
 async function loadTab(tab) {
   switch (tab) {
@@ -749,12 +809,54 @@ async function loadInsights() {
 
 async function loadAchievements() {
   const data = await api('achievements');
-  const unlocked = data.filter(a => a.unlocked).length;
+  const unlockedList = data.filter(a => a.unlocked);
+  const unlocked = unlockedList.length;
   const total = data.length;
 
   document.getElementById('achievements-unlocked').textContent = unlocked;
   document.getElementById('achievements-total').textContent = total;
   document.getElementById('achievements-progress-fill').style.width = (total > 0 ? (unlocked / total * 100) : 0) + '%';
+
+  // Points calculation
+  const totalPoints = unlockedList.reduce((sum, a) => sum + (a.points || 0), 0);
+  document.getElementById('achievements-points').textContent = formatNumber(totalPoints);
+
+  // Average achievements per day
+  if (unlockedList.length > 0) {
+    const dates = unlockedList.filter(a => a.unlockedAt).map(a => new Date(a.unlockedAt));
+    if (dates.length > 0) {
+      const minDate = new Date(Math.min(...dates));
+      const maxDate = new Date(Math.max(...dates));
+      const daySpan = Math.max(1, Math.round((maxDate - minDate) / 86400000) + 1);
+      const avgPerDay = (unlockedList.length / daySpan).toFixed(1);
+      document.getElementById('achievements-avg-per-day').textContent = avgPerDay;
+    } else {
+      document.getElementById('achievements-avg-per-day').textContent = '0';
+    }
+  } else {
+    document.getElementById('achievements-avg-per-day').textContent = '0';
+  }
+
+  // Build timeline data: achievements unlocked per day
+  const dayMap = {};
+  const pointsMap = {};
+  for (const a of unlockedList) {
+    if (!a.unlockedAt) continue;
+    const day = a.unlockedAt.slice(0, 10);
+    dayMap[day] = (dayMap[day] || 0) + 1;
+    pointsMap[day] = (pointsMap[day] || 0) + (a.points || 0);
+  }
+  const sortedDays = Object.keys(dayMap).sort();
+  let cumPoints = 0;
+  const timelineData = sortedDays.map(day => {
+    cumPoints += pointsMap[day] || 0;
+    return { date: day, count: dayMap[day], cumulativePoints: cumPoints };
+  });
+  if (timelineData.length > 0) {
+    createAchievementsTimelineChart('chart-achievements-timeline', timelineData);
+  } else {
+    destroyChart('chart-achievements-timeline');
+  }
 
   const grid = document.getElementById('achievements-grid');
   grid.textContent = '';
@@ -814,6 +916,11 @@ async function loadAchievements() {
       card.appendChild(icon);
       card.appendChild(info);
 
+      // Points badge
+      const pts = document.createElement('div');
+      pts.className = 'achievement-points';
+      pts.textContent = (ach.points || 0) + ' pts';
+
       if (ach.unlocked && ach.unlockedAt) {
         const date = document.createElement('div');
         date.className = 'achievement-date';
@@ -821,6 +928,7 @@ async function loadAchievements() {
         card.appendChild(date);
       }
 
+      card.appendChild(pts);
       cards.appendChild(card);
     }
 
@@ -1339,6 +1447,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       loadTab(state.activeTab);
     });
   });
+
+  // Period navigation (prev/next)
+  document.getElementById('period-prev')?.addEventListener('click', () => navigatePeriod(-1));
+  document.getElementById('period-next')?.addEventListener('click', () => navigatePeriod(1));
 
   document.getElementById('filter-project')?.addEventListener('change', (e) => {
     state.sessionFilter.project = e.target.value;

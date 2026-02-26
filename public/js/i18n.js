@@ -199,6 +199,11 @@ const LANG = {
     // Achievements tab
     achievements: 'Achievements',
     achievementsUnlocked: 'unlocked',
+    achievementsPoints: 'Points',
+    achievementsAvgPerDay: 'per day',
+    achievementsTimeline: 'Achievements over Time',
+    achievementsUnlockedCount: 'Unlocked',
+    achievementsCumulativePoints: 'Cumulative Points',
     // Achievement categories
     achievementCat_tokens: 'Tokens',
     achievementCat_sessions: 'Sessions',
@@ -1456,6 +1461,11 @@ const LANG = {
     // Achievements tab
     achievements: 'Achievements',
     achievementsUnlocked: 'freigeschaltet',
+    achievementsPoints: 'Punkte',
+    achievementsAvgPerDay: 'pro Tag',
+    achievementsTimeline: 'Achievements im Zeitverlauf',
+    achievementsUnlockedCount: 'Freigeschaltet',
+    achievementsCumulativePoints: 'Kumulative Punkte',
     // Achievement categories
     achievementCat_tokens: 'Tokens',
     achievementCat_sessions: 'Sitzungen',

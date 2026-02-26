@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.5] - 2026-02-26
+
+### Added
+- **Period Navigation Buttons** — prev/next arrow buttons beside the date picker, jump by the currently selected period duration (1 day, 7 days, 30 days)
+- **Achievements Points System** — tier-based point values (Bronze: 10, Silver: 25, Gold: 50, Platinum: 100, Diamond: 250), displayed on each achievement card and as a total score
+- **Achievements Timeline Chart** — bar+line chart showing achievements unlocked per day with cumulative points curve
+- **Achievements Stats** — total points counter and average achievements per day metric in the achievements header
+- 5 new i18n keys in both EN and DE (achievementsPoints, achievementsAvgPerDay, achievementsTimeline, achievementsUnlockedCount, achievementsCumulativePoints)
+
 ## [0.0.4] - 2026-02-24
 
 ### Added
