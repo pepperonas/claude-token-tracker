@@ -43,12 +43,13 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **16 interactive charts** across 9 tabs with real-time SSE updates
+- **17 interactive charts** across 9 tabs with real-time SSE updates
+- **Period navigation** — prev/next arrows beside date picker jump by selected period duration
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
 - **HTML export** — download self-contained dark-theme report with KPI cards, charts, and tables
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **500 achievements** — gamification system across 12 categories with 5 tiers
+- **500 achievements** — gamification system across 12 categories with 5 tiers, tier-based points, timeline chart, and daily unlock stats
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation

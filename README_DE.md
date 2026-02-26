@@ -28,11 +28,11 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 
 ### Dashboard & Visualisierung
 
-- **16 interaktive Charts** über 9 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Produktivität, Achievements, Info)
+- **17 interaktive Charts** über 9 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Produktivität, Achievements, Info)
 - **Aktive Sitzungen** — Live-Anzeige aktuell laufender Claude-Code-Sessions mit Projekt, Modell, Dauer und Kosten
 - **Token-Aufschlüsselung** — Detail-KPI-Cards für Input, Output, Cache Read und Cache Create Tokens mit Einzelkosten
 - **Lines of Code** — Write (grün), Edit (gelb), Delete (rot) mit Netto-Änderungsberechnung und adaptivem Stunden-/Tages-Chart
-- **Globaler Zeitraumfilter** — Heute / 7 Tage / 30 Tage / Gesamt, wirkt auf alle Tabs
+- **Globaler Zeitraumfilter** — Heute / 7 Tage / 30 Tage / Gesamt mit Vor-/Zurück-Navigationspfeilen, wirkt auf alle Tabs
 - **Sortierbare Tabellen** — Alle Datentabellen durch Klick auf Spaltenüberschriften sortierbar
 - **CSS-only Tooltips** mit Erklärungen auf KPI-Labels und Chart-Titeln
 - **Chart-Legenden-Persistenz** — Legenden-Auswahl und Zeitraumfilter werden im localStorage gespeichert
@@ -55,7 +55,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **SEO-optimiert** mit Open Graph, Twitter Cards und strukturierten Meta-Tags
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
-- **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant)
+- **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant), stufenbasierten Punkten (10–250), Zeitverlauf-Chart und täglichen Freischaltungs-Statistiken
 - **Produktivitäts-Tab** — Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Cache-Ersparnis, Code-Anteil mit Trend-Indikatoren
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — selbstständiges Dark-Theme-Dokument mit KPI-Cards, Charts und Tabellen herunterladen
@@ -92,7 +92,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
 | `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien |
-| `lib/achievements.js` | 500 Achievement-Definitionen mit Check-Logik, Stats-Builder und Unlock-Tracking |
+| `lib/achievements.js` | 500 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
 | `lib/export-html.js` | Selbstständiger HTML-Report-Generator mit Inline-Dark-Theme-CSS |
 | `server.js` | Vanilla `http.createServer` mit 25+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
