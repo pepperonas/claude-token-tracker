@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/version-0.0.6-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-148%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
@@ -53,7 +53,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
-- **148 automated tests** — unit, integration, and multi-user API tests
+- **151 automated tests** — unit, integration, and multi-user API tests
 
 ## Screenshots
 

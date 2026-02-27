@@ -416,4 +416,99 @@ describe('aggregator', () => {
       expect(agg.getOverview().messages).toBe(0);
     });
   });
+
+  describe('streaming dedup', () => {
+    it('deduplicates messages with the same id (last wins)', () => {
+      const fresh = new Aggregator();
+      // First streaming entry: text only, no tools, no lines
+      fresh.addMessages([{
+        id: 'msg_stream_1',
+        timestamp: '2026-02-22T10:00:00Z',
+        model: 'claude-sonnet-4-5-20250929',
+        sessionId: 'sess_1',
+        project: 'test',
+        inputTokens: 1000,
+        outputTokens: 200,
+        cacheReadTokens: 0,
+        cacheCreateTokens: 0,
+        tools: [],
+        linesAdded: 0,
+        linesRemoved: 0,
+        linesWritten: 0
+      }]);
+      // Second streaming entry: same id, now with Edit tool and lines
+      fresh.addMessages([{
+        id: 'msg_stream_1',
+        timestamp: '2026-02-22T10:00:02Z',
+        model: 'claude-sonnet-4-5-20250929',
+        sessionId: 'sess_1',
+        project: 'test',
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadTokens: 0,
+        cacheCreateTokens: 0,
+        tools: ['Edit'],
+        linesAdded: 15,
+        linesRemoved: 5,
+        linesWritten: 0
+      }]);
+
+      const overview = fresh.getOverview();
+      // Should count as ONE message, not two
+      expect(overview.messages).toBe(1);
+      // Should use the LATEST values (500 output tokens, not 200 or 700)
+      expect(overview.outputTokens).toBe(500);
+      // Lines should reflect the final entry, not sum of both
+      expect(overview.linesAdded).toBe(15);
+      expect(overview.linesRemoved).toBe(5);
+    });
+
+    it('handles multiple updates to same message correctly', () => {
+      const fresh = new Aggregator();
+      const base = {
+        id: 'msg_multi',
+        timestamp: '2026-02-22T12:00:00Z',
+        model: 'claude-sonnet-4-5-20250929',
+        sessionId: 'sess_2',
+        project: 'test',
+        cacheReadTokens: 0,
+        cacheCreateTokens: 0,
+      };
+
+      // Entry 1: text only
+      fresh.addMessages([{ ...base, inputTokens: 500, outputTokens: 100, tools: [], linesAdded: 0, linesRemoved: 0, linesWritten: 0 }]);
+      // Entry 2: Edit tool added
+      fresh.addMessages([{ ...base, inputTokens: 500, outputTokens: 300, tools: ['Edit'], linesAdded: 10, linesRemoved: 3, linesWritten: 0 }]);
+      // Entry 3: Edit + Write tools
+      fresh.addMessages([{ ...base, inputTokens: 500, outputTokens: 600, tools: ['Edit', 'Write'], linesAdded: 10, linesRemoved: 3, linesWritten: 50 }]);
+
+      const overview = fresh.getOverview();
+      expect(overview.messages).toBe(1);
+      expect(overview.outputTokens).toBe(600);
+      expect(overview.linesAdded).toBe(10);
+      expect(overview.linesRemoved).toBe(3);
+      expect(overview.linesWritten).toBe(50);
+
+      // Session should also have correct values
+      const sessions = fresh.getSessions();
+      expect(sessions.length).toBe(1);
+      expect(sessions[0].messages).toBe(1);
+      expect(sessions[0].outputTokens).toBe(600);
+      expect(sessions[0].linesWritten).toBe(50);
+    });
+
+    it('does not affect different message ids', () => {
+      const fresh = new Aggregator();
+      fresh.addMessages([
+        { id: 'msg_a', timestamp: '2026-02-22T10:00:00Z', model: 'claude-sonnet-4-5-20250929', sessionId: 'sess_1', project: 'test', inputTokens: 100, outputTokens: 50, cacheReadTokens: 0, cacheCreateTokens: 0, tools: ['Write'], linesAdded: 0, linesRemoved: 0, linesWritten: 20 },
+        { id: 'msg_b', timestamp: '2026-02-22T10:01:00Z', model: 'claude-sonnet-4-5-20250929', sessionId: 'sess_1', project: 'test', inputTokens: 200, outputTokens: 100, cacheReadTokens: 0, cacheCreateTokens: 0, tools: ['Edit'], linesAdded: 10, linesRemoved: 5, linesWritten: 0 },
+      ]);
+
+      const overview = fresh.getOverview();
+      expect(overview.messages).toBe(2);
+      expect(overview.linesWritten).toBe(20);
+      expect(overview.linesAdded).toBe(10);
+      expect(overview.linesRemoved).toBe(5);
+    });
+  });
 });

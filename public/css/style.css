@@ -20,6 +20,7 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Sticky header wrapper */
@@ -37,6 +38,8 @@ body {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .header h1 {
@@ -118,18 +121,25 @@ body {
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
   background: var(--surface);
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .tabs-left {
   display: flex;
   gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.tabs-left::-webkit-scrollbar { display: none; }
 
 .tabs-right {
   display: flex;
   align-items: center;
   gap: 16px;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* Status bar */
@@ -417,15 +427,11 @@ body {
   .kpi-grid { grid-template-columns: 1fr; }
   .content { padding: 16px; }
   .tabs-left {
-    overflow-x: auto;
     width: 100%;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     mask-image: linear-gradient(to right, black 85%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
-  .tabs-left::-webkit-scrollbar { display: none; }
 
   /* Touch targets */
   .tab-btn { min-height: 44px; }
