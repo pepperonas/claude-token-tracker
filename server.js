@@ -18,6 +18,7 @@ const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
+const github = require('./lib/github');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -52,6 +53,9 @@ if (MULTI_USER) console.log('Multi-user mode enabled');
 
 // 1. Initialize DB
 initDB();
+
+// 1b. Initialize GitHub module with DB reference
+github.initGithub(require('./lib/db'));
 
 // 2. Load existing messages from SQLite (single-user aggregator)
 const aggregator = new Aggregator();
@@ -401,7 +405,7 @@ const server = http.createServer((req, res) => {
 
   // Config endpoint (tells frontend about mode)
   if (pathname === '/api/config') {
-    return sendJSON(res, { multiUser: MULTI_USER });
+    return sendJSON(res, { multiUser: MULTI_USER, hasGithubToken: !!process.env.GITHUB_TOKEN });
   }
 
   // Sync endpoint — API key auth, separate from session auth
@@ -666,6 +670,73 @@ const server = http.createServer((req, res) => {
     if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
     const { getGlobalUserStats } = require('./lib/db');
     return sendJSON(res, getGlobalUserStats(query.from, query.to, user.id));
+  }
+
+  // GitHub stats endpoints
+  if (pathname === '/api/github/billing' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    github.getBillingInfo(token, user.id).then(data => {
+      sendJSON(res, data);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/stats' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    github.getContributionsAndRepos(token, user.id).then(data => {
+      sendJSON(res, data);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/code-frequency' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    const owner = query.owner;
+    const repo = query.repo;
+    if (!owner || !repo) return sendJSON(res, { error: 'Missing owner or repo' }, 400);
+    github.getCodeFrequency(token, user.id, owner, repo).then(data => {
+      sendJSON(res, data);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/languages' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    const owner = query.owner;
+    const repo = query.repo;
+    if (!owner || !repo) return sendJSON(res, { error: 'Missing owner or repo' }, 400);
+    github.getRepoLanguages(token, user.id, owner, repo).then(data => {
+      sendJSON(res, data);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/actions-usage' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    github.getActionsUsageByRepo(token, user.id).then(data => {
+      sendJSON(res, data);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/refresh' && req.method === 'POST') {
+    github.clearCache(user.id);
+    return sendJSON(res, { cleared: true });
   }
 
   // Achievements endpoint

@@ -43,7 +43,8 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **17 interactive charts** across 9 tabs with real-time SSE updates
+- **20 interactive charts** across 10 tabs with real-time SSE updates
+- **GitHub Integration** — Billing overview (Actions minutes, Packages, Storage with plan detection), PR Code Impact (additions/deletions/net/changed files), Actions Usage by Repository with workflow breakdown, Minutes by Runner OS chart, contributions heatmap
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
@@ -82,7 +83,7 @@ Open [http://localhost:5010](http://localhost:5010)
     -> Parser (incremental byte-offset)
     -> SQLite (WAL mode)
     -> Aggregator (in-memory pre-computed maps)
-    -> HTTP Server (20+ JSON endpoints + SSE)
+    -> HTTP Server (25+ JSON endpoints + SSE)
     -> Frontend (Chart.js, vanilla JS, i18n DE/EN)
 ```
 

@@ -85,6 +85,7 @@
         <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
         <button class="tab-btn" data-tab="productivity" data-i18n="productivity">Produktivität</button>
         <button class="tab-btn" data-tab="achievements" data-i18n="achievements">Achievements</button>
+        <button class="tab-btn" data-tab="github" data-i18n="github">GitHub</button>
         <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
         <button class="tab-btn" data-tab="settings" data-i18n="settings">Einstellungen</button>
       </div>
@@ -622,6 +623,203 @@
         </div>
       </div>
       <div id="achievements-grid"></div>
+    </div>
+
+    <!-- Tab: GitHub -->
+    <div id="tab-github" class="tab-panel">
+      <!-- Setup card (shown when no token) -->
+      <div class="github-setup-card" id="github-setup" style="display:none;">
+        <div class="github-setup-icon">
+          <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </div>
+        <h3 data-i18n="ghSetupTitle">GitHub-Token erforderlich</h3>
+        <p id="github-setup-desc" data-i18n="ghSetupDesc"></p>
+      </div>
+
+      <!-- Loading indicator -->
+      <div class="github-loading" id="github-loading" style="display:none;">
+        <div class="github-loading-spinner"></div>
+        <span data-i18n="ghLoading">GitHub-Daten werden geladen...</span>
+      </div>
+
+      <!-- GitHub content (shown when data is available) -->
+      <div id="github-content" style="display:none;">
+        <!-- Billing section -->
+        <div id="github-billing" class="chart-box" style="display:none;">
+          <div class="github-billing-header">
+            <h3 data-i18n="ghBilling">GitHub Billing</h3>
+            <span class="github-plan-badge" id="gh-plan-badge"></span>
+          </div>
+          <div class="github-billing-grid">
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghActionsMinutes">Actions Minutes</div>
+              <div class="kpi-value" id="gh-billing-minutes">-</div>
+              <div class="kpi-sub" id="gh-billing-minutes-sub"></div>
+              <div class="github-billing-bar"><div class="github-billing-bar-fill" id="gh-billing-minutes-bar"></div></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghStorage">Storage</div>
+              <div class="kpi-value" id="gh-billing-storage">-</div>
+              <div class="kpi-sub" id="gh-billing-storage-sub"></div>
+              <div class="github-billing-bar"><div class="github-billing-bar-fill" id="gh-billing-storage-bar"></div></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghPackages">Packages</div>
+              <div class="kpi-value" id="gh-billing-packages">-</div>
+              <div class="kpi-sub" id="gh-billing-packages-sub"></div>
+              <div class="github-billing-bar"><div class="github-billing-bar-fill" id="gh-billing-packages-bar"></div></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghBillingReset">Billing Reset</div>
+              <div class="kpi-value" id="gh-billing-reset">-</div>
+              <div class="kpi-sub" id="gh-billing-reset-sub"></div>
+            </div>
+          </div>
+          <div class="chart-container github-billing-os-chart" id="gh-os-chart-wrapper" style="display:none;">
+            <canvas id="chart-gh-actions-os"></canvas>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="ghContributions">Beiträge</div>
+            <div class="kpi-value" id="gh-kpi-contributions">-</div>
+            <div class="kpi-sub" data-i18n="ghLastYear">Letzte 12 Monate</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="ghCommits">Commits</div>
+            <div class="kpi-value" id="gh-kpi-commits">-</div>
+            <div class="kpi-sub" data-i18n="ghLastYear">Letzte 12 Monate</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="ghPullRequests">Pull Requests</div>
+            <div class="kpi-value" id="gh-kpi-prs">-</div>
+            <div class="kpi-sub" id="gh-kpi-prs-sub"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="ghRepos">Repositories</div>
+            <div class="kpi-value" id="gh-kpi-repos">-</div>
+            <div class="kpi-sub" id="gh-kpi-repos-sub"></div>
+          </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="chart-box">
+          <h3 data-i18n="ghContributionHeatmap">Beitrags-Heatmap</h3>
+          <div class="github-heatmap-container">
+            <div class="heatmap-grid" id="github-heatmap"></div>
+          </div>
+        </div>
+
+        <!-- Charts 2x2 -->
+        <div class="chart-grid">
+          <div class="chart-box">
+            <h3 data-i18n="ghCommitFrequency">Commit-Häufigkeit</h3>
+            <div class="chart-container">
+              <canvas id="chart-gh-commits"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="ghLanguages">Sprachen</h3>
+            <div class="chart-container">
+              <canvas id="chart-gh-languages"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-box">
+            <h3 data-i18n="ghPrOverview">PR-Übersicht</h3>
+            <div class="chart-container">
+              <canvas id="chart-gh-prs"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="ghCodeFrequency">Code-Häufigkeit</h3>
+            <div class="github-repo-selector">
+              <select id="gh-repo-select">
+                <option value="" data-i18n="ghSelectRepo">Repository wählen...</option>
+              </select>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-gh-code-freq"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- PR Code Impact -->
+        <div id="github-pr-impact" class="chart-box" style="display:none;">
+          <h3 data-i18n="ghPrCodeImpact">PR Code Impact</h3>
+          <div class="kpi-grid kpi-grid-4">
+            <div class="kpi-card kpi-card-green">
+              <div class="kpi-label" data-i18n="ghAdditions">Additions</div>
+              <div class="kpi-value" id="gh-pr-additions">-</div>
+              <div class="kpi-sub" data-i18n="ghAcrossPRs">across PRs</div>
+            </div>
+            <div class="kpi-card kpi-card-red">
+              <div class="kpi-label" data-i18n="ghDeletions">Deletions</div>
+              <div class="kpi-value" id="gh-pr-deletions">-</div>
+              <div class="kpi-sub" data-i18n="ghAcrossPRs">across PRs</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghNetLines">Net Lines</div>
+              <div class="kpi-value" id="gh-pr-net">-</div>
+              <div class="kpi-sub" data-i18n="ghAdditionsMinusDeletions">additions - deletions</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghChangedFiles">Changed Files</div>
+              <div class="kpi-value" id="gh-pr-files">-</div>
+              <div class="kpi-sub" data-i18n="ghAcrossPRs">across PRs</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-gh-pr-impact"></canvas>
+          </div>
+        </div>
+
+        <!-- Actions Usage by Repository -->
+        <div id="github-actions-usage" class="chart-box" style="display:none;">
+          <h3 data-i18n="ghActionsUsageByRepo">Actions Usage by Repository</h3>
+          <div class="chart-container">
+            <canvas id="chart-gh-actions-repo"></canvas>
+          </div>
+          <div class="table-wrapper" id="gh-workflows-table-wrapper" style="display:none;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Repository</th>
+                  <th data-i18n="ghWorkflow">Workflow</th>
+                  <th class="num" data-i18n="ghBillableMinutes">Billable Minutes</th>
+                </tr>
+              </thead>
+              <tbody id="gh-workflows-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Repo table -->
+        <div class="chart-box">
+          <h3 data-i18n="ghRepoOverview">Repository-Übersicht</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Repository</th>
+                  <th class="num" data-i18n="ghStars">Sterne</th>
+                  <th class="num" data-i18n="ghForks">Forks</th>
+                  <th data-i18n="ghLanguage">Sprache</th>
+                  <th data-i18n="ghUpdated">Aktualisiert</th>
+                </tr>
+              </thead>
+              <tbody id="gh-repos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="github-actions">
+          <button class="rebuild-btn" id="gh-refresh-btn" data-i18n="ghRefresh">Aktualisieren</button>
+        </div>
+      </div>
     </div>
 
     <!-- Tab 8: Info -->

@@ -453,6 +453,7 @@ async function loadTab(tab) {
     case 'insights': return loadInsights();
     case 'productivity': return loadProductivity();
     case 'achievements': return loadAchievements();
+    case 'github': return loadGithub();
     case 'info': return loadInfo();
     case 'settings': return loadSettings();
   }
@@ -1349,6 +1350,269 @@ async function loadGlobalComparison() {
     }
   } catch {
     container.style.display = 'none';
+  }
+}
+
+// --- GitHub Tab ---
+let _ghConfig = null;
+
+async function loadGithub() {
+  const setupEl = document.getElementById('github-setup');
+  const loadingEl = document.getElementById('github-loading');
+  const contentEl = document.getElementById('github-content');
+
+  // Check config to determine if token is available
+  if (!_ghConfig) {
+    try {
+      _ghConfig = await api('config');
+    } catch {
+      _ghConfig = {};
+    }
+  }
+
+  // In multi-user mode, token comes from OAuth; in single-user, from .env
+  // Try to fetch stats — if we get a 400 "No GitHub token", show setup
+  setupEl.style.display = 'none';
+  loadingEl.style.display = 'flex';
+  contentEl.style.display = 'none';
+
+  try {
+    // Fast: stats + billing load first, UI shows immediately
+    const [data, billing] = await Promise.all([
+      api('github/stats'),
+      api('github/billing').catch(() => null)
+    ]);
+    if (data.error) {
+      loadingEl.style.display = 'none';
+      setupEl.style.display = '';
+      const descEl = document.getElementById('github-setup-desc');
+      if (_ghConfig.multiUser) {
+        descEl.textContent = t('ghSetupDescMulti');
+      } else {
+        descEl.textContent = t('ghSetupDesc');
+      }
+      return;
+    }
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = '';
+
+    // Billing section
+    const billingEl = document.getElementById('github-billing');
+    if (billing && !billing.error) {
+      billingEl.style.display = '';
+
+      // Plan badge
+      const planBadge = document.getElementById('gh-plan-badge');
+      const plan = billing.actions.plan || 'Free';
+      planBadge.textContent = plan;
+      planBadge.className = 'github-plan-badge ' + plan.toLowerCase();
+
+      // Actions minutes
+      const minutesUsed = Math.round(billing.actions.totalMinutesUsed);
+      const minutesIncluded = billing.actions.includedMinutes;
+      document.getElementById('gh-billing-minutes').textContent = formatNumber(minutesUsed);
+      const ghMinutesUsed = LANG[currentLang].ghMinutesUsed || LANG.en.ghMinutesUsed;
+      document.getElementById('gh-billing-minutes-sub').textContent =
+        ghMinutesUsed(formatNumber(minutesUsed), formatNumber(minutesIncluded));
+      const minutesPct = billing.actions.percentUsed;
+      const minutesBar = document.getElementById('gh-billing-minutes-bar');
+      minutesBar.style.width = Math.min(minutesPct, 100) + '%';
+      minutesBar.className = 'github-billing-bar-fill' +
+        (minutesPct >= 90 ? ' danger' : minutesPct >= 70 ? ' warn' : '');
+
+      // Storage with progress bar
+      const storageGB = billing.storage.estimatedStorageGB;
+      const includedStorageGB = billing.storage.includedStorageGB || 0.5;
+      document.getElementById('gh-billing-storage').textContent =
+        storageGB < 0.01 ? '< 0.01 GB' : storageGB.toFixed(2) + ' GB';
+      const ghStorageUsedOf = LANG[currentLang].ghStorageUsedOf || LANG.en.ghStorageUsedOf;
+      document.getElementById('gh-billing-storage-sub').textContent =
+        ghStorageUsedOf(storageGB < 0.01 ? '< 0.01' : storageGB.toFixed(2), includedStorageGB);
+      const storagePct = includedStorageGB > 0 ? (storageGB / includedStorageGB * 100) : 0;
+      const storageBar = document.getElementById('gh-billing-storage-bar');
+      storageBar.style.width = Math.min(storagePct, 100) + '%';
+      storageBar.className = 'github-billing-bar-fill' +
+        (storagePct >= 90 ? ' danger' : storagePct >= 70 ? ' warn' : '');
+
+      // Packages bandwidth
+      const bwUsed = billing.packages.totalGigabytesBandwidthUsed;
+      const bwIncluded = billing.packages.includedGigabytesBandwidth;
+      document.getElementById('gh-billing-packages').textContent =
+        bwUsed < 0.01 ? '< 0.01 GB' : bwUsed.toFixed(2) + ' GB';
+      const ghBandwidthUsed = LANG[currentLang].ghBandwidthUsed || LANG.en.ghBandwidthUsed;
+      document.getElementById('gh-billing-packages-sub').textContent =
+        ghBandwidthUsed(bwUsed.toFixed(2), formatNumber(bwIncluded));
+      const bwPct = bwIncluded > 0 ? (bwUsed / bwIncluded * 100) : 0;
+      const bwBar = document.getElementById('gh-billing-packages-bar');
+      bwBar.style.width = Math.min(bwPct, 100) + '%';
+      bwBar.className = 'github-billing-bar-fill' +
+        (bwPct >= 90 ? ' danger' : bwPct >= 70 ? ' warn' : '');
+
+      // Reset date
+      document.getElementById('gh-billing-reset').textContent = billing.resetDate;
+      const ghResetIn = LANG[currentLang].ghResetIn || LANG.en.ghResetIn;
+      document.getElementById('gh-billing-reset-sub').textContent =
+        ghResetIn(billing.storage.daysLeftInCycle);
+
+      // Actions OS breakdown chart
+      const breakdown = billing.actions.minutesUsedBreakdown;
+      const osChartWrapper = document.getElementById('gh-os-chart-wrapper');
+      const hasBreakdown = breakdown && Object.values(breakdown).some(v => v > 0);
+      if (hasBreakdown) {
+        osChartWrapper.style.display = '';
+        createGithubActionsOsChart('chart-gh-actions-os', breakdown);
+      } else {
+        osChartWrapper.style.display = 'none';
+      }
+    } else {
+      billingEl.style.display = 'none';
+    }
+
+    // KPIs
+    document.getElementById('gh-kpi-contributions').textContent = formatNumber(data.totalContributions);
+    document.getElementById('gh-kpi-commits').textContent = formatNumber(data.commitCount);
+    document.getElementById('gh-kpi-prs').textContent = formatNumber(data.prStats.total);
+    document.getElementById('gh-kpi-prs-sub').textContent =
+      `${t('ghOpen')}: ${data.prStats.open} | ${t('ghMerged')}: ${data.prStats.merged}`;
+    document.getElementById('gh-kpi-repos').textContent = formatNumber(data.repoCount);
+    document.getElementById('gh-kpi-repos-sub').textContent =
+      `${t('ghTotalStars')}: ${data.totalStars} | ${t('ghTotalForks')}: ${data.totalForks}`;
+
+    // Heatmap
+    renderGithubHeatmap(document.getElementById('github-heatmap'), data.heatmap);
+
+    // Charts
+    createGithubCommitChart('chart-gh-commits', data.commitDaily);
+    createGithubLanguageChart('chart-gh-languages', data.languages);
+    createGithubPrChart('chart-gh-prs', data.prStats);
+
+    // PR Code Impact section
+    const prImpactEl = document.getElementById('github-pr-impact');
+    const prStats = data.prStats;
+    if (prStats.totalAdditions > 0 || prStats.totalDeletions > 0) {
+      prImpactEl.style.display = '';
+      document.getElementById('gh-pr-additions').textContent = '+' + formatNumber(prStats.totalAdditions);
+      document.getElementById('gh-pr-deletions').textContent = '-' + formatNumber(prStats.totalDeletions);
+      const net = prStats.netLines;
+      document.getElementById('gh-pr-net').textContent = (net >= 0 ? '+' : '') + formatNumber(net);
+      document.getElementById('gh-pr-files').textContent = formatNumber(prStats.totalChangedFiles);
+      createGithubPrCodeImpactChart('chart-gh-pr-impact', prStats.codeByState);
+    } else {
+      prImpactEl.style.display = 'none';
+    }
+
+    // Repo selector for code frequency
+    const repoSelect = document.getElementById('gh-repo-select');
+    repoSelect.textContent = '';
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = t('ghSelectRepo');
+    repoSelect.appendChild(defaultOpt);
+    for (const repo of data.repos.filter(r => !r.isPrivate).slice(0, 30)) {
+      const opt = document.createElement('option');
+      opt.value = repo.nameWithOwner;
+      opt.textContent = repo.name;
+      repoSelect.appendChild(opt);
+    }
+    repoSelect.onchange = function() {
+      if (this.value) loadCodeFrequency(this.value);
+    };
+    // Auto-load first repo
+    if (data.repos.length > 0) {
+      const first = data.repos.filter(r => !r.isPrivate)[0];
+      if (first) {
+        repoSelect.value = first.nameWithOwner;
+        loadCodeFrequency(first.nameWithOwner);
+      }
+    }
+
+    // Repos table
+    const tbody = document.getElementById('gh-repos-tbody');
+    buildTableRows(tbody, data.repos.slice(0, 30), [
+      { value: r => r.name },
+      { className: 'num', value: r => r.stars },
+      { className: 'num', value: r => r.forks },
+      { value: r => r.language || '-' },
+      { value: r => r.updatedAt ? r.updatedAt.slice(0, 10) : '-' }
+    ]);
+
+    // Refresh button
+    const refreshBtn = document.getElementById('gh-refresh-btn');
+    refreshBtn.onclick = async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = '...';
+      await fetch('/api/github/refresh', { method: 'POST' }).catch(() => {});
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = t('ghRefresh');
+      loadGithub();
+    };
+
+    // Slow: actions-usage loads lazily in background (many sequential API calls)
+    const actionsUsageEl = document.getElementById('github-actions-usage');
+    actionsUsageEl.style.display = 'none';
+    api('github/actions-usage').then(actionsUsage => {
+      if (actionsUsage && !actionsUsage.error && actionsUsage.repos && actionsUsage.repos.length > 0) {
+        actionsUsageEl.style.display = '';
+        createGithubActionsRepoChart('chart-gh-actions-repo', actionsUsage.repos);
+
+        // Workflow table
+        const wfWrapper = document.getElementById('gh-workflows-table-wrapper');
+        const wfTbody = document.getElementById('gh-workflows-tbody');
+        const wfRows = [];
+        for (const repo of actionsUsage.repos) {
+          for (const wf of repo.workflows) {
+            wfRows.push({ repo: repo.name, workflow: wf.name, minutes: wf.billableMinutes });
+          }
+        }
+        if (wfRows.length > 0) {
+          wfWrapper.style.display = '';
+          buildTableRows(wfTbody, wfRows.slice(0, 50), [
+            { value: r => r.repo },
+            { value: r => r.workflow },
+            { className: 'num', value: r => r.minutes + ' min' }
+          ]);
+        } else {
+          wfWrapper.style.display = 'none';
+        }
+      }
+    }).catch(() => {});
+
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    setupEl.style.display = '';
+    console.error('GitHub load error:', err);
+  }
+}
+
+function renderGithubHeatmap(container, days) {
+  container.textContent = '';
+  if (!days || days.length === 0) return;
+
+  for (const day of days) {
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    // Determine level from count
+    let level = 0;
+    if (day.count > 0 && day.count <= 3) level = 1;
+    else if (day.count <= 6) level = 2;
+    else if (day.count <= 9) level = 3;
+    else if (day.count > 9) level = 4;
+    cell.setAttribute('data-level', level);
+    cell.setAttribute('data-tooltip', `${day.date}: ${day.count} contributions`);
+    container.appendChild(cell);
+  }
+}
+
+async function loadCodeFrequency(nameWithOwner) {
+  const [owner, repo] = nameWithOwner.split('/');
+  try {
+    const data = await api(`github/code-frequency?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
+    if (Array.isArray(data)) {
+      createGithubCodeFrequencyChart('chart-gh-code-freq', data);
+    }
+  } catch (err) {
+    console.error('Code frequency error:', err);
   }
 }
 

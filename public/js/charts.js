@@ -1336,3 +1336,305 @@ function createAchievementsTimelineChart(canvasId, data) {
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
+
+// --- GitHub Charts ---
+
+const GITHUB_COLORS = {
+  green: '#3fb950',
+  red: '#f85149',
+  blue: '#58a6ff',
+  purple: '#bc8cff',
+  yellow: '#d29922',
+  orange: '#f0883e',
+  prOpen: '#3fb950',
+  prMerged: '#bc8cff',
+  prClosed: '#f85149'
+};
+
+function aggregateWeekly(data, dateKey, valueKey) {
+  if (!data || data.length <= 90) return data;
+  const weeks = [];
+  for (let i = 0; i < data.length; i += 7) {
+    const chunk = data.slice(i, i + 7);
+    const sum = chunk.reduce((s, d) => s + (d[valueKey] || 0), 0);
+    weeks.push({ [dateKey]: chunk[0][dateKey], [valueKey]: sum });
+  }
+  return weeks;
+}
+
+function createGithubCommitChart(canvasId, dailyData) {
+  destroyChart(canvasId);
+  if (!dailyData || dailyData.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const data = aggregateWeekly(dailyData, 'date', 'commits');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => formatChartDate(d.date)),
+      datasets: [{
+        label: t('ghCommits'),
+        data: data.map(d => d.commits),
+        backgroundColor: GITHUB_COLORS.green + '80',
+        borderColor: GITHUB_COLORS.green,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubLanguageChart(canvasId, languages) {
+  destroyChart(canvasId);
+  if (!languages || languages.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const top = languages.slice(0, 10);
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: top.map(l => l.name),
+      datasets: [{
+        data: top.map(l => l.count),
+        backgroundColor: top.map(l => l.color || '#8b949e'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.raw} repos`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubPrChart(canvasId, prStats) {
+  destroyChart(canvasId);
+  if (!prStats || prStats.total === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [t('ghOpen'), t('ghMerged'), t('ghClosed')],
+      datasets: [{
+        data: [prStats.open, prStats.merged, prStats.closed],
+        backgroundColor: [GITHUB_COLORS.prOpen, GITHUB_COLORS.prMerged, GITHUB_COLORS.prClosed],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.raw}`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubActionsOsChart(canvasId, breakdown) {
+  destroyChart(canvasId);
+  if (!breakdown || Object.keys(breakdown).length === 0) return;
+  const labels = Object.keys(breakdown);
+  const values = labels.map(k => Math.round((breakdown[k] || 0) * 10) / 10);
+  const osColors = { UBUNTU: '#3fb950', MACOS: '#58a6ff', WINDOWS: '#bc8cff' };
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels.map(l => l.charAt(0) + l.slice(1).toLowerCase()),
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(l => osColors[l] || '#8b949e'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.raw} min`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubActionsRepoChart(canvasId, repoData) {
+  destroyChart(canvasId);
+  if (!repoData || repoData.length === 0) return;
+  const top = repoData.slice(0, 15);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
+      datasets: [{
+        label: t('ghBillableMinutes'),
+        data: top.map(d => d.billableMinutes),
+        backgroundColor: GITHUB_COLORS.blue + '80',
+        borderColor: GITHUB_COLORS.blue,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.raw} min`
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { callback: v => v + ' min' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubPrCodeImpactChart(canvasId, codeByState) {
+  destroyChart(canvasId);
+  if (!codeByState || Object.keys(codeByState).length === 0) return;
+  const states = ['merged', 'open', 'closed'].filter(s => codeByState[s]);
+  if (states.length === 0) return;
+  const stateLabels = { merged: t('ghMerged'), open: t('ghOpen'), closed: t('ghClosed') };
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: states.map(s => stateLabels[s] || s),
+      datasets: [
+        {
+          label: t('ghAdditions'),
+          data: states.map(s => codeByState[s].additions),
+          backgroundColor: GITHUB_COLORS.green + '80',
+          borderColor: GITHUB_COLORS.green,
+          borderWidth: 1
+        },
+        {
+          label: t('ghDeletions'),
+          data: states.map(s => codeByState[s].deletions),
+          backgroundColor: GITHUB_COLORS.red + '80',
+          borderColor: GITHUB_COLORS.red,
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${formatNumber(ctx.raw)} lines`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createGithubCodeFrequencyChart(canvasId, data) {
+  destroyChart(canvasId);
+  if (!data || data.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => formatChartDate(d.week)),
+      datasets: [
+        {
+          label: t('ghAdditions'),
+          data: data.map(d => d.additions),
+          backgroundColor: GITHUB_COLORS.green + '80',
+          borderColor: GITHUB_COLORS.green,
+          borderWidth: 1
+        },
+        {
+          label: t('ghDeletions'),
+          data: data.map(d => Math.abs(d.deletions)),
+          backgroundColor: GITHUB_COLORS.red + '80',
+          borderColor: GITHUB_COLORS.red,
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}

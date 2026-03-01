@@ -28,7 +28,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 ### Dashboard & Visualization
 
-- **17 interactive charts** across 9 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, Info)
+- **20 interactive charts** across 10 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, GitHub, Info)
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
@@ -38,6 +38,16 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Chart legend persistence** — legend selections and period filter persist in localStorage
 - **Mobile-responsive** — optimized for phones (393px+) with touch targets, adaptive charts, and compact layout
 - **Bilingual UI** (German / English) with tab, period, and settings persistence
+
+### GitHub Integration
+
+- **GitHub tab** — connect via Personal Access Token to display GitHub-specific analytics
+- **Billing overview** — Actions minutes (used/included), Packages storage, Shared storage with Free/Pro plan detection and progress bars
+- **PR Code Impact** — total additions (green), deletions (red), net lines, and changed files across all PRs with grouped bar chart by PR state (Merged/Open/Closed)
+- **Actions Usage by Repository** — horizontal bar chart showing billable minutes per repo (top 15), workflow-level breakdown table with OS billing multipliers (Ubuntu 1x, macOS 10x, Windows 2x)
+- **Minutes by Runner OS** — doughnut chart showing Actions minutes distribution across Ubuntu, macOS, and Windows runners
+- **Contributions & Repos** — contribution heatmap, recent repositories list, and PRs with review status
+- **Lazy loading** — fast data (stats + billing) renders immediately, slow data (per-repo actions usage) loads in background
 
 ### Data Processing
 
@@ -78,7 +88,7 @@ Single-User:
       -> Parser (incremental, byte-offset)
       -> SQLite (WAL, INSERT OR REPLACE)
       -> Aggregator (in-memory, pre-computed maps)
-      -> HTTP Server (20+ JSON endpoints + SSE)
+      -> HTTP Server (25+ JSON endpoints + SSE)
       -> Frontend (Chart.js, i18n DE/EN, sortable tables)
 
 Multi-User:
@@ -101,6 +111,7 @@ Multi-User:
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
 | `lib/achievements.js` | 500 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
+| `lib/github.js` | GitHub API integration (REST + GraphQL), billing info, PR stats, contributions, actions usage per repo with OS multipliers, 15-min cache |
 | `lib/export-html.js` | Mobile-responsive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, sortable tables, and responsive breakpoints (768px/480px/412px) |
 | `server.js` | Vanilla `http.createServer` with 25+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
@@ -129,6 +140,7 @@ Create a `.env` file (optional for single-user, required for multi-user):
 | `DB_PATH` | `data/tracker.db` | Path to SQLite database |
 | `BACKUP_PATH` | *(empty)* | Destination directory for automatic backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup interval in hours |
+| `GITHUB_TOKEN` | — | GitHub Personal Access Token (for GitHub tab) |
 
 ### Multi-User Mode
 
@@ -285,6 +297,10 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/achievements` | GET | All 500 achievements with unlock status |
 | `/api/productivity` | GET | Productivity metrics (tokens/min, lines/hour, cost/line, trends) |
 | `/api/export-html` | GET | Interactive HTML snapshot (Chart.js, 8 tabs, 12+ charts) |
+| `/api/github/stats` | GET | GitHub contributions, repos, PRs (requires token) |
+| `/api/github/billing` | GET | GitHub billing info (Actions minutes, Packages, Storage) |
+| `/api/github/actions-usage` | GET | Actions usage per repository with workflow breakdown |
+| `/api/github/refresh` | POST | Force refresh GitHub data cache |
 | `/api/global-averages` | GET | Personal vs average stats (multi-user) |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
