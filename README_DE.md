@@ -210,7 +210,7 @@ curl -sL "https://deine-domain.de/api/sync-agent/install.sh?key=DEIN_API_KEY" | 
 
 **Windows (PowerShell):**
 ```powershell
-irm "https://deine-domain.de/api/sync-agent/install.ps1?key=DEIN_API_KEY" | iex
+powershell -ExecutionPolicy Bypass -Command "irm 'https://deine-domain.de/api/sync-agent/install.ps1?key=DEIN_API_KEY' | iex"
 ```
 
 Das Script:
