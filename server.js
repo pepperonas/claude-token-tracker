@@ -470,7 +470,7 @@ Write-Ok "Files written"
 # --- 4. Install dependencies ---
 Write-Info "Installing dependencies..."
 Push-Location $InstallDir
-npm install --production --silent 2>&1 | Out-Null
+& npm.cmd install --production --silent 2>&1 | Out-Null
 Pop-Location
 Write-Ok "Dependencies installed"
 
