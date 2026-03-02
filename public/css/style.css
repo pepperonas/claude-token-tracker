@@ -993,6 +993,34 @@ body {
   border-color: var(--red);
 }
 
+.sync-os-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.sync-os-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.sync-os-btn.active {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.sync-os-btn:hover {
+  opacity: 0.8;
+}
+
 .sync-install-desc {
   margin-top: 16px;
   font-size: 13px;

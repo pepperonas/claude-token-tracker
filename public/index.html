@@ -937,23 +937,53 @@
               <button class="btn-small btn-danger" id="regenerate-api-key" data-i18n="regenerate">Neu generieren</button>
             </div>
           </div>
-          <p class="sync-install-desc" data-i18n="syncInstallDesc">Kopiere den Befehl unten und f&uuml;hre ihn im Terminal aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
-          <div class="sync-curl-box">
-            <label data-i18n="syncCurlLabel">Installations-Befehl</label>
-            <div class="sync-curl-row">
-              <code class="sync-curl-value" id="sync-curl-value">...</code>
-              <button class="btn-small" id="copy-curl-cmd" data-i18n="copy">Kopieren</button>
+          <div class="sync-os-toggle">
+            <button class="sync-os-btn active" id="sync-os-unix" onclick="switchSyncOs('unix')" data-i18n="syncOsUnix">macOS / Linux</button>
+            <button class="sync-os-btn" id="sync-os-windows" onclick="switchSyncOs('windows')" data-i18n="syncOsWindows">Windows</button>
+          </div>
+
+          <!-- Unix panel -->
+          <div id="sync-panel-unix">
+            <p class="sync-install-desc" data-i18n="syncInstallDesc">Kopiere den Befehl unten und f&uuml;hre ihn im Terminal aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
+            <div class="sync-curl-box">
+              <label data-i18n="syncCurlLabel">Installations-Befehl</label>
+              <div class="sync-curl-row">
+                <code class="sync-curl-value" id="sync-curl-value">...</code>
+                <button class="btn-small" id="copy-curl-cmd" data-i18n="copy">Kopieren</button>
+              </div>
+            </div>
+            <div class="sync-download-row">
+              <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
+              <button class="btn-small btn-download" id="download-install-script" data-i18n="syncDownloadBtn">Install-Script herunterladen</button>
+            </div>
+            <div class="sync-pm2-box">
+              <h4 data-i18n="syncPm2Title">Autostart</h4>
+              <p data-i18n="syncAutostartDesc">Das Script richtet automatisch einen Autostart ein (launchd auf macOS, systemd auf Linux). Falls du PM2 bevorzugst:</p>
+              <pre><code>pm2 start ~/claude-sync-agent/index.js --name claude-sync
+pm2 save</code></pre>
             </div>
           </div>
-          <div class="sync-download-row">
-            <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
-            <button class="btn-small btn-download" id="download-install-script" data-i18n="syncDownloadBtn">Install-Script herunterladen</button>
-          </div>
-          <div class="sync-pm2-box">
-            <h4 data-i18n="syncPm2Title">Autostart</h4>
-            <p data-i18n="syncAutostartDesc">Das Script richtet automatisch einen Autostart ein (launchd auf macOS, systemd auf Linux). Falls du PM2 bevorzugst:</p>
-            <pre><code>pm2 start ~/claude-sync-agent/index.js --name claude-sync
+
+          <!-- Windows panel -->
+          <div id="sync-panel-windows" style="display:none">
+            <p class="sync-install-desc" data-i18n="syncInstallDescWin">Kopiere den Befehl unten und f&uuml;hre ihn in PowerShell aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
+            <div class="sync-curl-box">
+              <label data-i18n="syncPsLabel">PowerShell-Befehl</label>
+              <div class="sync-curl-row">
+                <code class="sync-curl-value" id="sync-ps-value">...</code>
+                <button class="btn-small" id="copy-ps-cmd" data-i18n="copy">Kopieren</button>
+              </div>
+            </div>
+            <div class="sync-download-row">
+              <span data-i18n="syncOrDownload">Oder als Datei herunterladen:</span>
+              <button class="btn-small btn-download" id="download-ps-script" data-i18n="syncDownloadBtnWin">PowerShell-Script herunterladen</button>
+            </div>
+            <div class="sync-pm2-box">
+              <h4 data-i18n="syncPm2Title">Autostart</h4>
+              <p data-i18n="syncAutostartDescWin">Das Script richtet automatisch einen Autostart &uuml;ber den Task Scheduler ein. Alternativ mit PM2:</p>
+              <pre><code>pm2 start %USERPROFILE%\claude-sync-agent\index.js --name claude-sync
 pm2 save</code></pre>
+            </div>
           </div>
         </div>
       </div>

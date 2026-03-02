@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
   <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
@@ -61,8 +61,8 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 ### Multi-User & Deployment
 
 - **Multi-user mode** — GitHub OAuth, personal API keys, per-user data isolation
-- **Sync Agent** — one-click install via curl, watches local session files and uploads to server
-- **Autostart** — install script automatically sets up launchd (macOS) or systemd (Linux)
+- **Sync Agent** — one-click install via curl (macOS/Linux) or PowerShell (Windows), watches local session files and uploads to server
+- **Autostart** — install script automatically sets up launchd (macOS), systemd (Linux), or Task Scheduler (Windows)
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
@@ -197,19 +197,25 @@ The Sync Agent runs on the user's machine and automatically uploads local Claude
 ### One-Click Install (recommended)
 
 1. Log into the dashboard -> Info tab -> **Sync Agent Setup**
-2. Copy the displayed curl command or download the install script
-3. Run in terminal:
+2. Select your OS (macOS/Linux or Windows)
+3. Copy the displayed command or download the install script
 
+**macOS / Linux:**
 ```bash
 curl -sL "https://your-domain.com/api/sync-agent/install.sh?key=YOUR_API_KEY" | bash
 ```
 
+**Windows (PowerShell):**
+```powershell
+irm "https://your-domain.com/api/sync-agent/install.ps1?key=YOUR_API_KEY" | iex
+```
+
 The script:
 - Checks Node.js >= 18 and npm
-- Installs the agent to `~/claude-sync-agent/` (auto-updates existing installations)
+- Installs the agent to `~/claude-sync-agent/` (macOS/Linux) or `%USERPROFILE%\claude-sync-agent\` (Windows)
 - Configures API key and server URL automatically
 - Verifies server connectivity
-- Sets up autostart (launchd on macOS, systemd on Linux)
+- Sets up autostart (launchd on macOS, systemd on Linux, Task Scheduler on Windows)
 - Starts the agent immediately
 
 ### Manual Installation

@@ -45,7 +45,7 @@ sync-agent (client machine) → POST /api/sync (API key auth)
 
 - **`lib/parser.js`** — Reads JSONL files, extracts token counts/tools/model from `type: 'assistant'` messages. Tracks byte offsets per file for incremental parsing. Deduplicates by `message.id` (last entry wins for streaming).
 - **`lib/aggregator.js`** — In-memory analytics engine. Maintains `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly` maps. All API data served from these pre-computed structures. `AggregatorCache` class provides per-user lazy loading with 30min eviction for multi-user mode.
-- **`lib/db.js`** — SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions` tables. All multi-row inserts use `db.transaction()`. User-scoped functions: `insertMessagesForUser()`, `getMessagesForUser()`.
+- **`lib/db.js`** — SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache` tables. All multi-row inserts use `db.transaction()`. User-scoped functions: `insertMessagesForUser()`, `getMessagesForUser()`.
 - **`lib/auth.js`** — GitHub OAuth flow (server-side, native `https.request`), session management (`crypto.randomBytes` tokens, HttpOnly cookies, 30-day expiry), `authenticateRequest()` middleware. Single-user mode returns DUMMY_USER.
 - **`lib/pricing.js`** — Per-model pricing (input/output/cacheRead/cacheCreate per 1M tokens). Unknown models fall back to Sonnet 4.5 pricing.
 - **`lib/watcher.js`** — Chokidar file watcher with `awaitWriteFinish` debouncing. On file change: incremental parse → update aggregator → broadcast SSE (with userId filtering in multi-user mode).

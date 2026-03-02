@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
   <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platform">
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
@@ -52,7 +52,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **500 achievements** — gamification system across 12 categories with 5 tiers, tier-based points, timeline chart, and daily unlock stats
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
-- **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install
+- **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
 - **151 automated tests** — unit, integration, and multi-user API tests
 

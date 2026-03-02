@@ -393,6 +393,140 @@ echo ""
 `;
 }
 
+/**
+ * Generate a self-contained PowerShell install script for the sync agent (Windows)
+ */
+function generateWindowsInstallScript(serverUrl, apiKey) {
+  // Use single-quoted heredocs (@'...'@) for index.js and package.json (no interpolation)
+  // Use double-quoted heredoc (@"..."@) for config.json (needs variable interpolation)
+  return `#Requires -Version 5.0
+$ErrorActionPreference = "Stop"
+
+function Write-Info($msg)  { Write-Host "  $msg" -ForegroundColor Cyan }
+function Write-Ok($msg)    { Write-Host "  $msg" -ForegroundColor Green }
+function Write-Warn($msg)  { Write-Host "  $msg" -ForegroundColor Yellow }
+function Write-Err($msg)   { Write-Host "  $msg" -ForegroundColor Red }
+
+$InstallDir = Join-Path $env:USERPROFILE "claude-sync-agent"
+
+Write-Host ""
+Write-Host "Claude Sync Agent Installer" -ForegroundColor White
+Write-Host ""
+
+# --- 1. Prerequisites ---
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+if (-not $nodeCmd) {
+    Write-Err "Node.js is not installed. Install Node.js 18+ first."
+    exit 1
+}
+$nodeVersion = (node -v) -replace '^v', ''
+$nodeMajor = [int]($nodeVersion.Split('.')[0])
+if ($nodeMajor -lt 18) {
+    Write-Err "Node.js 18+ required (found v$nodeVersion)"
+    exit 1
+}
+Write-Ok "Node.js v$nodeVersion"
+
+$npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+if (-not $npmCmd) {
+    Write-Err "npm is not installed."
+    exit 1
+}
+
+# --- 2. Handle existing installation ---
+if (Test-Path $InstallDir) {
+    Write-Info "Updating existing installation at $InstallDir ..."
+    # Stop existing scheduled task
+    $task = Get-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
+    if ($task) {
+        Stop-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
+    }
+}
+
+# --- 3. Install files ---
+Write-Info "Installing to $InstallDir ..."
+New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+
+$indexJs = @'
+${SYNC_AGENT_INDEX}
+'@
+Set-Content -Path (Join-Path $InstallDir "index.js") -Value $indexJs -Encoding UTF8
+
+$packageJson = @'
+${SYNC_AGENT_PKG}
+'@
+Set-Content -Path (Join-Path $InstallDir "package.json") -Value $packageJson -Encoding UTF8
+
+$configJson = @"
+{
+  "serverUrl": "${serverUrl}",
+  "apiKey": "${apiKey}"
+}
+"@
+Set-Content -Path (Join-Path $InstallDir "config.json") -Value $configJson -Encoding UTF8
+
+Write-Ok "Files written"
+
+# --- 4. Install dependencies ---
+Write-Info "Installing dependencies..."
+Push-Location $InstallDir
+npm install --production --silent 2>&1 | Out-Null
+Pop-Location
+Write-Ok "Dependencies installed"
+
+# --- 5. Verify server connection ---
+Write-Info "Verifying server connection..."
+try {
+    $response = Invoke-WebRequest -Uri "${serverUrl}/api/sync" -Method POST \`
+        -Headers @{ "Authorization" = "Bearer ${apiKey}"; "Content-Type" = "application/json" } \`
+        -Body '{"messages":[]}' -UseBasicParsing -ErrorAction Stop
+    Write-Ok "Server connection verified"
+} catch {
+    $status = 0
+    if ($_.Exception.Response) {
+        $status = [int]$_.Exception.Response.StatusCode
+    }
+    if ($status -eq 400) {
+        Write-Ok "Server connection verified"
+    } elseif ($status -eq 401) {
+        Write-Warn "API key rejected - regenerate it on the website"
+    } else {
+        Write-Warn "Could not reach server at ${serverUrl}"
+    }
+}
+
+# --- 6. Autostart (Task Scheduler) ---
+$nodePath = (Get-Command node).Source
+
+Write-Host ""
+$reply = Read-Host "  Set up autostart? [Y/n]"
+if ($reply -notmatch '^[Nn]$') {
+    $action = New-ScheduledTaskAction -Execute $nodePath -Argument (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
+    $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 0)
+    Register-ScheduledTask -TaskName "ClaudeSyncAgent" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
+    Start-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
+    Write-Ok "Autostart configured (Task Scheduler)"
+    Write-Ok "Agent is running - survives reboots"
+    Write-Host ""
+    Write-Info "Stop:    Stop-ScheduledTask -TaskName ClaudeSyncAgent"
+    Write-Info "Restart: Start-ScheduledTask -TaskName ClaudeSyncAgent"
+    Write-Info "Remove:  Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:\`$false"
+} else {
+    # Start agent manually
+    Start-Process -NoNewWindow -FilePath $nodePath -ArgumentList (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
+    Write-Ok "Agent started"
+    Write-Info "Start manually: node $InstallDir\\index.js"
+}
+
+Write-Host ""
+Write-Host "=== Installation complete ===" -ForegroundColor Green
+Write-Host "  Directory: $InstallDir"
+Write-Host "  Server:    ${serverUrl}"
+Write-Host ""
+`;
+}
+
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
@@ -455,6 +589,25 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
       'Content-Disposition': 'attachment; filename="install-sync-agent.sh"',
+      'Cache-Control': 'no-cache'
+    });
+    return res.end(script);
+  }
+
+  // Sync agent PowerShell install script download (Windows)
+  if (pathname === '/api/sync-agent/install.ps1' && req.method === 'GET') {
+    if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
+
+    let scriptUser = authenticateRequest(req);
+    if (!scriptUser && query.key) {
+      scriptUser = findUserByApiKey(query.key);
+    }
+    if (!scriptUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
+
+    const script = generateWindowsInstallScript(BASE_URL, scriptUser.api_key);
+    res.writeHead(200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="install-sync-agent.ps1"',
       'Cache-Control': 'no-cache'
     });
     return res.end(script);

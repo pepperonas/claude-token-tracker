@@ -320,13 +320,16 @@ function copySyncKey() {
 }
 
 function updateCurlCommand(apiKey) {
-  const el = document.getElementById('sync-curl-value');
-  if (!el) return;
-  if (!apiKey || apiKey === '-') {
-    el.textContent = '...';
-    return;
+  const curlEl = document.getElementById('sync-curl-value');
+  const psEl = document.getElementById('sync-ps-value');
+  if (curlEl) {
+    curlEl.textContent = (!apiKey || apiKey === '-') ? '...' :
+      `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
   }
-  el.textContent = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
+  if (psEl) {
+    psEl.textContent = (!apiKey || apiKey === '-') ? '...' :
+      `irm "${location.origin}/api/sync-agent/install.ps1?key=${apiKey}" | iex`;
+  }
 }
 
 function copyCurlCommand() {
@@ -334,6 +337,40 @@ function copyCurlCommand() {
   if (el && el.textContent !== '...') {
     navigator.clipboard.writeText(el.textContent);
     flashCopyButton('copy-curl-cmd');
+  }
+}
+
+function copyPsCommand() {
+  const el = document.getElementById('sync-ps-value');
+  if (el && el.textContent !== '...') {
+    navigator.clipboard.writeText(el.textContent);
+    flashCopyButton('copy-ps-cmd');
+  }
+}
+
+function downloadPsScript() {
+  const key = document.getElementById('api-key-value').textContent;
+  if (key && key !== '-') {
+    window.location.href = `/api/sync-agent/install.ps1?key=${encodeURIComponent(key)}`;
+  }
+}
+
+function switchSyncOs(os) {
+  const unixPanel = document.getElementById('sync-panel-unix');
+  const winPanel = document.getElementById('sync-panel-windows');
+  const unixBtn = document.getElementById('sync-os-unix');
+  const winBtn = document.getElementById('sync-os-windows');
+  if (!unixPanel || !winPanel) return;
+  if (os === 'windows') {
+    unixPanel.style.display = 'none';
+    winPanel.style.display = 'block';
+    unixBtn.classList.remove('active');
+    winBtn.classList.add('active');
+  } else {
+    unixPanel.style.display = 'block';
+    winPanel.style.display = 'none';
+    unixBtn.classList.add('active');
+    winBtn.classList.remove('active');
   }
 }
 
@@ -1744,6 +1781,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('regenerate-api-key')?.addEventListener('click', regenerateSyncKey);
   document.getElementById('copy-curl-cmd')?.addEventListener('click', copyCurlCommand);
   document.getElementById('download-install-script')?.addEventListener('click', downloadInstallScript);
+  document.getElementById('copy-ps-cmd')?.addEventListener('click', copyPsCommand);
+  document.getElementById('download-ps-script')?.addEventListener('click', downloadPsScript);
 
   // Period comparison
   document.querySelectorAll('.period-btn-b').forEach(btn => {
