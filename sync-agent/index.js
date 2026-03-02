@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
 const readline = require('readline');
@@ -38,8 +39,8 @@ function extractProjectName(filePath) {
 
 function parseSessionFile(filePath, fromOffset = 0) {
   let stat;
-  try { stat = fs.statSync(filePath); } catch { return { messages: [], newOffset: fromOffset }; }
-  if (stat.size <= fromOffset) return { messages: [], newOffset: fromOffset };
+  try { stat = fs.statSync(filePath); } catch { return { messages: [], rateLimitEvents: [], newOffset: fromOffset }; }
+  if (stat.size <= fromOffset) return { messages: [], rateLimitEvents: [], newOffset: fromOffset };
 
   const fd = fs.openSync(filePath, 'r');
   const buf = Buffer.alloc(stat.size - fromOffset);
@@ -48,6 +49,7 @@ function parseSessionFile(filePath, fromOffset = 0) {
 
   const lines = buf.toString('utf-8').split('\n');
   const msgMap = new Map();
+  const rateLimitEvents = [];
   let sessionId = null;
   const project = extractProjectName(filePath);
 
@@ -57,6 +59,14 @@ function parseSessionFile(filePath, fromOffset = 0) {
     try { obj = JSON.parse(line); } catch { continue; }
 
     if (!sessionId && obj.sessionId) sessionId = obj.sessionId;
+
+    // Rate-limit events
+    if (obj.type === 'queue-operation' && obj.content === '/rate-limit-options') {
+      const sid = obj.sessionId || sessionId || '';
+      const id = crypto.createHash('sha256').update(sid + obj.timestamp).digest('hex').slice(0, 16);
+      rateLimitEvents.push({ id, timestamp: obj.timestamp, sessionId: sid, project });
+      continue;
+    }
 
     if (obj.type === 'assistant' && obj.message) {
       const msg = obj.message;
@@ -105,7 +115,7 @@ function parseSessionFile(filePath, fromOffset = 0) {
     }
   }
 
-  return { messages: [...msgMap.values()], newOffset: stat.size };
+  return { messages: [...msgMap.values()], rateLimitEvents, newOffset: stat.size };
 }
 
 function findSessionFiles() {
@@ -152,13 +162,17 @@ function loadConfig() {
 
 // --- HTTP request helper ---
 
-function sendBatch(serverUrl, apiKey, messages) {
+function sendBatch(serverUrl, apiKey, messages, rateLimitEvents) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(serverUrl + '/api/sync');
     const isHttps = urlObj.protocol === 'https:';
     const mod = isHttps ? https : http;
 
-    const body = JSON.stringify({ messages });
+    const payload = { messages };
+    if (rateLimitEvents && rateLimitEvents.length > 0) {
+      payload.rateLimitEvents = rateLimitEvents;
+    }
+    const body = JSON.stringify(payload);
 
     const options = {
       hostname: urlObj.hostname,
@@ -196,10 +210,10 @@ function sendBatch(serverUrl, apiKey, messages) {
   });
 }
 
-async function sendWithRetry(serverUrl, apiKey, messages, maxRetries = 3) {
+async function sendWithRetry(serverUrl, apiKey, messages, rateLimitEvents, maxRetries = 3) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await sendBatch(serverUrl, apiKey, messages);
+      return await sendBatch(serverUrl, apiKey, messages, rateLimitEvents);
     } catch (err) {
       if (attempt === maxRetries - 1) throw err;
       const delay = Math.pow(2, attempt) * 1000;
@@ -244,14 +258,21 @@ async function fullSync(config) {
     const prev = state[filePath];
     const offset = prev ? prev.offset : 0;
 
-    const { messages, newOffset } = parseSessionFile(filePath, offset);
-    if (messages.length > 0) {
-      // Send in batches of 500
-      for (let i = 0; i < messages.length; i += 500) {
-        const batch = messages.slice(i, i + 500);
-        const result = await sendWithRetry(config.serverUrl, config.apiKey, batch);
-        totalSent += result.inserted || batch.length;
-        process.stdout.write(`  Synced ${totalSent} messages...\r`);
+    const { messages, rateLimitEvents, newOffset } = parseSessionFile(filePath, offset);
+    if (messages.length > 0 || rateLimitEvents.length > 0) {
+      if (messages.length > 0) {
+        // Send in batches of 500
+        for (let i = 0; i < messages.length; i += 500) {
+          const batch = messages.slice(i, i + 500);
+          // Attach rate-limit events only to the first batch
+          const rle = (i === 0) ? rateLimitEvents : [];
+          const result = await sendWithRetry(config.serverUrl, config.apiKey, batch, rle);
+          totalSent += result.inserted || batch.length;
+          process.stdout.write(`  Synced ${totalSent} messages...\r`);
+        }
+      } else {
+        // Rate-limit events only (no messages)
+        await sendWithRetry(config.serverUrl, config.apiKey, [], rateLimitEvents);
       }
     }
 
@@ -291,11 +312,14 @@ async function watch(config) {
     try {
       const prev = state[filePath];
       const offset = prev ? prev.offset : 0;
-      const { messages, newOffset } = parseSessionFile(filePath, offset);
+      const { messages, rateLimitEvents, newOffset } = parseSessionFile(filePath, offset);
 
-      if (messages.length > 0) {
-        await sendWithRetry(config.serverUrl, config.apiKey, messages);
-        console.log(`[${new Date().toTimeString().slice(0, 8)}] Synced ${messages.length} messages from ${path.basename(filePath)}`);
+      if (messages.length > 0 || rateLimitEvents.length > 0) {
+        await sendWithRetry(config.serverUrl, config.apiKey, messages, rateLimitEvents);
+        const parts = [];
+        if (messages.length > 0) parts.push(`${messages.length} messages`);
+        if (rateLimitEvents.length > 0) parts.push(`${rateLimitEvents.length} rate-limit events`);
+        console.log(`[${new Date().toTimeString().slice(0, 8)}] Synced ${parts.join(', ')} from ${path.basename(filePath)}`);
       }
 
       state[filePath] = { offset: newOffset };

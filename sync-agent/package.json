@@ -1,6 +1,6 @@
 {
   "name": "claude-token-tracker-sync-agent",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Sync agent for Claude Token Tracker — watches local session files and uploads to server",
   "main": "index.js",
   "scripts": {

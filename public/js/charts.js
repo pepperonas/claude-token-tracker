@@ -1638,3 +1638,227 @@ function createGithubCodeFrequencyChart(canvasId, data) {
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
+
+// --- Anthropic API Charts ---
+
+const ANTHROPIC_COLORS = [
+  '#d4a574', '#c9956b', '#b8845f', '#a67353', '#946247',
+  '#e8c4a0', '#f0d4b8', '#c4a882', '#a89070', '#8c7860'
+];
+
+function createAnthropicDailyCostChart(canvasId, dailyCosts) {
+  destroyChart(canvasId);
+  if (!dailyCosts || dailyCosts.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  // Collect all models across all days
+  const modelSet = new Set();
+  for (const d of dailyCosts) {
+    for (const m of Object.keys(d.byModel || {})) modelSet.add(m);
+  }
+  const models = [...modelSet];
+
+  const datasets = models.map((model, i) => ({
+    label: model,
+    data: dailyCosts.map(d => Math.round(((d.byModel || {})[model] || 0) * 100) / 100),
+    backgroundColor: ANTHROPIC_COLORS[i % ANTHROPIC_COLORS.length] + 'cc',
+    borderWidth: 0
+  }));
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dailyCosts.map(d => formatChartDate(d.date)),
+      datasets
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: models.length > 1 && !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: $${ctx.raw.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createAnthropicDailyTokensChart(canvasId, dailyTokens) {
+  destroyChart(canvasId);
+  if (!dailyTokens || dailyTokens.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dailyTokens.map(d => formatChartDate(d.date)),
+      datasets: [
+        {
+          label: 'Input',
+          data: dailyTokens.map(d => d.input),
+          backgroundColor: COLORS.input + 'cc',
+          borderWidth: 0
+        },
+        {
+          label: 'Output',
+          data: dailyTokens.map(d => d.output),
+          backgroundColor: COLORS.output + 'cc',
+          borderWidth: 0
+        },
+        {
+          label: 'Cache Read',
+          data: dailyTokens.map(d => d.cacheRead),
+          backgroundColor: COLORS.cacheRead + 'cc',
+          borderWidth: 0
+        },
+        {
+          label: 'Cache Create',
+          data: dailyTokens.map(d => d.cacheCreate),
+          backgroundColor: COLORS.cacheCreate + 'cc',
+          borderWidth: 0
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.raw;
+              if (val >= 1000000) return `${ctx.dataset.label}: ${(val / 1000000).toFixed(1)}M`;
+              if (val >= 1000) return `${ctx.dataset.label}: ${(val / 1000).toFixed(1)}K`;
+              return `${ctx.dataset.label}: ${val}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createAnthropicModelChart(canvasId, modelBreakdown) {
+  destroyChart(canvasId);
+  if (!modelBreakdown || modelBreakdown.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const top = modelBreakdown.filter(m => m.cost > 0).slice(0, 10);
+  if (top.length === 0) return;
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: top.map(m => m.model),
+      datasets: [{
+        data: top.map(m => Math.round(m.cost * 100) / 100),
+        backgroundColor: top.map((_, i) => ANTHROPIC_COLORS[i % ANTHROPIC_COLORS.length]),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: $${ctx.raw.toFixed(2)}`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createAnthropicCostTrendChart(canvasId, dailyCosts) {
+  destroyChart(canvasId);
+  if (!dailyCosts || dailyCosts.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  // Build cumulative data
+  let cumulative = 0;
+  const cumulativeData = dailyCosts.map(d => {
+    cumulative += d.total;
+    return Math.round(cumulative * 100) / 100;
+  });
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dailyCosts.map(d => formatChartDate(d.date)),
+      datasets: [{
+        label: t('caCostTrend'),
+        data: cumulativeData,
+        borderColor: '#d4a574',
+        backgroundColor: '#d4a57420',
+        fill: true,
+        tension: 0.3,
+        pointRadius: isMobile() ? 1 : 2,
+        pointHoverRadius: 4
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `$${ctx.raw.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}

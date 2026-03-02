@@ -491,6 +491,7 @@ async function loadTab(tab) {
     case 'productivity': return loadProductivity();
     case 'achievements': return loadAchievements();
     case 'github': return loadGithub();
+    case 'claude-api': return loadClaudeApi();
     case 'info': return loadInfo();
     case 'settings': return loadSettings();
   }
@@ -562,6 +563,7 @@ async function loadOverview() {
   document.getElementById('kpi-cost-sub').textContent = t('costSubLabel');
   document.getElementById('kpi-sessions').textContent = formatNumber(overview.sessions);
   document.getElementById('kpi-messages').textContent = formatNumber(overview.messages);
+  document.getElementById('kpi-rate-limits').textContent = formatNumber(overview.rateLimitHits || 0);
 
   // Detail KPI cards
   document.getElementById('kpi-input-tokens').textContent = formatTokens(overview.inputTokens);
@@ -1494,8 +1496,17 @@ async function loadGithub() {
       bwBar.className = 'github-billing-bar-fill' +
         (bwPct >= 90 ? ' danger' : bwPct >= 70 ? ' warn' : '');
 
-      // Reset date
-      document.getElementById('gh-billing-reset').textContent = billing.resetDate;
+      // Reset date — format as localized date
+      const resetDateStr = billing.resetDate;
+      if (resetDateStr) {
+        const [ry, rm, rd] = resetDateStr.split('-');
+        const resetFormatted = currentLang === 'de'
+          ? `${rd}.${rm}.${ry}`
+          : `${rm}/${rd}/${ry}`;
+        document.getElementById('gh-billing-reset').textContent = resetFormatted;
+      } else {
+        document.getElementById('gh-billing-reset').textContent = '-';
+      }
       const ghResetIn = LANG[currentLang].ghResetIn || LANG.en.ghResetIn;
       document.getElementById('gh-billing-reset-sub').textContent =
         ghResetIn(billing.storage.daysLeftInCycle);
@@ -1718,6 +1729,185 @@ async function loadCodeFrequency(nameWithOwner) {
   }
 }
 
+// --- Claude API Tab ---
+let _caConfig = null;
+
+async function loadClaudeApi() {
+  const setupEl = document.getElementById('anthropic-setup');
+  const loadingEl = document.getElementById('anthropic-loading');
+  const contentEl = document.getElementById('anthropic-content');
+
+  // Check config
+  if (!_caConfig) {
+    try {
+      _caConfig = await api('config');
+    } catch {
+      _caConfig = {};
+    }
+  }
+
+  const isRefresh = contentEl.style.display !== 'none';
+  setupEl.style.display = 'none';
+  if (!isRefresh) {
+    loadingEl.style.display = 'flex';
+    contentEl.style.display = 'none';
+  }
+
+  try {
+    const [data, budgetRes] = await Promise.all([
+      api('anthropic/dashboard'),
+      api('anthropic/budget').catch(() => ({ budget: null }))
+    ]);
+
+    if (data.error) {
+      loadingEl.style.display = 'none';
+      setupEl.style.display = '';
+      const descEl = document.getElementById('anthropic-setup-desc');
+      if (_caConfig.multiUser) {
+        descEl.textContent = t('caSetupDescMulti');
+      } else {
+        descEl.textContent = t('caSetupDesc');
+      }
+      return;
+    }
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = '';
+
+    // Budget section
+    const budgetSection = document.getElementById('anthropic-budget-section');
+    budgetSection.style.display = '';
+    const budgetInput = document.getElementById('anthropic-budget-input');
+    const budgetBarWrapper = document.getElementById('anthropic-budget-bar-wrapper');
+
+    if (budgetRes.budget !== null && budgetRes.budget > 0) {
+      budgetInput.value = budgetRes.budget;
+      budgetBarWrapper.style.display = '';
+      const spent = data.totalCost;
+      const remaining = Math.max(0, budgetRes.budget - spent);
+      const pct = Math.min((spent / budgetRes.budget) * 100, 100);
+      document.getElementById('anthropic-budget-spent').textContent = '$' + spent.toFixed(2);
+      const budgetRemainingFn = LANG[currentLang].caBudgetRemaining || LANG.en.caBudgetRemaining;
+      document.getElementById('anthropic-budget-remaining').textContent =
+        budgetRemainingFn(remaining.toFixed(2));
+      const bar = document.getElementById('anthropic-budget-bar');
+      bar.style.width = pct + '%';
+      bar.className = 'github-billing-bar-fill' +
+        (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+    } else {
+      budgetBarWrapper.style.display = 'none';
+    }
+
+    // Budget save/clear handlers
+    document.getElementById('anthropic-budget-save').onclick = async () => {
+      const val = parseFloat(budgetInput.value);
+      if (isNaN(val) || val <= 0) return;
+      await fetch('/api/anthropic/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ budget: val })
+      });
+      loadClaudeApi();
+    };
+    document.getElementById('anthropic-budget-clear').onclick = async () => {
+      await fetch('/api/anthropic/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ budget: null })
+      });
+      budgetInput.value = '';
+      loadClaudeApi();
+    };
+
+    // Period filtering on daily data
+    const { from: pFrom, to: pTo } = getPeriodRange();
+    const filterByPeriod = (arr, dateKey) => {
+      if (!pFrom) return arr;
+      return arr.filter(d => d[dateKey] >= pFrom && d[dateKey] <= pTo);
+    };
+
+    const filteredDailyCosts = filterByPeriod(data.dailyCosts || [], 'date');
+    const filteredDailyTokens = filterByPeriod(data.dailyTokens || [], 'date');
+
+    // Recalculate KPIs for filtered range
+    const filteredTotalCost = filteredDailyCosts.reduce((s, d) => s + d.total, 0);
+    const filteredTotalInput = filteredDailyTokens.reduce((s, d) => s + d.input, 0);
+    const filteredTotalOutput = filteredDailyTokens.reduce((s, d) => s + d.output, 0);
+    const filteredTotalCacheRead = filteredDailyTokens.reduce((s, d) => s + d.cacheRead, 0);
+    const filteredTotalCacheCreate = filteredDailyTokens.reduce((s, d) => s + d.cacheCreate, 0);
+    const filteredTotalTokens = filteredTotalInput + filteredTotalOutput + filteredTotalCacheRead + filteredTotalCacheCreate;
+    const filteredActiveDays = filteredDailyCosts.filter(d => d.total > 0).length;
+    const filteredAvgCost = filteredActiveDays > 0 ? filteredTotalCost / filteredActiveDays : 0;
+    const filteredCacheEff = filteredTotalTokens > 0
+      ? Math.round((filteredTotalCacheRead / filteredTotalTokens) * 1000) / 10 : 0;
+
+    // KPIs
+    document.getElementById('ca-kpi-cost').textContent =
+      '$' + (pFrom ? filteredTotalCost : data.totalCost).toFixed(2);
+    document.getElementById('ca-kpi-tokens').textContent =
+      formatNumber(pFrom ? filteredTotalTokens : data.totalTokens);
+    const tokenBreakdownFn = LANG[currentLang].caTokenBreakdown || LANG.en.caTokenBreakdown;
+    document.getElementById('ca-kpi-tokens-sub').textContent =
+      tokenBreakdownFn(
+        formatNumber(pFrom ? filteredTotalInput : data.totalInput),
+        formatNumber(pFrom ? filteredTotalOutput : data.totalOutput),
+        formatNumber(pFrom ? filteredTotalCacheRead : data.totalCacheRead)
+      );
+    document.getElementById('ca-kpi-avg-cost').textContent =
+      '$' + (pFrom ? filteredAvgCost : data.avgCostPerDay).toFixed(2);
+    document.getElementById('ca-kpi-cache').textContent =
+      (pFrom ? filteredCacheEff : data.cacheEfficiency) + '%';
+
+    // Charts
+    createAnthropicDailyCostChart('chart-ca-daily-cost', filteredDailyCosts);
+    createAnthropicDailyTokensChart('chart-ca-daily-tokens', filteredDailyTokens);
+    createAnthropicModelChart('chart-ca-model', data.modelBreakdown || []);
+    createAnthropicCostTrendChart('chart-ca-cost-trend', filteredDailyCosts);
+
+    // Model table
+    const totalCostForShare = data.totalCost || 1;
+    const tbody = document.getElementById('ca-model-tbody');
+    buildTableRows(tbody, (data.modelBreakdown || []).slice(0, 20), [
+      { value: r => r.model },
+      { className: 'num', value: r => formatNumber(r.input) },
+      { className: 'num', value: r => formatNumber(r.output) },
+      { className: 'num', value: r => formatNumber(r.cacheRead) },
+      { className: 'num', value: r => '$' + r.cost.toFixed(2) },
+      { className: 'num', value: r => (r.cost / totalCostForShare * 100).toFixed(1) + '%' }
+    ]);
+
+    // Refresh button + cache age
+    const refreshBtn = document.getElementById('ca-refresh-btn');
+    refreshBtn.onclick = async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = '...';
+      await fetch('/api/anthropic/refresh', { method: 'POST' }).catch(() => {});
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = t('caRefresh');
+      loadClaudeApi();
+    };
+
+    let cacheAgeEl = document.getElementById('ca-cache-age');
+    if (!cacheAgeEl) {
+      cacheAgeEl = document.createElement('span');
+      cacheAgeEl.id = 'ca-cache-age';
+      cacheAgeEl.style.cssText = 'margin-left:8px;font-size:0.82em;opacity:0.55';
+      refreshBtn.parentNode.insertBefore(cacheAgeEl, refreshBtn.nextSibling);
+    }
+    if (typeof data._age === 'number' && data._cached) {
+      const age = data._age < 1 ? '< 1' : String(data._age);
+      cacheAgeEl.textContent = t('ghCacheAge').replace('{0}', age);
+    } else {
+      cacheAgeEl.textContent = '';
+    }
+
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    setupEl.style.display = '';
+    console.error('Claude API load error:', err);
+  }
+}
+
 async function loadInfo() {
   // Info tab is now documentation-only, no action needed
 }
@@ -1726,6 +1916,77 @@ async function loadSettings() {
   if (state.multiUser) {
     loadSyncKey();
   }
+  loadAnthropicKeyStatus();
+}
+
+async function loadAnthropicKeyStatus() {
+  const section = document.getElementById('anthropic-key-section');
+  if (!section) return;
+  section.style.display = '';
+
+  try {
+    const data = await api('user/anthropic-key');
+    const statusEl = document.getElementById('anthropic-key-status');
+    const input = document.getElementById('anthropic-key-input');
+    if (data.hasKey) {
+      statusEl.textContent = t('caKeyConfigured');
+      statusEl.className = 'settings-status success';
+      input.placeholder = '••••••••••••••••';
+    } else {
+      statusEl.textContent = '';
+      statusEl.className = 'settings-status';
+      input.placeholder = 'sk-ant-admin...';
+    }
+  } catch {
+    // ignore
+  }
+
+  document.getElementById('save-anthropic-key').onclick = async () => {
+    const input = document.getElementById('anthropic-key-input');
+    const key = input.value.trim();
+    const statusEl = document.getElementById('anthropic-key-status');
+    if (!key) return;
+    if (!key.startsWith('sk-ant-admin')) {
+      statusEl.textContent = t('caKeyInvalid');
+      statusEl.className = 'settings-status error';
+      return;
+    }
+    try {
+      const res = await fetch('/api/user/anthropic-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key })
+      });
+      const data = await res.json();
+      if (data.error) {
+        statusEl.textContent = data.error;
+        statusEl.className = 'settings-status error';
+      } else {
+        statusEl.textContent = t('caKeySaved');
+        statusEl.className = 'settings-status success';
+        input.value = '';
+        input.placeholder = '••••••••••••••••';
+      }
+    } catch {
+      statusEl.textContent = 'Error';
+      statusEl.className = 'settings-status error';
+    }
+  };
+
+  document.getElementById('delete-anthropic-key').onclick = async () => {
+    const statusEl = document.getElementById('anthropic-key-status');
+    const input = document.getElementById('anthropic-key-input');
+    try {
+      await fetch('/api/user/anthropic-key', { method: 'DELETE' });
+      statusEl.textContent = t('caKeyDeleted');
+      statusEl.className = 'settings-status';
+      input.placeholder = 'sk-ant-admin...';
+      input.value = '';
+    } catch {
+      statusEl.textContent = 'Error';
+      statusEl.className = 'settings-status error';
+    }
+  };
 }
 
 // --- Chart resize handler (debounced) ---

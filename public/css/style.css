@@ -957,6 +957,31 @@ body {
   gap: 8px;
 }
 
+.settings-warning {
+  background: rgba(210, 153, 34, 0.1);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--orange);
+  margin-bottom: 10px;
+}
+
+.settings-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.settings-status {
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 18px;
+}
+.settings-status.success { color: var(--green); }
+.settings-status.error { color: var(--red); }
+
 .api-key-value {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -1721,4 +1746,62 @@ body {
     gap: 2px;
   }
   .heatmap-cell { width: 8px; height: 8px; }
+}
+
+/* Anthropic / Claude API tab */
+.anthropic-setup-card {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 500px;
+  margin: 40px auto;
+}
+.anthropic-setup-icon { color: #d4a574; margin-bottom: 16px; }
+.anthropic-setup-card h3 { margin: 0 0 12px; color: var(--text-primary); }
+.anthropic-setup-card p { color: var(--text-muted); line-height: 1.6; margin: 0; font-size: 14px; }
+
+.anthropic-loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+#anthropic-budget-section { margin-bottom: 24px; }
+.anthropic-budget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.anthropic-budget-header h3 { margin: 0; }
+.anthropic-budget-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.anthropic-budget-input-row input {
+  width: 80px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.anthropic-budget-bar-container { margin-top: 8px; }
+.anthropic-budget-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
 }

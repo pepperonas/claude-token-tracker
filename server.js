@@ -12,13 +12,17 @@ const {
   initDB, insertMessages, getAllMessages, getParseState, setParseState, closeDB,
   insertMessagesForUser, getMessagesForUser,
   regenerateApiKey, cleanExpiredSessions, findUserByApiKey,
-  getUnlockedAchievements, unlockAchievementsBatch
+  getUnlockedAchievements, unlockAchievementsBatch,
+  getMetadata, setMetadata,
+  insertRateLimitEvents, insertRateLimitEventsForUser,
+  getAllRateLimitEvents, getRateLimitEventsForUser
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 const github = require('./lib/github');
+const anthropicApi = require('./lib/anthropic-api');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -57,6 +61,9 @@ initDB();
 // 1b. Initialize GitHub module with DB reference
 github.initGithub(require('./lib/db'));
 
+// 1c. Initialize Anthropic API module with DB reference
+anthropicApi.initAnthropicApi(require('./lib/db'));
+
 // 2. Load existing messages from SQLite (single-user aggregator)
 const aggregator = new Aggregator();
 const existingMessages = getAllMessages();
@@ -65,10 +72,17 @@ if (existingMessages.length > 0) {
   console.log(`Loaded ${existingMessages.length} messages from database`);
 }
 
+// 2b. Load existing rate-limit events from SQLite
+const existingRateLimitEvents = getAllRateLimitEvents();
+if (existingRateLimitEvents.length > 0) {
+  aggregator.addRateLimitEvents(existingRateLimitEvents);
+  console.log(`Loaded ${existingRateLimitEvents.length} rate-limit events from database`);
+}
+
 // 3. Parse new JSONL data incrementally (only in single-user mode)
 const t0 = Date.now();
 const savedParseState = getParseState();
-const { messages: newMessages, parseState: newParseState } = parseAll(savedParseState);
+const { messages: newMessages, rateLimitEvents: newRateLimitEvents, parseState: newParseState } = parseAll(savedParseState);
 let parseState = newParseState;
 
 if (newMessages.length > 0) {
@@ -79,6 +93,12 @@ if (newMessages.length > 0) {
     aggregator.addMessages(trulyNew);
     console.log(`Parsed ${trulyNew.length} new messages in ${Date.now() - t0}ms`);
   }
+}
+
+if (newRateLimitEvents.length > 0) {
+  insertRateLimitEvents(newRateLimitEvents);
+  aggregator.addRateLimitEvents(newRateLimitEvents);
+  console.log(`Parsed ${newRateLimitEvents.length} new rate-limit events`);
 }
 
 // 4. Save parse state
@@ -96,8 +116,9 @@ if (!MULTI_USER) {
 }
 
 // Start file watcher (single-user only)
-const watcher = new Watcher(aggregator, parseState, (newMsgs) => {
-  insertMessages(newMsgs, calculateCost);
+const watcher = new Watcher(aggregator, parseState, (newMsgs, rleEvents) => {
+  if (newMsgs.length > 0) insertMessages(newMsgs, calculateCost);
+  if (rleEvents && rleEvents.length > 0) insertRateLimitEvents(rleEvents);
   setParseState(parseState);
   try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (e) { console.error('Achievement check failed:', e.message); }
 });
@@ -106,7 +127,7 @@ if (!MULTI_USER) {
 }
 
 // Multi-user aggregator cache
-const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser) : null;
+const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser, getRateLimitEventsForUser) : null;
 
 // Clean expired sessions periodically (multi-user)
 let sessionCleanupTimer = null;
@@ -533,11 +554,21 @@ const server = http.createServer((req, res) => {
 
     readBody(req).then(body => {
       const messages = body.messages;
-      if (!Array.isArray(messages) || messages.length === 0) {
+      const rateLimitEvents = body.rateLimitEvents;
+      const hasMessages = Array.isArray(messages) && messages.length > 0;
+      const hasRateLimitEvents = Array.isArray(rateLimitEvents) && rateLimitEvents.length > 0;
+
+      if (!hasMessages && !hasRateLimitEvents) {
         return sendJSON(res, { error: 'No messages provided' }, 400);
       }
 
-      insertMessagesForUser(messages, calculateCost, user.id);
+      if (hasMessages) {
+        insertMessagesForUser(messages, calculateCost, user.id);
+      }
+
+      if (hasRateLimitEvents) {
+        insertRateLimitEventsForUser(rateLimitEvents, user.id);
+      }
 
       // Invalidate aggregator cache for this user
       if (aggregatorCache) aggregatorCache.invalidateUser(user.id);
@@ -549,9 +580,9 @@ const server = http.createServer((req, res) => {
       } catch (e) { console.error('Achievement check failed for user', user.id, ':', e.message); }
 
       // Broadcast SSE update to this user's clients
-      watcher.broadcast({ type: 'update', count: messages.length, userId: user.id });
+      watcher.broadcast({ type: 'update', count: hasMessages ? messages.length : 0, userId: user.id });
 
-      return sendJSON(res, { inserted: messages.length });
+      return sendJSON(res, { inserted: hasMessages ? messages.length : 0, rateLimitEvents: hasRateLimitEvents ? rateLimitEvents.length : 0 });
     }).catch(err => {
       return sendJSON(res, { error: 'Invalid JSON: ' + err.message }, 400);
     });
@@ -627,6 +658,10 @@ const server = http.createServer((req, res) => {
 
   if (pathname === '/api/overview') {
     return sendJSON(res, agg.getOverview(query.from, query.to));
+  }
+
+  if (pathname === '/api/rate-limits') {
+    return sendJSON(res, agg.getRateLimits(query.from, query.to));
   }
 
   if (pathname === '/api/daily') {
@@ -890,6 +925,69 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/github/refresh' && req.method === 'POST') {
     github.clearCache(user.id);
     return sendJSON(res, { cleared: true });
+  }
+
+  // Per-user Anthropic key management
+  if (pathname === '/api/user/anthropic-key' && req.method === 'GET') {
+    return sendJSON(res, { hasKey: anthropicApi.hasAdminKey(user) });
+  }
+
+  if (pathname === '/api/user/anthropic-key' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const key = (body.key || '').trim();
+      if (!key.startsWith('sk-ant-admin')) {
+        return sendJSON(res, { error: 'Invalid key format — must start with sk-ant-admin' }, 400);
+      }
+      anthropicApi.saveAdminKey(user.id, key);
+      return sendJSON(res, { saved: true });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  if (pathname === '/api/user/anthropic-key' && req.method === 'DELETE') {
+    anthropicApi.deleteAdminKey(user.id);
+    anthropicApi.clearCache(user.id);
+    return sendJSON(res, { deleted: true });
+  }
+
+  // Anthropic API endpoints
+  if (pathname === '/api/anthropic/dashboard' && req.method === 'GET') {
+    const token = anthropicApi.getAdminToken(user);
+    if (!token) return sendJSON(res, { error: 'No Anthropic admin key configured' }, 400);
+    anthropicApi.getDashboardData(token, user.id).then(data => {
+      const age = anthropicApi.getCacheAge(user.id, 'anthropic-dashboard');
+      sendJSON(res, { ...data, _cached: age !== null, _age: age || 0 });
+    }).catch(err => {
+      console.error('[anthropic] dashboard error:', err.message);
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/anthropic/refresh' && req.method === 'POST') {
+    anthropicApi.clearCache(user.id);
+    return sendJSON(res, { cleared: true });
+  }
+
+  if (pathname === '/api/anthropic/budget' && req.method === 'GET') {
+    const uid = MULTI_USER ? user.id : 0;
+    const budget = getMetadata(`anthropic_budget_${uid}`);
+    return sendJSON(res, { budget: budget ? parseFloat(budget) : null });
+  }
+
+  if (pathname === '/api/anthropic/budget' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const uid = MULTI_USER ? user.id : 0;
+      if (body.budget === null || body.budget === undefined) {
+        setMetadata(`anthropic_budget_${uid}`, '');
+        return sendJSON(res, { budget: null });
+      }
+      const val = parseFloat(body.budget);
+      if (isNaN(val) || val < 0) return sendJSON(res, { error: 'Invalid budget' }, 400);
+      setMetadata(`anthropic_budget_${uid}`, String(val));
+      return sendJSON(res, { budget: val });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
   }
 
   // Achievements endpoint

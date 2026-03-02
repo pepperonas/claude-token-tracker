@@ -86,6 +86,7 @@
         <button class="tab-btn" data-tab="productivity" data-i18n="productivity">Produktivität</button>
         <button class="tab-btn" data-tab="achievements" data-i18n="achievements">Achievements</button>
         <button class="tab-btn" data-tab="github" data-i18n="github">GitHub</button>
+        <button class="tab-btn" data-tab="claude-api" data-i18n="claudeApi">Claude API</button>
         <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
         <button class="tab-btn" data-tab="settings" data-i18n="settings">Einstellungen</button>
       </div>
@@ -170,6 +171,11 @@
           <div class="kpi-label" data-i18n="messagesLabel" data-tooltip-key="tooltipMessages">Nachrichten</div>
           <div class="kpi-value" id="kpi-messages">-</div>
           <div class="kpi-sub" data-i18n="assistantResponses">Assistenten-Antworten</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="rateLimitLabel">Rate-Limits</div>
+          <div class="kpi-value" id="kpi-rate-limits">-</div>
+          <div class="kpi-sub" data-i18n="rateLimitDesc">Limit-Ereignisse</div>
         </div>
       </div>
 
@@ -849,6 +855,126 @@
       </div>
     </div>
 
+    <!-- Tab: Claude API -->
+    <div id="tab-claude-api" class="tab-panel">
+      <!-- Setup card (shown when no key) -->
+      <div class="anthropic-setup-card" id="anthropic-setup" style="display:none;">
+        <div class="anthropic-setup-icon">
+          <svg width="48" height="48" viewBox="0 0 256 176" fill="currentColor"><path d="M147.487 0L256 176H198.93L147.487 85.735 96.043 176H77.99l-19.06-33.12L0 176 58.513 76.235h.015L89.09 22.59l19.822 33.145L147.487 0z"/></svg>
+        </div>
+        <h3 data-i18n="caSetupTitle">Anthropic Admin Key erforderlich</h3>
+        <p id="anthropic-setup-desc" data-i18n="caSetupDesc"></p>
+      </div>
+
+      <!-- Loading indicator -->
+      <div class="anthropic-loading" id="anthropic-loading" style="display:none;">
+        <div class="github-loading-spinner"></div>
+        <span data-i18n="caLoading">API-Daten werden geladen...</span>
+      </div>
+
+      <!-- Content -->
+      <div id="anthropic-content" style="display:none;">
+        <!-- Budget section -->
+        <div class="chart-box" id="anthropic-budget-section" style="display:none;">
+          <div class="anthropic-budget-header">
+            <h3 data-i18n="caBudget">Budget</h3>
+            <div class="anthropic-budget-input-row">
+              <span>$</span>
+              <input type="number" id="anthropic-budget-input" min="0" step="1" placeholder="z.B. 100">
+              <button class="rebuild-btn" id="anthropic-budget-save" data-i18n="caBudgetSave">Speichern</button>
+              <button class="rebuild-btn" id="anthropic-budget-clear" data-i18n="caBudgetClear">Entfernen</button>
+            </div>
+          </div>
+          <div class="anthropic-budget-bar-container" id="anthropic-budget-bar-wrapper" style="display:none;">
+            <div class="anthropic-budget-labels">
+              <span id="anthropic-budget-spent">$0</span>
+              <span id="anthropic-budget-remaining"></span>
+            </div>
+            <div class="github-billing-bar">
+              <div class="github-billing-bar-fill" id="anthropic-budget-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="caTotalCost">Gesamtkosten</div>
+            <div class="kpi-value" id="ca-kpi-cost">-</div>
+            <div class="kpi-sub" data-i18n="caLast30Days">Letzte 30 Tage</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="caTotalTokens">Tokens gesamt</div>
+            <div class="kpi-value" id="ca-kpi-tokens">-</div>
+            <div class="kpi-sub" id="ca-kpi-tokens-sub"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="caAvgCostPerDay">&#216; Kosten/Tag</div>
+            <div class="kpi-value" id="ca-kpi-avg-cost">-</div>
+            <div class="kpi-sub" data-i18n="caActiveDays">an aktiven Tagen</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label" data-i18n="caCacheEfficiency">Cache-Effizienz</div>
+            <div class="kpi-value" id="ca-kpi-cache">-</div>
+            <div class="kpi-sub" data-i18n="caCacheReadShare">Cache-Read-Anteil</div>
+          </div>
+        </div>
+
+        <!-- Charts 2x2 -->
+        <div class="chart-grid">
+          <div class="chart-box">
+            <h3 data-i18n="caDailyCosts">Tägliche Kosten</h3>
+            <div class="chart-container">
+              <canvas id="chart-ca-daily-cost"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="caDailyTokens">Tägliche Tokens</h3>
+            <div class="chart-container">
+              <canvas id="chart-ca-daily-tokens"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="caModelDistribution">Modell-Verteilung</h3>
+            <div class="chart-container">
+              <canvas id="chart-ca-model"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="caCostTrend">Kosten-Trend</h3>
+            <div class="chart-container">
+              <canvas id="chart-ca-cost-trend"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model table -->
+        <div class="chart-box">
+          <h3 data-i18n="caModelTable">Modell-Übersicht</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="caModel">Modell</th>
+                  <th class="num" data-i18n="caInput">Input</th>
+                  <th class="num" data-i18n="caOutput">Output</th>
+                  <th class="num" data-i18n="caCacheRead">Cache Read</th>
+                  <th class="num" data-i18n="caCost">Kosten</th>
+                  <th class="num" data-i18n="caShare">Anteil</th>
+                </tr>
+              </thead>
+              <tbody id="ca-model-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Refresh -->
+        <div class="github-actions">
+          <button class="rebuild-btn" id="ca-refresh-btn" data-i18n="caRefresh">Aktualisieren</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab 8: Info -->
     <div id="tab-info" class="tab-panel">
       <div class="info-container">
@@ -1016,6 +1142,22 @@ Start-ScheduledTask -TaskName ClaudeSyncAgent
 # Entfernen
 Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
             </div>
+          </div>
+        </div>
+
+        <!-- Anthropic Admin Key (multi-user only) -->
+        <div class="info-section" id="anthropic-key-section" style="display:none;">
+          <h3 data-i18n="caKeyTitle">Anthropic Admin Key</h3>
+          <div class="settings-warning" data-i18n="caKeyWarning">Dein Key wird AES-256-GCM verschlüsselt in der Datenbank gespeichert und nie im Klartext zurückgegeben.</div>
+          <p class="settings-desc" data-i18n="caKeyDesc">Erstelle einen Admin Key unter console.anthropic.com/settings/admin-keys mit dem Prefix sk-ant-admin.</p>
+          <div class="api-key-box">
+            <label data-i18n="caKeyLabel">Admin Key</label>
+            <div class="api-key-row">
+              <input type="password" id="anthropic-key-input" class="api-key-value" placeholder="sk-ant-admin..." style="font-family:monospace;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;flex:1;font-size:13px;">
+              <button class="btn-small" id="save-anthropic-key" data-i18n="save">Speichern</button>
+              <button class="btn-small btn-danger" id="delete-anthropic-key" data-i18n="delete">Löschen</button>
+            </div>
+            <div class="settings-status" id="anthropic-key-status"></div>
           </div>
         </div>
       </div>
