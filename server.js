@@ -410,7 +410,7 @@ function Write-Err($msg)   { Write-Host "  $msg" -ForegroundColor Red }
 $InstallDir = Join-Path $env:USERPROFILE "claude-sync-agent"
 
 Write-Host ""
-Write-Host "Claude Sync Agent Installer" -ForegroundColor White
+Write-Host "  Claude Sync Agent Installer" -ForegroundColor White
 Write-Host ""
 
 # --- 1. Prerequisites ---
@@ -427,16 +427,9 @@ if ($nodeMajor -lt 18) {
 }
 Write-Ok "Node.js v$nodeVersion"
 
-$npmCmd = Get-Command npm -ErrorAction SilentlyContinue
-if (-not $npmCmd) {
-    Write-Err "npm is not installed."
-    exit 1
-}
-
 # --- 2. Handle existing installation ---
 if (Test-Path $InstallDir) {
     Write-Info "Updating existing installation at $InstallDir ..."
-    # Stop existing scheduled task
     $task = Get-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
     if ($task) {
         Stop-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
@@ -496,33 +489,24 @@ try {
 }
 
 # --- 6. Autostart (Task Scheduler) ---
+Write-Info "Setting up autostart (Task Scheduler)..."
 $nodePath = (Get-Command node).Source
+$action = New-ScheduledTaskAction -Execute $nodePath -Argument (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
+$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 0)
+Register-ScheduledTask -TaskName "ClaudeSyncAgent" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
+Start-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
+Write-Ok "Autostart configured (Task Scheduler)"
+Write-Ok "Agent is running — survives reboots"
 
 Write-Host ""
-$reply = Read-Host "  Set up autostart? [Y/n]"
-if ($reply -notmatch '^[Nn]$') {
-    $action = New-ScheduledTaskAction -Execute $nodePath -Argument (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
-    $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 0)
-    Register-ScheduledTask -TaskName "ClaudeSyncAgent" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
-    Start-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
-    Write-Ok "Autostart configured (Task Scheduler)"
-    Write-Ok "Agent is running - survives reboots"
-    Write-Host ""
-    Write-Info "Stop:    Stop-ScheduledTask -TaskName ClaudeSyncAgent"
-    Write-Info "Restart: Start-ScheduledTask -TaskName ClaudeSyncAgent"
-    Write-Info "Remove:  Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:\`$false"
-} else {
-    # Start agent manually
-    Start-Process -NoNewWindow -FilePath $nodePath -ArgumentList (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
-    Write-Ok "Agent started"
-    Write-Info "Start manually: node $InstallDir\\index.js"
-}
-
-Write-Host ""
-Write-Host "=== Installation complete ===" -ForegroundColor Green
+Write-Host "  === Installation complete ===" -ForegroundColor Green
 Write-Host "  Directory: $InstallDir"
 Write-Host "  Server:    ${serverUrl}"
+Write-Host ""
+Write-Info "Stop:    Stop-ScheduledTask -TaskName ClaudeSyncAgent"
+Write-Info "Restart: Start-ScheduledTask -TaskName ClaudeSyncAgent"
+Write-Info "Remove:  Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:\`$false"
 Write-Host ""
 `;
 }

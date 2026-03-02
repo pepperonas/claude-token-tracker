@@ -328,7 +328,7 @@ function updateCurlCommand(apiKey) {
   }
   if (psEl) {
     psEl.textContent = (!apiKey || apiKey === '-') ? '...' :
-      `irm "${location.origin}/api/sync-agent/install.ps1?key=${apiKey}" | iex`;
+      `powershell -ExecutionPolicy Bypass -Command "irm '${location.origin}/api/sync-agent/install.ps1?key=${apiKey}' | iex"`;
   }
 }
 

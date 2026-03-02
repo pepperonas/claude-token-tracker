@@ -993,7 +993,7 @@ pm2 save</code></pre>
 
           <!-- Windows panel -->
           <div id="sync-panel-windows" style="display:none">
-            <p class="sync-install-desc" data-i18n="syncInstallDescWin">Kopiere den Befehl unten und f&uuml;hre ihn in PowerShell aus &mdash; der Agent wird automatisch mit deinem API-Key konfiguriert.</p>
+            <p class="sync-install-desc" data-i18n="syncInstallDescWin">Kopiere den Befehl und f&uuml;hre ihn in PowerShell aus. Der Agent wird installiert, mit Autostart konfiguriert und sofort gestartet.</p>
             <div class="sync-curl-box">
               <label data-i18n="syncPsLabel">PowerShell-Befehl</label>
               <div class="sync-curl-row">
@@ -1007,9 +1007,14 @@ pm2 save</code></pre>
             </div>
             <div class="sync-pm2-box">
               <h4 data-i18n="syncPm2Title">Autostart</h4>
-              <p data-i18n="syncAutostartDescWin">Das Script richtet automatisch einen Autostart &uuml;ber den Task Scheduler ein. Alternativ mit PM2:</p>
-              <pre><code>pm2 start %USERPROFILE%\claude-sync-agent\index.js --name claude-sync
-pm2 save</code></pre>
+              <p data-i18n="syncAutostartDescWin">Das Script richtet automatisch einen Autostart &uuml;ber den Task Scheduler ein. Der Agent startet nach jedem Neustart automatisch.</p>
+              <pre><code># Status pr&uuml;fen
+Get-ScheduledTask -TaskName ClaudeSyncAgent
+# Stoppen / Starten
+Stop-ScheduledTask -TaskName ClaudeSyncAgent
+Start-ScheduledTask -TaskName ClaudeSyncAgent
+# Entfernen
+Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
             </div>
           </div>
         </div>
