@@ -42,12 +42,15 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 ### GitHub-Integration
 
 - **GitHub-Tab** — Verbindung über Personal Access Token für GitHub-spezifische Analysen
-- **Billing-Übersicht** — Actions-Minuten (genutzt/inklusiv), Packages-Speicher, Shared Storage mit Free/Pro-Plan-Erkennung und Fortschrittsbalken
-- **PR Code Impact** — Additions (grün), Deletions (rot), Netto-Zeilen und geänderte Dateien über alle PRs mit gruppiertem Balkendiagramm nach PR-Status (Merged/Open/Closed)
+- **Stale-While-Revalidate Caching** — gecachte Daten werden sofort ausgeliefert (auch wenn abgelaufen), Hintergrund-Refresh mit Doppel-Fetch-Verhinderung. 60-Min-TTL, manueller Refresh-Button verfügbar. Nach dem ersten Laden zeigt der GitHub-Tab nie einen Spinner
+- **Billing-Übersicht** — Actions-Minuten, Packages, Storage mit Free/Pro-Plan-Erkennung, Fortschrittsbalken und Prozentanzeige
+- **Code-Statistiken** — LOC hinzugefügt/gelöscht/netto aggregiert über die Top-10-Repos via GitHub Code Frequency API, zeitraumgefiltert
+- **PR Code Impact** — Additions (grün), Deletions (rot), Netto-Zeilen und geänderte Dateien über alle PRs mit gruppiertem Balkendiagramm nach PR-Status (Merged/Open/Closed). Zeigt „gesamt"-Hinweis bei aktivem Zeitraumfilter (PR-Daten können nicht nach Datum gefiltert werden)
 - **Actions-Nutzung pro Repository** — horizontales Balkendiagramm der abrechnungsfähigen Minuten pro Repo (Top 15), Workflow-Aufschlüsselung mit OS-Billing-Multiplikatoren (Ubuntu 1x, macOS 10x, Windows 2x)
 - **Minuten nach Runner-OS** — Doughnut-Chart der Actions-Minuten-Verteilung über Ubuntu, macOS und Windows Runner
-- **Contributions & Repos** — Contributions-Heatmap, aktuelle Repositories und PRs mit Review-Status
-- **Lazy Loading** — schnelle Daten (Stats + Billing) werden sofort angezeigt, langsame Daten (Actions-Nutzung pro Repo) laden im Hintergrund nach
+- **Contributions & Repos** — Contributions-Heatmap (immer volles Jahr), Commit-Chart und KPIs gefiltert nach gewähltem Zeitraum
+- **Lazy Loading** — schnelle Daten (Stats + Billing) werden sofort angezeigt, langsame Daten (Actions-Nutzung, Code-Statistiken) laden im Hintergrund nach
+- **Sanfter Refresh** — Zeitraumwechsel und Refresh-Button aktualisieren Daten ohne Spinner oder Scroll-Sprung
 
 ### Datenverarbeitung
 
@@ -111,7 +114,7 @@ Multi-User:
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
 | `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien |
 | `lib/achievements.js` | 500 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
-| `lib/github.js` | GitHub-API-Integration (REST + GraphQL), Billing-Info, PR-Statistiken, Contributions, Actions-Nutzung pro Repo mit OS-Multiplikatoren, 15-Min-Cache |
+| `lib/github.js` | GitHub-API-Integration (REST + GraphQL), Billing via Usage-Summary-API, PR-Statistiken, Contributions, Code-Statistiken, Actions-Nutzung pro Repo mit OS-Multiplikatoren, Stale-While-Revalidate-Cache (60-Min-TTL) |
 | `lib/export-html.js` | Mobil-optimierter HTML-Snapshot-Generator mit Chart.js, 8 Tabs, 12+ Charts, sortierbaren Tabellen und responsiven Breakpoints (768px/480px/412px) |
 | `server.js` | Vanilla `http.createServer` mit 25+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
@@ -305,6 +308,7 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/export-html` | GET | Interaktiver HTML-Snapshot (Chart.js, 8 Tabs, 12+ Charts) |
 | `/api/github/stats` | GET | GitHub Contributions, Repos, PRs (benötigt Token) |
 | `/api/github/billing` | GET | GitHub-Billing-Info (Actions-Minuten, Packages, Storage) |
+| `/api/github/code-stats` | GET | Aggregierte LOC-Statistiken über Top-Repos |
 | `/api/github/actions-usage` | GET | Actions-Nutzung pro Repository mit Workflow-Aufschlüsselung |
 | `/api/github/refresh` | POST | GitHub-Daten-Cache aktualisieren |
 | `/api/global-averages` | GET | Eigene vs. durchschnittliche Statistiken (Multi-User) |

@@ -44,7 +44,7 @@ Open [http://localhost:5010](http://localhost:5010)
 ## Highlights
 
 - **20 interactive charts** across 10 tabs with real-time SSE updates
-- **GitHub Integration** — Billing overview (Actions minutes, Packages, Storage with plan detection), PR Code Impact (additions/deletions/net/changed files), Actions Usage by Repository with workflow breakdown, Minutes by Runner OS chart, contributions heatmap
+- **GitHub Integration** — Stale-while-revalidate caching (instant loads after first visit), Billing with percentages, Code Statistics (LOC added/deleted/net across repos), PR Code Impact, Actions Usage by Repository, contributions heatmap with period-filtered charts
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators

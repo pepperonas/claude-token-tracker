@@ -830,8 +830,10 @@ const server = http.createServer((req, res) => {
     const token = github.getToken(user);
     if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
     github.getBillingInfo(token, user.id).then(data => {
-      sendJSON(res, data);
+      const age = github.getCacheAge(user.id, 'billing');
+      sendJSON(res, { ...data, _cached: age !== null, _age: age || 0 });
     }).catch(err => {
+      console.error('[billing] error:', err.message);
       sendJSON(res, { error: err.message }, 500);
     });
     return;
@@ -841,7 +843,8 @@ const server = http.createServer((req, res) => {
     const token = github.getToken(user);
     if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
     github.getContributionsAndRepos(token, user.id).then(data => {
-      sendJSON(res, data);
+      const age = github.getCacheAge(user.id, 'contributions');
+      sendJSON(res, { ...data, _cached: age !== null, _age: age || 0 });
     }).catch(err => {
       sendJSON(res, { error: err.message }, 500);
     });
@@ -880,7 +883,20 @@ const server = http.createServer((req, res) => {
     const token = github.getToken(user);
     if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
     github.getActionsUsageByRepo(token, user.id).then(data => {
-      sendJSON(res, data);
+      const age = github.getCacheAge(user.id, 'actions-usage');
+      sendJSON(res, { ...data, _cached: age !== null, _age: age || 0 });
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/code-stats' && req.method === 'GET') {
+    const token = github.getToken(user);
+    if (!token) return sendJSON(res, { error: 'No GitHub token configured' }, 400);
+    github.getCodeStats(token, user.id).then(data => {
+      const age = github.getCacheAge(user.id, 'code-stats');
+      sendJSON(res, { ...data, _cached: age !== null, _age: age || 0 });
     }).catch(err => {
       sendJSON(res, { error: err.message }, 500);
     });

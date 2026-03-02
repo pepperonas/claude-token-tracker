@@ -711,6 +711,33 @@
           </div>
         </div>
 
+        <!-- Code Stats (aggregated from repos) -->
+        <div id="github-code-stats" class="chart-box" style="display:none;">
+          <h3 data-i18n="ghCodeStats">Code-Statistiken</h3>
+          <div class="kpi-grid kpi-grid-4">
+            <div class="kpi-card kpi-card-green">
+              <div class="kpi-label" data-i18n="ghAdditions">Additions</div>
+              <div class="kpi-value" id="gh-code-additions">-</div>
+              <div class="kpi-sub" id="gh-code-additions-sub"></div>
+            </div>
+            <div class="kpi-card kpi-card-red">
+              <div class="kpi-label" data-i18n="ghDeletions">Deletions</div>
+              <div class="kpi-value" id="gh-code-deletions">-</div>
+              <div class="kpi-sub" id="gh-code-deletions-sub"></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghNetLines">Net Lines</div>
+              <div class="kpi-value" id="gh-code-net">-</div>
+              <div class="kpi-sub" id="gh-code-net-sub"></div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label" data-i18n="ghRepos">Repositories</div>
+              <div class="kpi-value" id="gh-code-repos">-</div>
+              <div class="kpi-sub" id="gh-code-repos-sub" data-i18n="ghAnalyzed">analysiert</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Charts 2x2 -->
         <div class="chart-grid">
           <div class="chart-box">

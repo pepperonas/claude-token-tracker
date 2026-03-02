@@ -1408,10 +1408,13 @@ async function loadGithub() {
   }
 
   // In multi-user mode, token comes from OAuth; in single-user, from .env
-  // Try to fetch stats — if we get a 400 "No GitHub token", show setup
+  // Only show spinner on first load; on refresh keep content visible
+  const isRefresh = contentEl.style.display !== 'none';
   setupEl.style.display = 'none';
-  loadingEl.style.display = 'flex';
-  contentEl.style.display = 'none';
+  if (!isRefresh) {
+    loadingEl.style.display = 'flex';
+    contentEl.style.display = 'none';
+  }
 
   try {
     // Fast: stats + billing load first, UI shows immediately
@@ -1448,11 +1451,12 @@ async function loadGithub() {
       // Actions minutes
       const minutesUsed = Math.round(billing.actions.totalMinutesUsed);
       const minutesIncluded = billing.actions.includedMinutes;
-      document.getElementById('gh-billing-minutes').textContent = formatNumber(minutesUsed);
+      const minutesPct = billing.actions.percentUsed;
+      document.getElementById('gh-billing-minutes').textContent =
+        formatNumber(minutesUsed) + ` (${minutesPct}%)`;
       const ghMinutesUsed = LANG[currentLang].ghMinutesUsed || LANG.en.ghMinutesUsed;
       document.getElementById('gh-billing-minutes-sub').textContent =
         ghMinutesUsed(formatNumber(minutesUsed), formatNumber(minutesIncluded));
-      const minutesPct = billing.actions.percentUsed;
       const minutesBar = document.getElementById('gh-billing-minutes-bar');
       minutesBar.style.width = Math.min(minutesPct, 100) + '%';
       minutesBar.className = 'github-billing-bar-fill' +
@@ -1461,8 +1465,10 @@ async function loadGithub() {
       // Storage with progress bar
       const storageGB = billing.storage.estimatedStorageGB;
       const includedStorageGB = billing.storage.includedStorageGB || 0.5;
+      const storagePctVal = includedStorageGB > 0 ? Math.round(storageGB / includedStorageGB * 1000) / 10 : 0;
+      const storageLabel = storageGB < 0.01 ? '< 0.01 GB' : storageGB.toFixed(2) + ' GB';
       document.getElementById('gh-billing-storage').textContent =
-        storageGB < 0.01 ? '< 0.01 GB' : storageGB.toFixed(2) + ' GB';
+        storageLabel + ` (${storagePctVal}%)`;
       const ghStorageUsedOf = LANG[currentLang].ghStorageUsedOf || LANG.en.ghStorageUsedOf;
       document.getElementById('gh-billing-storage-sub').textContent =
         ghStorageUsedOf(storageGB < 0.01 ? '< 0.01' : storageGB.toFixed(2), includedStorageGB);
@@ -1475,8 +1481,10 @@ async function loadGithub() {
       // Packages bandwidth
       const bwUsed = billing.packages.totalGigabytesBandwidthUsed;
       const bwIncluded = billing.packages.includedGigabytesBandwidth;
+      const bwPctVal = bwIncluded > 0 ? Math.round(bwUsed / bwIncluded * 1000) / 10 : 0;
+      const bwLabel = bwUsed < 0.01 ? '< 0.01 GB' : bwUsed.toFixed(2) + ' GB';
       document.getElementById('gh-billing-packages').textContent =
-        bwUsed < 0.01 ? '< 0.01 GB' : bwUsed.toFixed(2) + ' GB';
+        bwLabel + ` (${bwPctVal}%)`;
       const ghBandwidthUsed = LANG[currentLang].ghBandwidthUsed || LANG.en.ghBandwidthUsed;
       document.getElementById('gh-billing-packages-sub').textContent =
         ghBandwidthUsed(bwUsed.toFixed(2), formatNumber(bwIncluded));
@@ -1507,26 +1515,40 @@ async function loadGithub() {
     }
 
     // KPIs
-    document.getElementById('gh-kpi-contributions').textContent = formatNumber(data.totalContributions);
-    document.getElementById('gh-kpi-commits').textContent = formatNumber(data.commitCount);
+    // KPIs — use filtered counts when period is not "all"
+    const { from: pFrom, to: pTo } = getPeriodRange();
+    const filterByPeriod = (arr, dateKey) => {
+      if (!pFrom) return arr;
+      return arr.filter(d => d[dateKey] >= pFrom && d[dateKey] <= pTo);
+    };
+    const filteredHeatmap = filterByPeriod(data.heatmap, 'date');
+    const filteredContributions = filteredHeatmap.reduce((s, d) => s + d.count, 0);
+    const filteredCommitDaily = filterByPeriod(data.commitDaily, 'date');
+    const filteredCommits = filteredCommitDaily.reduce((s, d) => s + d.commits, 0);
+
+    document.getElementById('gh-kpi-contributions').textContent = formatNumber(pFrom ? filteredContributions : data.totalContributions);
+    document.getElementById('gh-kpi-commits').textContent = formatNumber(pFrom ? filteredCommits : data.commitCount);
     document.getElementById('gh-kpi-prs').textContent = formatNumber(data.prStats.total);
-    document.getElementById('gh-kpi-prs-sub').textContent =
-      `${t('ghOpen')}: ${data.prStats.open} | ${t('ghMerged')}: ${data.prStats.merged}`;
+    const prSubKpi = pFrom
+      ? `${t('ghTotal')} · ${t('ghOpen')}: ${data.prStats.open} | ${t('ghMerged')}: ${data.prStats.merged}`
+      : `${t('ghOpen')}: ${data.prStats.open} | ${t('ghMerged')}: ${data.prStats.merged}`;
+    document.getElementById('gh-kpi-prs-sub').textContent = prSubKpi;
     document.getElementById('gh-kpi-repos').textContent = formatNumber(data.repoCount);
     document.getElementById('gh-kpi-repos-sub').textContent =
-      `${t('ghTotalStars')}: ${data.totalStars} | ${t('ghTotalForks')}: ${data.totalForks}`;
+      (pFrom ? t('ghTotal') + ' · ' : '') + `${t('ghTotalStars')}: ${data.totalStars} | ${t('ghTotalForks')}: ${data.totalForks}`;
 
-    // Heatmap
+    // Heatmap — always show full year regardless of period
     renderGithubHeatmap(document.getElementById('github-heatmap'), data.heatmap);
 
     // Charts
-    createGithubCommitChart('chart-gh-commits', data.commitDaily);
+    createGithubCommitChart('chart-gh-commits', filteredCommitDaily);
     createGithubLanguageChart('chart-gh-languages', data.languages);
     createGithubPrChart('chart-gh-prs', data.prStats);
 
-    // PR Code Impact section
+    // PR Code Impact section (not filterable by period — PRs have no date in GraphQL)
     const prImpactEl = document.getElementById('github-pr-impact');
     const prStats = data.prStats;
+    const prSub = pFrom ? t('ghAcrossPRsTotal') : t('ghAcrossPRs');
     if (prStats.totalAdditions > 0 || prStats.totalDeletions > 0) {
       prImpactEl.style.display = '';
       document.getElementById('gh-pr-additions').textContent = '+' + formatNumber(prStats.totalAdditions);
@@ -1534,6 +1556,9 @@ async function loadGithub() {
       const net = prStats.netLines;
       document.getElementById('gh-pr-net').textContent = (net >= 0 ? '+' : '') + formatNumber(net);
       document.getElementById('gh-pr-files').textContent = formatNumber(prStats.totalChangedFiles);
+      // Update sub labels to indicate total when period is filtered
+      document.querySelectorAll('#github-pr-impact .kpi-sub[data-i18n="ghAcrossPRs"]')
+        .forEach(el => { el.textContent = prSub; });
       createGithubPrCodeImpactChart('chart-gh-pr-impact', prStats.codeByState);
     } else {
       prImpactEl.style.display = 'none';
@@ -1574,7 +1599,7 @@ async function loadGithub() {
       { value: r => r.updatedAt ? r.updatedAt.slice(0, 10) : '-' }
     ]);
 
-    // Refresh button
+    // Refresh button + cache age indicator
     const refreshBtn = document.getElementById('gh-refresh-btn');
     refreshBtn.onclick = async () => {
       refreshBtn.disabled = true;
@@ -1584,6 +1609,21 @@ async function loadGithub() {
       refreshBtn.textContent = t('ghRefresh');
       loadGithub();
     };
+
+    // Show "Updated X min ago" next to refresh button
+    let cacheAgeEl = document.getElementById('gh-cache-age');
+    if (!cacheAgeEl) {
+      cacheAgeEl = document.createElement('span');
+      cacheAgeEl.id = 'gh-cache-age';
+      cacheAgeEl.style.cssText = 'margin-left:8px;font-size:0.82em;opacity:0.55';
+      refreshBtn.parentNode.insertBefore(cacheAgeEl, refreshBtn.nextSibling);
+    }
+    if (typeof data._age === 'number' && data._cached) {
+      const age = data._age < 1 ? '< 1' : String(data._age);
+      cacheAgeEl.textContent = t('ghCacheAge').replace('{0}', age);
+    } else {
+      cacheAgeEl.textContent = '';
+    }
 
     // Slow: actions-usage loads lazily in background (many sequential API calls)
     const actionsUsageEl = document.getElementById('github-actions-usage');
@@ -1615,6 +1655,32 @@ async function loadGithub() {
       }
     }).catch(() => {});
 
+    // Code stats: LOC across top repos (lazy load)
+    const codeStatsEl = document.getElementById('github-code-stats');
+    codeStatsEl.style.display = 'none';
+    api('github/code-stats').then(cs => {
+      if (cs && !cs.error && cs.weekly && cs.weekly.length > 0) {
+        // Filter weekly data by selected period
+        const filtered = filterByPeriod(cs.weekly, 'week');
+        const additions = filtered.reduce((s, w) => s + w.additions, 0);
+        const deletions = filtered.reduce((s, w) => s + w.deletions, 0);
+        const net = additions - deletions;
+        if (additions > 0 || deletions > 0) {
+          codeStatsEl.style.display = '';
+          document.getElementById('gh-code-additions').textContent = '+' + formatNumber(additions);
+          document.getElementById('gh-code-deletions').textContent = '-' + formatNumber(deletions);
+          document.getElementById('gh-code-net').textContent = (net >= 0 ? '+' : '') + formatNumber(net);
+          document.getElementById('gh-code-repos').textContent = cs.repos;
+          document.getElementById('gh-code-additions-sub').textContent =
+            t('ghAcrossRepos').replace('{0}', cs.repos);
+          document.getElementById('gh-code-deletions-sub').textContent =
+            t('ghAcrossRepos').replace('{0}', cs.repos);
+          document.getElementById('gh-code-net-sub').textContent =
+            t('ghAdditionsMinusDeletions');
+        }
+      }
+    }).catch(() => {});
+
   } catch (err) {
     loadingEl.style.display = 'none';
     setupEl.style.display = '';
@@ -1629,12 +1695,11 @@ function renderGithubHeatmap(container, days) {
   for (const day of days) {
     const cell = document.createElement('div');
     cell.className = 'heatmap-cell';
-    // Determine level from count
     let level = 0;
-    if (day.count > 0 && day.count <= 3) level = 1;
-    else if (day.count <= 6) level = 2;
-    else if (day.count <= 9) level = 3;
-    else if (day.count > 9) level = 4;
+    if (day.count >= 10) level = 4;
+    else if (day.count >= 7) level = 3;
+    else if (day.count >= 4) level = 2;
+    else if (day.count >= 1) level = 1;
     cell.setAttribute('data-level', level);
     cell.setAttribute('data-tooltip', `${day.date}: ${day.count} contributions`);
     container.appendChild(cell);
