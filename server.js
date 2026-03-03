@@ -130,7 +130,12 @@ const watcher = new Watcher(aggregator, parseState, (newMsgs, rleEvents) => {
   if (newMsgs.length > 0) insertMessages(newMsgs, calculateCost);
   if (rleEvents && rleEvents.length > 0) insertRateLimitEvents(rleEvents);
   setParseState(parseState);
-  try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (e) { console.error('Achievement check failed:', e.message); }
+  try {
+    const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
+    if (newAch.length > 0) {
+      watcher.broadcast({ type: 'achievement-unlocked', achievements: achievements.getAchievementsByKeys(newAch) });
+    }
+  } catch (e) { console.error('Achievement check failed:', e.message); }
 });
 if (!MULTI_USER) {
   watcher.start();
@@ -586,7 +591,10 @@ const server = http.createServer((req, res) => {
       // Check achievements for this user
       try {
         const userAgg = aggregatorCache.get(user.id);
-        achievements.checkAchievements(userAgg, user.id, achievementsDb);
+        const newAch = achievements.checkAchievements(userAgg, user.id, achievementsDb);
+        if (newAch.length > 0) {
+          watcher.broadcast({ type: 'achievement-unlocked', achievements: achievements.getAchievementsByKeys(newAch), userId: user.id });
+        }
       } catch (e) { console.error('Achievement check failed for user', user.id, ':', e.message); }
 
       // Broadcast SSE update to this user's clients

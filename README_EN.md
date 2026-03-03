@@ -6,7 +6,7 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/version-0.0.7-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.8-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
   <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
@@ -69,7 +69,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
-- **500 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, and daily unlock stats
+- **500 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering

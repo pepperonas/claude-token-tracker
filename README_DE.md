@@ -6,7 +6,7 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-MIT-blue.svg" alt="Lizenz: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/Version-0.0.7-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.0.8-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
   <img src="https://img.shields.io/badge/Tests-151%20bestanden-brightgreen" alt="Tests">
@@ -69,7 +69,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **SEO-optimiert** mit Open Graph, Twitter Cards und strukturierten Meta-Tags
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
-- **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant), stufenbasierten Punkten (10–250), Zeitverlauf-Chart und täglichen Freischaltungs-Statistiken
+- **500 Achievements** — Gamification-System über 12 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial) mit 5 Stufen (Bronze bis Diamant), stufenbasierten Punkten (10–250), Zeitverlauf-Chart, täglichen Freischaltungs-Statistiken und Echtzeit-Benachrichtigungen bei neuen Freischaltungen via SSE
 - **Produktivitäts-Tab** — Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Cache-Ersparnis, Code-Anteil mit Trend-Indikatoren
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen

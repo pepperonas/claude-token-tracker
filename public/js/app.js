@@ -2000,6 +2000,62 @@ window.addEventListener('resize', () => {
   }, 250);
 });
 
+// --- Achievement Notifications ---
+let achievementNotificationTimer = null;
+
+function showAchievementNotification(achievements) {
+  const container = document.getElementById('achievement-notification');
+  const list = container.querySelector('.achievement-notification-list');
+  const title = container.querySelector('.achievement-notification-title');
+
+  // Append new items (supports accumulation if already visible)
+  for (const ach of achievements) {
+    const item = document.createElement('div');
+    item.className = `achievement-notification-item tier-${ach.tier}`;
+    const icon = document.createElement('div');
+    icon.className = 'achievement-icon';
+    icon.textContent = ach.emoji;
+    const info = document.createElement('div');
+    info.className = 'achievement-info';
+    const name = document.createElement('div');
+    name.className = 'achievement-name';
+    name.textContent = t('ach_' + ach.key) || ach.key;
+    const desc = document.createElement('div');
+    desc.className = 'achievement-desc';
+    desc.textContent = t('ach_' + ach.key + '_desc') || '';
+    info.appendChild(name);
+    if (desc.textContent) info.appendChild(desc);
+    const pts = document.createElement('div');
+    pts.className = 'achievement-points';
+    pts.textContent = '+' + ach.points;
+    item.appendChild(icon);
+    item.appendChild(info);
+    item.appendChild(pts);
+    list.appendChild(item);
+  }
+
+  title.textContent = t('achievementUnlocked');
+  container.classList.remove('hidden');
+
+  // Re-trigger slide-in animation
+  container.style.animation = 'none';
+  container.offsetHeight; // force reflow
+  container.style.animation = '';
+
+  // Auto-dismiss after 15s
+  clearTimeout(achievementNotificationTimer);
+  achievementNotificationTimer = setTimeout(() => closeAchievementNotification(), 15000);
+}
+
+function closeAchievementNotification() {
+  clearTimeout(achievementNotificationTimer);
+  const container = document.getElementById('achievement-notification');
+  container.classList.add('hidden');
+  // Remove all child nodes safely
+  const list = container.querySelector('.achievement-notification-list');
+  while (list.firstChild) list.removeChild(list.firstChild);
+}
+
 // --- SSE Live Updates ---
 let sseConnection = null;
 
@@ -2017,6 +2073,8 @@ function connectSSE() {
     if (data.type === 'update' || data.type === 'new-session') {
       chartAnimateNext = false;
       loadTab(state.activeTab);
+    } else if (data.type === 'achievement-unlocked' && data.achievements) {
+      showAchievementNotification(data.achievements);
     }
   };
 
