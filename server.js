@@ -812,12 +812,13 @@ const server = http.createServer((req, res) => {
     const productivity = agg.getProductivity(query.from, query.to);
     const stopReasons = agg.getStopReasons(query.from, query.to);
     const weekday = agg.getDayOfWeek(query.from, query.to);
+    const rateLimits = agg.getRateLimits(query.from, query.to);
     const exportUserId = MULTI_USER ? user.id : 0;
     const achData = achievements.getAchievementsResponse(exportUserId, achievementsDb);
     const periodLabel = query.from && query.to
       ? `${query.from} — ${query.to}`
       : query.from ? `From ${query.from}` : 'All Time';
-    const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, hourly, productivity, stopReasons, weekday, achievements: achData, periodLabel });
+    const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, hourly, productivity, stopReasons, weekday, achievements: achData, rateLimits, periodLabel });
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Content-Disposition': `attachment; filename="claude-tracker-${new Date().toISOString().slice(0, 10)}.html"`,
