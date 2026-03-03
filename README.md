@@ -11,13 +11,39 @@
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/version-0.0.7-orange.svg" alt="Version">
-  <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platform">
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.0.7-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
+  <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
+  <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
+  <img src="https://img.shields.io/badge/Vitest-151_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript">
+  <img src="https://img.shields.io/badge/HTML5-Vanilla-E34F26?logo=html5&logoColor=white" alt="HTML5">
+  <img src="https://img.shields.io/badge/CSS3-Responsive-1572B6?logo=css3&logoColor=white" alt="CSS3">
+  <img src="https://img.shields.io/badge/SSE-Real--time-FF6600?logo=lightning&logoColor=white" alt="SSE">
+  <img src="https://img.shields.io/badge/i18n-DE%20%7C%20EN-lightgrey" alt="i18n">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?logo=apple&logoColor=white" alt="Platform">
+  <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
+  <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
+  <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
+  <img src="https://img.shields.io/badge/LOC-17k+-informational" alt="Lines of Code">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/GitHub_OAuth-supported-181717?logo=github&logoColor=white" alt="GitHub OAuth">
+  <img src="https://img.shields.io/badge/Anthropic_API-integrated-D4A574?logo=anthropic&logoColor=white" alt="Anthropic API">
+  <img src="https://img.shields.io/badge/GitHub_GraphQL-contributions-181717?logo=graphql&logoColor=white" alt="GitHub GraphQL">
+  <img src="https://img.shields.io/badge/AES--256--GCM-encrypted-critical" alt="Encryption">
 </p>
 
 ---
@@ -43,18 +69,21 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **20 interactive charts** across 10 tabs with real-time SSE updates
-- **GitHub Integration** — Stale-while-revalidate caching (instant loads after first visit), Billing with percentages, Code Statistics (LOC added/deleted/net across repos), PR Code Impact, Actions Usage by Repository, contributions heatmap with period-filtered charts
+- **20+ interactive charts** across 10 tabs with real-time SSE updates
+- **Claude API tab** — Anthropic Admin API usage/cost dashboard with budget tracking, daily cost/token charts by model, cache efficiency metrics, AES-256-GCM encrypted key storage
+- **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
+- **Rate-Limit Tracking** — automatic detection of Claude Code rate-limit events from JSONL logs, daily aggregation, KPI card, backfill for historical data
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
-- **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
+- **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs, 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **500 achievements** — gamification system across 12 categories with 5 tiers, tier-based points, timeline chart, and daily unlock stats
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
-- **Multi-user mode** — GitHub OAuth, personal API keys, Sync Agent with one-click install (macOS/Linux/Windows)
+- **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
 - **151 automated tests** — unit, integration, and multi-user API tests
+- **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
 
@@ -80,12 +109,35 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ```
 ~/.claude/projects/**/*.jsonl
-    -> Parser (incremental byte-offset)
-    -> SQLite (WAL mode)
+    -> Parser (incremental byte-offset, dedup by message ID)
+    -> SQLite (WAL mode, 8 tables)
     -> Aggregator (in-memory pre-computed maps)
-    -> HTTP Server (25+ JSON endpoints + SSE)
+    -> HTTP Server (50+ JSON endpoints + SSE)
     -> Frontend (Chart.js, vanilla JS, i18n DE/EN)
 ```
+
+**Multi-user mode:**
+```
+Sync Agent (client) -> POST /api/sync (API key auth)
+    -> Per-user SQLite storage
+    -> AggregatorCache (lazy loaded, 30min eviction)
+    -> GitHub OAuth sessions
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Runtime** | Node.js >= 18 (native HTTP server, no Express) |
+| **Database** | SQLite via better-sqlite3 (WAL mode, transactions) |
+| **Frontend** | Vanilla JS + HTML5 + CSS3 (no build step) |
+| **Charts** | Chart.js 4.x |
+| **File watching** | Chokidar 4.x |
+| **Auth** | GitHub OAuth + HttpOnly session cookies |
+| **Encryption** | AES-256-GCM (admin API keys) |
+| **Testing** | Vitest + Supertest |
+| **Linting** | ESLint 9 (flat config) |
+| **CI** | GitHub Actions |
 
 ## Links
 

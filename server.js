@@ -4,7 +4,7 @@ const path = require('path');
 const url = require('url');
 
 const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL } = require('./lib/config');
-const { parseAll } = require('./lib/parser');
+const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
 const { calculateCost } = require('./lib/pricing');
@@ -99,6 +99,16 @@ if (newRateLimitEvents.length > 0) {
   insertRateLimitEvents(newRateLimitEvents);
   aggregator.addRateLimitEvents(newRateLimitEvents);
   console.log(`Parsed ${newRateLimitEvents.length} new rate-limit events`);
+}
+
+// Backfill: if DB has no rate-limit events but JSONL files might, do a full re-scan
+if (!MULTI_USER && existingRateLimitEvents.length === 0 && newRateLimitEvents.length === 0) {
+  const backfilled = backfillRateLimitEvents();
+  if (backfilled.length > 0) {
+    insertRateLimitEvents(backfilled);
+    aggregator.addRateLimitEvents(backfilled);
+    console.log(`Backfilled ${backfilled.length} rate-limit events from existing JSONL files`);
+  }
 }
 
 // 4. Save parse state

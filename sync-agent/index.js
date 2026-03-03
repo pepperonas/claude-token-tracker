@@ -249,10 +249,60 @@ async function setup() {
 
 // --- Full sync ---
 
+async function backfillRateLimitEvents(config) {
+  const files = findSessionFiles();
+  const allEvents = [];
+
+  for (const filePath of files) {
+    let stat;
+    try { stat = fs.statSync(filePath); } catch { continue; }
+    if (stat.size === 0) continue;
+
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(stat.size);
+    fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd);
+
+    const project = extractProjectName(filePath);
+    let sessionId = null;
+
+    const lines = buf.toString('utf-8').split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      let obj;
+      try { obj = JSON.parse(line); } catch { continue; }
+      if (!sessionId && obj.sessionId) sessionId = obj.sessionId;
+      if (obj.type === 'queue-operation' && obj.content === '/rate-limit-options') {
+        const sid = obj.sessionId || sessionId || '';
+        const id = crypto.createHash('sha256').update(sid + obj.timestamp).digest('hex').slice(0, 16);
+        allEvents.push({ id, timestamp: obj.timestamp, sessionId: sid, project });
+      }
+    }
+  }
+
+  if (allEvents.length > 0) {
+    // Send in batches of 500
+    for (let i = 0; i < allEvents.length; i += 500) {
+      const batch = allEvents.slice(i, i + 500);
+      await sendWithRetry(config.serverUrl, config.apiKey, [], batch);
+    }
+    console.log(`Backfilled ${allEvents.length} rate-limit events from existing JSONL files`);
+  }
+
+  return allEvents.length;
+}
+
 async function fullSync(config) {
   const state = loadState();
   const files = findSessionFiles();
   let totalSent = 0;
+
+  // One-time backfill for rate-limit events from already-parsed files
+  if (!state._rateLimitBackfillDone) {
+    await backfillRateLimitEvents(config);
+    state._rateLimitBackfillDone = true;
+    saveState(state);
+  }
 
   for (const filePath of files) {
     const prev = state[filePath];
