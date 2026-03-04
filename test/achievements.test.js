@@ -47,13 +47,13 @@ function createMockDb() {
 
 describe('Achievements', () => {
   describe('ACHIEVEMENTS array', () => {
-    it('should have exactly 500 achievements', () => {
-      expect(ACHIEVEMENTS.length).toBe(500);
+    it('should have exactly 700 achievements', () => {
+      expect(ACHIEVEMENTS.length).toBe(700);
     });
 
     it('should have unique keys', () => {
       const keys = ACHIEVEMENTS.map(a => a.key);
-      expect(new Set(keys).size).toBe(500);
+      expect(new Set(keys).size).toBe(700);
     });
 
     it('should have valid tiers', () => {
@@ -66,7 +66,8 @@ describe('Achievements', () => {
     it('should have valid categories', () => {
       const validCategories = [
         'tokens', 'sessions', 'messages', 'cost', 'lines',
-        'models', 'tools', 'time', 'projects', 'streaks', 'cache', 'special'
+        'models', 'tools', 'time', 'projects', 'streaks', 'cache', 'special',
+        'efficiency', 'ratelimits'
       ];
       for (const a of ACHIEVEMENTS) {
         expect(validCategories).toContain(a.category);
@@ -243,13 +244,13 @@ describe('Achievements', () => {
       }
     });
 
-    it('should return all 500 achievements with unlock status', () => {
+    it('should return all 700 achievements with unlock status', () => {
       const db = createMockDb();
       db.unlockAchievementsBatch(0, ['tokens_1k', 'sessions_1']);
 
       const response = getAchievementsResponse(0, db);
 
-      expect(response.length).toBe(500);
+      expect(response.length).toBe(700);
 
       const tokens1k = response.find(a => a.key === 'tokens_1k');
       expect(tokens1k.unlocked).toBe(true);

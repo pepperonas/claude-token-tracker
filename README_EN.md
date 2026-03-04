@@ -6,7 +6,7 @@
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
-  <img src="https://img.shields.io/badge/version-0.0.9-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.1.0-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white" alt="SQLite">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
   <img src="https://img.shields.io/badge/Tests-151%20passing-brightgreen" alt="Tests">
@@ -69,7 +69,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
-- **500 achievements** — gamification system across 12 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, daily unlock stats, and real-time unlock notifications via SSE
+- **700 achievements** — gamification system across 14 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special, efficiency, ratelimits) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
@@ -113,7 +113,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
-| `lib/achievements.js` | 500 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
+| `lib/achievements.js` | 700 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
 | `lib/github.js` | GitHub API integration (REST + GraphQL), billing via usage summary API, PR stats, contributions, code stats, actions usage per repo with OS multipliers, stale-while-revalidate cache (60-min TTL) |
 | `lib/export-html.js` | Mobile-responsive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, sortable tables, and responsive breakpoints (768px/480px/412px) |
 | `server.js` | Vanilla `http.createServer` with 25+ API routes, SSE, and static file serving |
@@ -303,7 +303,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Stop reason distribution |
 | `/api/session-efficiency` | GET | Tokens/message and cost/message |
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
-| `/api/achievements` | GET | All 500 achievements with unlock status |
+| `/api/achievements` | GET | All 700 achievements with unlock status |
 | `/api/productivity` | GET | Productivity metrics (tokens/min, lines/hour, cost/line, trends) |
 | `/api/export-html` | GET | Interactive HTML snapshot (Chart.js, 8 tabs, 12+ charts) |
 | `/api/github/stats` | GET | GitHub contributions, repos, PRs (requires token) |

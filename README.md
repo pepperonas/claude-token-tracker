@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.0.9-orange.svg" alt="Version"></a>
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.1.0-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
@@ -78,7 +78,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs, 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **500 achievements** — gamification system across 12 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
+- **700 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
@@ -96,7 +96,7 @@ Open [http://localhost:5010](http://localhost:5010)
 | ![Models](public/screenshots/05-models.png) | ![Insights](public/screenshots/06-insights.png) |
 | **Models** — model usage, daily tokens by model, cost breakdown | **Insights** — cache efficiency, stop reasons, lines of code chart |
 | ![Productivity](public/screenshots/07-productivity.png) | ![Achievements](public/screenshots/08-achievements.png) |
-| **Productivity** — efficiency metrics with period comparison | **Achievements** — 500 achievements across 12 categories with 5 tiers |
+| **Productivity** — efficiency metrics with period comparison | **Achievements** — 700 achievements across 14 categories with 5 tiers |
 
 ### Mobile (iPhone 16 — 393px)
 
