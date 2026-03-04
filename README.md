@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.0.8-orange.svg" alt="Version"></a>
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.0.9-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 

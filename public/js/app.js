@@ -852,8 +852,21 @@ async function loadInsights() {
   createSessionEfficiencyChart('chart-session-efficiency', sessionEfficiency);
 }
 
+let _achievementsData = null;
+let _achievementSort = 'category';
+
+function formatAchDate(isoStr) {
+  if (!isoStr) return '';
+  const d = isoStr.slice(0, 10); // YYYY-MM-DD
+  const fmt = localStorage.getItem('dateFormat') || 'us';
+  const yy = d.slice(0, 4), mm = d.slice(5, 7), dd = d.slice(8, 10);
+  return fmt === 'de' ? `${dd}.${mm}.${yy}` : `${mm}/${dd}/${yy}`;
+}
+
 async function loadAchievements() {
   const data = await api('achievements');
+  _achievementsData = data;
+
   const unlockedList = data.filter(a => a.unlocked);
   const unlocked = unlockedList.length;
   const total = data.length;
@@ -903,41 +916,79 @@ async function loadAchievements() {
     destroyChart('chart-achievements-timeline');
   }
 
+  // Sort buttons
+  document.querySelectorAll('.ach-sort-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sort === _achievementSort);
+  });
+
+  renderAchievementsGrid(data, _achievementSort);
+}
+
+const TIER_ORDER = { diamond: 0, platinum: 1, gold: 2, silver: 3, bronze: 4 };
+
+function renderAchievementsGrid(data, sortMode) {
   const grid = document.getElementById('achievements-grid');
   grid.textContent = '';
 
-  // Group by category
-  const categories = [];
-  const catMap = {};
-  for (const a of data) {
-    if (!catMap[a.category]) {
-      catMap[a.category] = [];
-      categories.push(a.category);
-    }
-    catMap[a.category].push(a);
-  }
-
   const tierFallback = {
-    bronze: '\u{1F7E4}',    // brown circle
-    silver: '\u26AA',       // white circle
-    gold: '\u{1F7E1}',     // yellow circle
-    platinum: '\u{1F535}',  // blue circle
-    diamond: '\u{1F48E}'   // gem
+    bronze: '\u{1F7E4}', silver: '\u26AA', gold: '\u{1F7E1}',
+    platinum: '\u{1F535}', diamond: '\u{1F48E}'
   };
 
-  for (const cat of categories) {
+  let groups;
+
+  if (sortMode === 'category') {
+    // Group by category (original)
+    const catMap = {};
+    const catOrder = [];
+    for (const a of data) {
+      if (!catMap[a.category]) { catMap[a.category] = []; catOrder.push(a.category); }
+      catMap[a.category].push(a);
+    }
+    groups = catOrder.map(cat => ({ label: t('achievementCat_' + cat) || cat, items: catMap[cat] }));
+  } else if (sortMode === 'recent') {
+    // Unlocked first sorted by date desc, then locked
+    const unl = data.filter(a => a.unlocked).sort((a, b) => (b.unlockedAt || '').localeCompare(a.unlockedAt || ''));
+    const locked = data.filter(a => !a.unlocked);
+    groups = [];
+    if (unl.length) groups.push({ label: t('achievementsUnlockedCount') || 'Unlocked', items: unl });
+    if (locked.length) groups.push({ label: t('locked') || 'Locked', items: locked });
+  } else if (sortMode === 'points-desc') {
+    // Sort by points descending, unlocked first
+    const sorted = [...data].sort((a, b) => {
+      if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
+      return (b.points || 0) - (a.points || 0);
+    });
+    groups = [{ label: '', items: sorted }];
+  } else if (sortMode === 'tier') {
+    // Group by tier (diamond first)
+    const tierMap = {};
+    const tierOrder = ['diamond', 'platinum', 'gold', 'silver', 'bronze'];
+    for (const a of data) {
+      if (!tierMap[a.tier]) tierMap[a.tier] = [];
+      tierMap[a.tier].push(a);
+    }
+    groups = tierOrder.filter(t => tierMap[t]).map(tier => ({
+      label: tier.charAt(0).toUpperCase() + tier.slice(1),
+      items: tierMap[tier].sort((a, b) => (a.unlocked === b.unlocked ? 0 : a.unlocked ? -1 : 1))
+    }));
+  }
+
+  for (const group of groups) {
     const section = document.createElement('div');
     section.className = 'achievements-category';
 
-    const header = document.createElement('h3');
-    header.className = 'achievements-category-title';
-    header.textContent = t('achievementCat_' + cat) || cat;
-    section.appendChild(header);
+    if (group.label) {
+      const header = document.createElement('h3');
+      header.className = 'achievements-category-title';
+      header.textContent = group.label;
+      section.appendChild(header);
+    }
 
     const cards = document.createElement('div');
     cards.className = 'achievements-cards';
 
-    for (const ach of catMap[cat]) {
+    for (const ach of group.items) {
       const card = document.createElement('div');
       card.className = 'achievement-card' + (ach.unlocked ? ' unlocked' : ' locked') + ' tier-' + ach.tier;
 
@@ -961,19 +1012,18 @@ async function loadAchievements() {
       card.appendChild(icon);
       card.appendChild(info);
 
-      // Points badge
-      const pts = document.createElement('div');
-      pts.className = 'achievement-points';
-      pts.textContent = (ach.points || 0) + ' pts';
-
       if (ach.unlocked && ach.unlockedAt) {
         const date = document.createElement('div');
         date.className = 'achievement-date';
-        date.textContent = ach.unlockedAt.slice(0, 10);
+        date.textContent = formatAchDate(ach.unlockedAt);
         card.appendChild(date);
       }
 
+      const pts = document.createElement('div');
+      pts.className = 'achievement-points';
+      pts.textContent = (ach.points || 0) + ' pts';
       card.appendChild(pts);
+
       cards.appendChild(card);
     }
 
@@ -2156,6 +2206,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('filter-project')?.addEventListener('change', (e) => {
     state.sessionFilter.project = e.target.value;
     loadSessions();
+  });
+
+  // Achievement sort buttons
+  document.querySelectorAll('.ach-sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _achievementSort = btn.dataset.sort;
+      document.querySelectorAll('.ach-sort-btn').forEach(b => b.classList.toggle('active', b === btn));
+      if (_achievementsData) renderAchievementsGrid(_achievementsData, _achievementSort);
+    });
   });
 
   document.getElementById('rebuild-btn')?.addEventListener('click', rebuild);

@@ -1268,6 +1268,32 @@ body {
   white-space: nowrap;
   flex-shrink: 0;
 }
+.achievements-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.achievements-sort-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.ach-sort-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.ach-sort-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 @media (max-width: 600px) {
   .achievements-cards { grid-template-columns: 1fr; }
   .achievements-stats { gap: 16px; }
