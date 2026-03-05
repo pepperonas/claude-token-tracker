@@ -57,6 +57,10 @@
   <img src="https://img.shields.io/badge/Mobil-responsiv_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobil responsiv">
 </p>
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Projekt_unterstützen-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal"></a>
+</p>
+
 ---
 
 <p align="center">
@@ -394,12 +398,6 @@ npm run lint          # ESLint (lib/ + server.js)
 - Unbenutzte Variablen: Prefix `_` (ESLint)
 - Deutsche Texte: richtige Umlaute (ü, ö, ä, ß), niemals ASCII-Ersatz
 
-## Unterstützung
-
-Wenn dir dieses Projekt gefällt, freue ich mich über eine kleine Spende:
-
-[![Spenden](https://img.shields.io/badge/Spenden-PayPal-blue.svg)](https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR)
-
 ## Autor
 
 Entwickelt von [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)
@@ -407,3 +405,13 @@ Entwickelt von [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/
 ## Lizenz
 
 MIT — siehe [LICENSE](LICENSE)
+
+---
+
+<p align="center">
+  <b>Wenn dir dieses Projekt gefällt, freue ich mich über eine kleine Unterstützung:</b>
+</p>
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Spenden-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal"></a>
+</p>

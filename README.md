@@ -63,6 +63,10 @@
   <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
 </p>
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Sponsor_this_project-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal"></a>
+</p>
+
 ---
 
 <p align="center">
@@ -160,5 +164,14 @@ Sync Agent (client) -> POST /api/sync (API key auth)
 
 - **Try it**: [tracker.celox.io](https://tracker.celox.io)
 - **Author**: [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)
-- **Donate**: [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR)
 - **License**: [MIT](LICENSE)
+
+---
+
+<p align="center">
+  <b>If you find this project useful, consider supporting its development:</b>
+</p>
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal"></a>
+</p>
