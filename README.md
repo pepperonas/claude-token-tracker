@@ -13,6 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.1.0-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+  <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/demo-tracker.celox.io-blue?logo=googlechrome&logoColor=white" alt="Live Demo"></a>
 </p>
 
 <p align="center">
@@ -44,6 +45,22 @@
   <img src="https://img.shields.io/badge/Anthropic_API-integrated-D4A574?logo=anthropic&logoColor=white" alt="Anthropic API">
   <img src="https://img.shields.io/badge/GitHub_GraphQL-contributions-181717?logo=graphql&logoColor=white" alt="GitHub GraphQL">
   <img src="https://img.shields.io/badge/AES--256--GCM-encrypted-critical" alt="Encryption">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
+  <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
+  <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
+  <img src="https://img.shields.io/badge/charts-20+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
+  <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/sync_agent-included-success?logo=upload&logoColor=white" alt="Sync Agent">
+  <img src="https://img.shields.io/badge/PM2-production_ready-2B037A?logo=pm2&logoColor=white" alt="PM2">
+  <img src="https://img.shields.io/badge/Nginx-reverse_proxy-009639?logo=nginx&logoColor=white" alt="Nginx">
+  <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
+  <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
 </p>
 
 ---
