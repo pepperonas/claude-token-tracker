@@ -69,7 +69,9 @@
 
 # Claude Token Tracker
 
-Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungsdateien von Claude Code, berechnet API-äquivalente Kosten, trackt Codezeilen und zeigt alles in Echtzeit an. Unterstützt **Single-User** (lokal) und **Multi-User** (gehostet mit GitHub OAuth + Sync Agent).
+Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungsdateien von Claude Code, schätzt API-äquivalente Kosten, trackt Codezeilen und zeigt alles in Echtzeit an. Unterstützt **Single-User** (lokal) und **Multi-User** (gehostet mit GitHub OAuth + Sync Agent).
+
+> **Hinweis zu Kosten:** Claude Code wird als Flatrate-Abo (Pro-/Max-Plan) abgerechnet, nicht pro Token. Die im Dashboard angezeigten Kosten sind **API-äquivalente Schätzungen** — sie zeigen, was deine Token-Nutzung zu regulären Anthropic-API-Preisen kosten würde. Das ist nützlich, um relative Nutzungsmuster zu verstehen, Effizienz über Sessions hinweg zu vergleichen und den Wert deines Abonnements einzuschätzen.
 
 ## Features
 
@@ -105,7 +107,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **SQLite-Datenbank** mit WAL-Modus für persistente Speicherung und schnelle Abfragen
 - **In-Memory Aggregation** — vorberechnete Maps für schnelle API-Antworten
 - **Echtzeit-Updates** via Server-Sent Events (animationsfrei bei Live-Updates)
-- **API-äquivalente Kostenschätzung** für alle Claude-Modelle (Opus 4.5/4.6, Sonnet 4.5, Haiku 4.5, Sonnet 3.7)
+- **API-äquivalente Kostenschätzung** für alle Claude-Modelle (Opus 4.5/4.6, Sonnet 4.5, Haiku 4.5, Sonnet 3.7) — zeigt, was die Nutzung zu regulären API-Preisen kosten würde, nicht die tatsächliche Abrechnung (Claude Code nutzt ein Flatrate-Abo)
 - **Automatisches Backup** (konfigurierbar, z.B. in Google Drive)
 
 ### Multi-User & Deployment

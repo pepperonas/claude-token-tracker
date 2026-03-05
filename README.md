@@ -5,7 +5,7 @@
 <h1 align="center">Claude Token Tracker</h1>
 
 <p align="center">
-  Real-time dashboard for Claude Code token usage, cost analysis, and coding activity tracking.
+  Real-time dashboard for Claude Code token usage, API-equivalent cost estimation, and coding activity tracking.
 </p>
 
 <p align="center">
@@ -102,7 +102,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **700 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
-- **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type cost estimation
+- **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
 - **151 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
