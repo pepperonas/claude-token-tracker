@@ -115,6 +115,9 @@
             document.querySelectorAll('.period-btn').forEach(function(b) {
               b.classList.toggle('active', b.dataset.period === p);
             });
+            if (p === 'today') {
+              document.getElementById('custom-date-picker').value = new Date().toISOString().slice(0, 10);
+            }
           }
         })();
         </script>

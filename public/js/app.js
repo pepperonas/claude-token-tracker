@@ -414,7 +414,7 @@ function setPeriod(period) {
   localStorage.setItem('period', period);
   localStorage.removeItem('customDate');
   const picker = document.getElementById('custom-date-picker');
-  if (picker) picker.value = '';
+  if (picker) picker.value = period === 'today' ? toLocalDate(new Date()) : '';
   document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
   loadTab(state.activeTab);
 }
@@ -452,7 +452,7 @@ function navigatePeriod(direction) {
         state.customDate = '';
         localStorage.removeItem('customDate');
         localStorage.setItem('period', 'today');
-        if (picker) picker.value = '';
+        if (picker) picker.value = today;
         document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === 'today'));
       }
     }
