@@ -978,11 +978,19 @@
           </div>
         </div>
 
-        <!-- Per API Key: Cost Chart -->
+        <!-- Per API Key: Cost Chart (total) -->
         <div class="chart-box" id="ca-key-chart-wrapper" style="display:none;">
           <h3 data-i18n="caKeyBreakdown">Kosten pro API Key</h3>
           <div class="chart-container" style="min-height:250px;">
             <canvas id="chart-ca-keys"></canvas>
+          </div>
+        </div>
+
+        <!-- Per API Key: Daily Cost Timeline -->
+        <div class="chart-box" id="ca-key-cost-timeline-wrapper" style="display:none;">
+          <h3 data-i18n="caKeyCostTimeline">Tägliche Kosten pro Key</h3>
+          <div class="chart-container">
+            <canvas id="chart-ca-key-cost-timeline"></canvas>
           </div>
         </div>
 

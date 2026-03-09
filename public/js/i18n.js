@@ -1785,6 +1785,7 @@ const LANG = {
     caKeyName: 'Key',
     caKeyLastUsed: 'Last Used',
     caKeyTimeline: 'Token History per Key',
+    caKeyCostTimeline: 'Daily Costs per Key',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -3572,6 +3573,7 @@ const LANG = {
     caKeyName: 'Key',
     caKeyLastUsed: 'Letzter Aufruf',
     caKeyTimeline: 'Token-Verlauf pro Key',
+    caKeyCostTimeline: 'Tägliche Kosten pro Key',
   }
 };
 

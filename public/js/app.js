@@ -1933,15 +1933,21 @@ async function loadClaudeApi() {
 
     const hasKeyData = keyTotals.length > 0;
     const keyChartWrapper = document.getElementById('ca-key-chart-wrapper');
+    const keyCostTimelineWrapper = document.getElementById('ca-key-cost-timeline-wrapper');
     const keyTableWrapper = document.getElementById('ca-key-table-wrapper');
     const keyTimelineWrapper = document.getElementById('ca-key-timeline-wrapper');
 
     keyChartWrapper.style.display = hasKeyData ? '' : 'none';
+    keyCostTimelineWrapper.style.display = hasKeyData ? '' : 'none';
     keyTableWrapper.style.display = hasKeyData ? '' : 'none';
 
     if (hasKeyData) {
       // Horizontal bar chart: cost per key, stacked by model
       createAnthropicKeyChart('chart-ca-keys', keyTotals, keyBreakdown);
+
+      // Daily cost timeline per key
+      const filteredDailyByKey = filterByPeriod(dailyTokensByKey, 'date');
+      createAnthropicKeyCostTimelineChart('chart-ca-key-cost-timeline', filteredDailyByKey, keyTotals);
 
       // Key table
       const keyTbody = document.getElementById('ca-key-tbody');
@@ -1956,8 +1962,7 @@ async function loadClaudeApi() {
         { className: 'num', value: r => r.lastUsed || '-' }
       ]);
 
-      // Timeline: only show if > 1 key
-      const filteredDailyByKey = filterByPeriod(dailyTokensByKey, 'date');
+      // Token timeline: only show if > 1 key
       if (keyTotals.length > 1) {
         keyTimelineWrapper.style.display = '';
         createAnthropicKeyTimelineChart('chart-ca-key-timeline', filteredDailyByKey, keyTotals);
@@ -1965,6 +1970,7 @@ async function loadClaudeApi() {
         keyTimelineWrapper.style.display = 'none';
       }
     } else {
+      keyCostTimelineWrapper.style.display = 'none';
       keyTimelineWrapper.style.display = 'none';
     }
 

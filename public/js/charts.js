@@ -1929,6 +1929,60 @@ function createAnthropicKeyChart(canvasId, keyTotals, keyBreakdown) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+function createAnthropicKeyCostTimelineChart(canvasId, dailyTokensByKey, keyTotals) {
+  destroyChart(canvasId);
+  if (!dailyTokensByKey || dailyTokensByKey.length === 0) return;
+  if (!keyTotals || keyTotals.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  const topKeys = keyTotals.slice(0, 10);
+
+  const datasets = topKeys.map((k, i) => ({
+    label: k.keyName,
+    data: dailyTokensByKey.map(d => {
+      const entry = d.byKey[k.keyId];
+      return entry ? entry.calculatedCost : 0;
+    }),
+    backgroundColor: ANTHROPIC_KEY_COLORS[i % ANTHROPIC_KEY_COLORS.length] + 'cc',
+    borderWidth: 0
+  }));
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dailyTokensByKey.map(d => formatChartDate(d.date)),
+      datasets
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: topKeys.length > 1 && !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: $${ctx.raw.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 function createAnthropicKeyTimelineChart(canvasId, dailyTokensByKey, keyTotals) {
   destroyChart(canvasId);
   if (!dailyTokensByKey || dailyTokensByKey.length === 0) return;
