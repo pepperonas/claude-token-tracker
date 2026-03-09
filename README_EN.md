@@ -45,7 +45,7 @@
   <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
-  <img src="https://img.shields.io/badge/charts-20+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
+  <img src="https://img.shields.io/badge/charts-25+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
   <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
 </p>
 
@@ -77,7 +77,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 ### Dashboard & Visualization
 
-- **20 interactive charts** across 10 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, GitHub, Info)
+- **25+ interactive charts** across 10 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, GitHub, Claude API, Info)
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
@@ -100,6 +100,25 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Contributions & Repos** — contribution heatmap (always full year), commit chart and KPIs filtered by selected period
 - **Lazy loading** — fast data (stats + billing) renders immediately, slow data (actions usage, code stats) loads in background
 - **Smooth refresh** — period changes and refresh button update data in-place without spinner or scroll jump
+
+### Claude API Integration
+
+- **Anthropic Admin API dashboard** — connects via Admin Key (`sk-ant-admin`) to display organization-level usage and cost data from the Anthropic API
+- **4 KPIs** — Total Cost, Total Tokens, Avg Cost/Day (on active days), Cache Efficiency (cache-read share)
+- **Budget tracking** — set a monthly budget with progress bar, color-coded thresholds (green < 70%, orange < 90%, red >= 90%)
+- **Daily cost chart** — stacked bar chart of daily costs broken down by model (Opus, Sonnet, Haiku)
+- **Daily token chart** — stacked bar chart of daily tokens by type (Input, Output, Cache Read, Cache Create)
+- **Model distribution** — doughnut chart showing cost share per model
+- **Cumulative cost trend** — line chart tracking running total over time
+- **Per-API-key cost breakdown** — horizontal stacked bar chart showing calculated cost per API key, broken down by model. Costs computed via `lib/pricing.js` model rates (the Anthropic cost API doesn't support `group_by api_key_id`)
+- **Daily cost timeline per key** — stacked bar chart showing daily cost per API key over time
+- **API key comparison table** — sortable table with columns: Key Name, Tokens, Input, Output, Cache %, Calculated Cost, Last Used
+- **Token history per key** — stacked area chart of daily tokens per key (only shown when more than one key has data)
+- **Key name resolution** — API key IDs resolved to human-readable names via `/v1/organizations/api_keys`, with truncated ID fallback
+- **AES-256-GCM encryption** — Admin keys stored encrypted in the database, never returned in plain text
+- **Stale-while-revalidate caching** — API responses cached with configurable TTL (`ANTHROPIC_CACHE_TTL_MINUTES`, default 60 min), manual refresh button with cache age display
+- **Period filtering** — all daily charts and KPIs respect the global period filter (Today / 7d / 30d / All Time)
+- **Multi-user support** — each user stores their own Admin Key; in single-user mode, key can be set via `.env` or in Settings
 
 ### Data Processing
 
@@ -164,6 +183,7 @@ Multi-User:
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
 | `lib/achievements.js` | 700 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
 | `lib/github.js` | GitHub API integration (REST + GraphQL), billing via usage summary API, PR stats, contributions, code stats, actions usage per repo with OS multipliers, stale-while-revalidate cache (60-min TTL) |
+| `lib/anthropic-api.js` | Anthropic Admin API integration — usage/cost reports, per-API-key breakdown (4 parallel requests: usage by model, usage by key+model, cost report, API key names), SWR cache, AES-256-GCM key encryption |
 | `lib/export-html.js` | Mobile-responsive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, sortable tables, and responsive breakpoints (768px/480px/412px) |
 | `server.js` | Vanilla `http.createServer` with 25+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
@@ -360,6 +380,9 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/github/code-stats` | GET | Aggregated LOC stats across top repos |
 | `/api/github/actions-usage` | GET | Actions usage per repository with workflow breakdown |
 | `/api/github/refresh` | POST | Force refresh GitHub data cache |
+| `/api/anthropic/dashboard` | GET | Anthropic API usage/cost dashboard with per-key breakdown |
+| `/api/anthropic/budget` | GET/POST | Get or set monthly budget |
+| `/api/anthropic/refresh` | POST | Force refresh Anthropic data cache |
 | `/api/global-averages` | GET | Personal vs average stats (multi-user) |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |

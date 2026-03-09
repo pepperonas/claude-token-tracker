@@ -51,7 +51,7 @@
   <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
-  <img src="https://img.shields.io/badge/charts-20+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
+  <img src="https://img.shields.io/badge/charts-25+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
   <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
 </p>
 
@@ -90,8 +90,8 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **20+ interactive charts** across 10 tabs with real-time SSE updates
-- **Claude API tab** — Anthropic Admin API usage/cost dashboard with budget tracking, daily cost/token charts by model, per-API-key cost breakdown (horizontal stacked bar + table + timeline), cache efficiency metrics, AES-256-GCM encrypted key storage
+- **25+ interactive charts** across 10 tabs with real-time SSE updates
+- **Claude API tab** — Anthropic Admin API usage/cost dashboard: budget tracking with progress bar, 4 KPIs (total cost, tokens, avg cost/day, cache efficiency), daily cost/token charts by model, model distribution doughnut, cumulative cost trend. **Per-API-key breakdown**: horizontal stacked bar chart showing cost per key by model, daily cost timeline per key, key comparison table (tokens, input, output, cache %, calculated cost, last used), token history timeline (stacked area). Costs per key calculated via model pricing since the cost API doesn't support `group_by api_key_id`. Key names resolved via `/v1/organizations/api_keys`. AES-256-GCM encrypted key storage, SWR caching with configurable TTL
 - **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
 - **Rate-Limit Tracking** — automatic detection of Claude Code rate-limit events from JSONL logs, daily aggregation, KPI card, backfill for historical data
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
