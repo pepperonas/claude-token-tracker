@@ -1926,6 +1926,48 @@ async function loadClaudeApi() {
       { className: 'num', value: r => (r.cost / totalCostForShare * 100).toFixed(1) + '%' }
     ]);
 
+    // Per-API-key section
+    const keyTotals = data.keyTotals || [];
+    const keyBreakdown = data.keyBreakdown || [];
+    const dailyTokensByKey = data.dailyTokensByKey || [];
+
+    const hasKeyData = keyTotals.length > 0;
+    const keyChartWrapper = document.getElementById('ca-key-chart-wrapper');
+    const keyTableWrapper = document.getElementById('ca-key-table-wrapper');
+    const keyTimelineWrapper = document.getElementById('ca-key-timeline-wrapper');
+
+    keyChartWrapper.style.display = hasKeyData ? '' : 'none';
+    keyTableWrapper.style.display = hasKeyData ? '' : 'none';
+
+    if (hasKeyData) {
+      // Horizontal bar chart: cost per key, stacked by model
+      createAnthropicKeyChart('chart-ca-keys', keyTotals, keyBreakdown);
+
+      // Key table
+      const keyTbody = document.getElementById('ca-key-tbody');
+      buildTableRows(keyTbody, keyTotals.slice(0, 20), [
+        { value: r => r.keyName },
+        { className: 'num', value: r => formatNumber(r.totalTokens) },
+        { className: 'num', value: r => formatNumber(r.totalInput) },
+        { className: 'num', value: r => formatNumber(r.totalOutput) },
+        { className: 'num', value: r => r.totalTokens > 0
+          ? (r.totalCacheRead / r.totalTokens * 100).toFixed(1) + '%' : '0%' },
+        { className: 'num', value: r => '$' + r.calculatedCost.toFixed(2) },
+        { className: 'num', value: r => r.lastUsed || '-' }
+      ]);
+
+      // Timeline: only show if > 1 key
+      const filteredDailyByKey = filterByPeriod(dailyTokensByKey, 'date');
+      if (keyTotals.length > 1) {
+        keyTimelineWrapper.style.display = '';
+        createAnthropicKeyTimelineChart('chart-ca-key-timeline', filteredDailyByKey, keyTotals);
+      } else {
+        keyTimelineWrapper.style.display = 'none';
+      }
+    } else {
+      keyTimelineWrapper.style.display = 'none';
+    }
+
     // Refresh button + cache age
     const refreshBtn = document.getElementById('ca-refresh-btn');
     refreshBtn.onclick = async () => {

@@ -1780,6 +1780,11 @@ const LANG = {
     caShare: 'Share',
     caRefresh: 'Refresh',
     caTokenBreakdown: (input, output, cache) => `In: ${input} | Out: ${output} | Cache: ${cache}`,
+    caKeyBreakdown: 'Cost per API Key',
+    caKeyTable: 'API Key Overview',
+    caKeyName: 'Key',
+    caKeyLastUsed: 'Last Used',
+    caKeyTimeline: 'Token History per Key',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -3562,6 +3567,11 @@ const LANG = {
     caShare: 'Anteil',
     caRefresh: 'Aktualisieren',
     caTokenBreakdown: (input, output, cache) => `In: ${input} | Out: ${output} | Cache: ${cache}`,
+    caKeyBreakdown: 'Kosten pro API Key',
+    caKeyTable: 'API Key Übersicht',
+    caKeyName: 'Key',
+    caKeyLastUsed: 'Letzter Aufruf',
+    caKeyTimeline: 'Token-Verlauf pro Key',
   }
 };
 

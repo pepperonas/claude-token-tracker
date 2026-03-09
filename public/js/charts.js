@@ -1862,3 +1862,134 @@ function createAnthropicCostTrendChart(canvasId, dailyCosts) {
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
+
+const ANTHROPIC_KEY_COLORS = [
+  '#4A90E2', '#FF6B35', '#d4a574', '#6BBF6B', '#E24A7A',
+  '#9B59B6', '#F1C40F', '#1ABC9C', '#E67E22', '#3498DB'
+];
+
+function createAnthropicKeyChart(canvasId, keyTotals, keyBreakdown) {
+  destroyChart(canvasId);
+  if (!keyTotals || keyTotals.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  // Collect all models across key breakdown
+  const modelSet = new Set();
+  for (const e of (keyBreakdown || [])) modelSet.add(e.model);
+  const models = [...modelSet];
+
+  // Sort keys by cost descending (already sorted from backend)
+  const sortedKeys = keyTotals.slice(0, 15);
+
+  const datasets = models.map((model, i) => ({
+    label: model,
+    data: sortedKeys.map(k => {
+      const match = (keyBreakdown || []).find(e => e.keyId === k.keyId && e.model === model);
+      return match ? match.calculatedCost : 0;
+    }),
+    backgroundColor: ANTHROPIC_COLORS[i % ANTHROPIC_COLORS.length] + 'cc',
+    borderWidth: 0
+  }));
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sortedKeys.map(k => k.keyName),
+      datasets
+    },
+    options: {
+      indexAxis: 'y',
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: models.length > 1 && !isNarrow() },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: $${ctx.raw.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, beginAtZero: true },
+        y: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            font: { size: isMobile() ? 9 : 11 },
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return label.length > 20 ? label.slice(0, 18) + '\u2026' : label;
+            }
+          }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createAnthropicKeyTimelineChart(canvasId, dailyTokensByKey, keyTotals) {
+  destroyChart(canvasId);
+  if (!dailyTokensByKey || dailyTokensByKey.length === 0) return;
+  if (!keyTotals || keyTotals.length <= 1) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  // Use top keys by cost
+  const topKeys = keyTotals.slice(0, 10);
+
+  const datasets = topKeys.map((k, i) => ({
+    label: k.keyName,
+    data: dailyTokensByKey.map(d => {
+      const entry = d.byKey[k.keyId];
+      return entry ? entry.total : 0;
+    }),
+    backgroundColor: ANTHROPIC_KEY_COLORS[i % ANTHROPIC_KEY_COLORS.length] + '66',
+    borderColor: ANTHROPIC_KEY_COLORS[i % ANTHROPIC_KEY_COLORS.length],
+    borderWidth: 1,
+    fill: true,
+    tension: 0.3,
+    pointRadius: isMobile() ? 0 : 1,
+    pointHoverRadius: 3
+  }));
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dailyTokensByKey.map(d => formatChartDate(d.date)),
+      datasets
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', display: !isNarrow() },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.raw;
+              if (val >= 1000000) return `${ctx.dataset.label}: ${(val / 1000000).toFixed(1)}M`;
+              if (val >= 1000) return `${ctx.dataset.label}: ${(val / 1000).toFixed(1)}K`;
+              return `${ctx.dataset.label}: ${val}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile() ? 6 : 12,
+            font: { size: isMobile() ? 9 : 11 }
+          }
+        },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}

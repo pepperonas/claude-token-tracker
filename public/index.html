@@ -978,6 +978,43 @@
           </div>
         </div>
 
+        <!-- Per API Key: Cost Chart -->
+        <div class="chart-box" id="ca-key-chart-wrapper" style="display:none;">
+          <h3 data-i18n="caKeyBreakdown">Kosten pro API Key</h3>
+          <div class="chart-container" style="min-height:250px;">
+            <canvas id="chart-ca-keys"></canvas>
+          </div>
+        </div>
+
+        <!-- Per API Key: Table -->
+        <div class="chart-box" id="ca-key-table-wrapper" style="display:none;">
+          <h3 data-i18n="caKeyTable">API Key Übersicht</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="caKeyName">Key</th>
+                  <th class="num" data-i18n="tokens">Tokens</th>
+                  <th class="num" data-i18n="caInput">Input</th>
+                  <th class="num" data-i18n="caOutput">Output</th>
+                  <th class="num">Cache %</th>
+                  <th class="num" data-i18n="caCost">Kosten</th>
+                  <th class="num" data-i18n="caKeyLastUsed">Letzter Aufruf</th>
+                </tr>
+              </thead>
+              <tbody id="ca-key-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Per API Key: Timeline -->
+        <div class="chart-box" id="ca-key-timeline-wrapper" style="display:none;">
+          <h3 data-i18n="caKeyTimeline">Token-Verlauf pro Key</h3>
+          <div class="chart-container">
+            <canvas id="chart-ca-key-timeline"></canvas>
+          </div>
+        </div>
+
         <!-- Refresh -->
         <div class="github-actions">
           <button class="rebuild-btn" id="ca-refresh-btn" data-i18n="caRefresh">Aktualisieren</button>

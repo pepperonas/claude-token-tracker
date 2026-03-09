@@ -91,7 +91,7 @@ Open [http://localhost:5010](http://localhost:5010)
 ## Highlights
 
 - **20+ interactive charts** across 10 tabs with real-time SSE updates
-- **Claude API tab** — Anthropic Admin API usage/cost dashboard with budget tracking, daily cost/token charts by model, cache efficiency metrics, AES-256-GCM encrypted key storage
+- **Claude API tab** — Anthropic Admin API usage/cost dashboard with budget tracking, daily cost/token charts by model, per-API-key cost breakdown (horizontal stacked bar + table + timeline), cache efficiency metrics, AES-256-GCM encrypted key storage
 - **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
 - **Rate-Limit Tracking** — automatic detection of Claude Code rate-limit events from JSONL logs, daily aggregation, KPI card, backfill for historical data
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
