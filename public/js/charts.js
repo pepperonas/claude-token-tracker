@@ -1642,8 +1642,8 @@ function createGithubCodeFrequencyChart(canvasId, data) {
 // --- Anthropic API Charts ---
 
 const ANTHROPIC_COLORS = [
-  '#d4a574', '#c9956b', '#b8845f', '#a67353', '#946247',
-  '#e8c4a0', '#f0d4b8', '#c4a882', '#a89070', '#8c7860'
+  '#4A90E2', '#FF6B35', '#d4a574', '#6BBF6B', '#E24A7A',
+  '#9B59B6', '#F1C40F', '#1ABC9C', '#E67E22', '#3498DB'
 ];
 
 function createAnthropicDailyCostChart(canvasId, dailyCosts) {

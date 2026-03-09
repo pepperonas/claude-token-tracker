@@ -930,6 +930,14 @@
           </div>
         </div>
 
+        <!-- Per API Key: Cost Chart (total) — primary chart -->
+        <div class="chart-box" id="ca-key-chart-wrapper" style="display:none;">
+          <h3 data-i18n="caKeyBreakdown">Kosten pro API Key</h3>
+          <div class="chart-container" style="min-height:250px;">
+            <canvas id="chart-ca-keys"></canvas>
+          </div>
+        </div>
+
         <!-- Charts 2x2 -->
         <div class="chart-grid">
           <div class="chart-box">
@@ -975,14 +983,6 @@
               </thead>
               <tbody id="ca-model-tbody"></tbody>
             </table>
-          </div>
-        </div>
-
-        <!-- Per API Key: Cost Chart (total) -->
-        <div class="chart-box" id="ca-key-chart-wrapper" style="display:none;">
-          <h3 data-i18n="caKeyBreakdown">Kosten pro API Key</h3>
-          <div class="chart-container" style="min-height:250px;">
-            <canvas id="chart-ca-keys"></canvas>
           </div>
         </div>
 
