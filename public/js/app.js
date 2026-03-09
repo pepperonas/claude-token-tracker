@@ -754,13 +754,119 @@ async function loadProjects() {
 }
 
 async function loadTools() {
-  const tools = await api('tools' + periodQuery());
-  createToolBarChart('chart-tools', tools);
+  const pq = periodQuery();
+  const singleDay = isSingleDay();
+  const [tools, toolStats, mcpServers, subagentStats, toolCostDaily] = await Promise.all([
+    api('tools' + pq),
+    api('tool-stats' + pq),
+    api('mcp-servers' + pq),
+    api('subagent-stats' + pq),
+    singleDay ? Promise.resolve(null) : api('tool-cost-daily' + pq)
+  ]);
 
-  storeTableData('tools-tbody', tools, [
-    { value: t => t.name },
-    { value: t => formatNumber(t.count), className: 'num' },
-    { value: t => t.percentage + '%', className: 'num' }
+  // KPIs
+  const totalCalls = toolStats.reduce((a, t) => a + t.calls, 0);
+  const totalCost = toolStats.reduce((a, t) => a + t.cost, 0);
+  document.getElementById('kpi-unique-tools-val').textContent = formatNumber(toolStats.length);
+  document.getElementById('kpi-total-calls-val').textContent = formatNumber(totalCalls);
+  document.getElementById('kpi-tools-cost-val').textContent = formatCost(totalCost);
+  document.getElementById('kpi-mcp-servers-val').textContent = formatNumber(mcpServers.length);
+
+  // Charts
+  createToolBarChart('chart-tools', tools);
+  createToolCostBarChart('chart-tool-cost', toolStats);
+  if (toolCostDaily) {
+    createToolCostDailyChart('chart-tool-cost-daily', toolCostDaily);
+  }
+
+  // MCP Servers section
+  const mcpSection = document.getElementById('mcp-servers-section');
+  const mcpCards = document.getElementById('mcp-servers-cards');
+  if (mcpServers.length > 0) {
+    mcpSection.style.display = '';
+    mcpCards.textContent = '';
+    for (const srv of mcpServers) {
+      const card = document.createElement('div');
+      card.className = 'kpi';
+      const label = document.createElement('div');
+      label.className = 'kpi-label';
+      label.textContent = srv.name;
+      const value = document.createElement('div');
+      value.className = 'kpi-value';
+      value.textContent = formatNumber(srv.totalCalls) + ' calls';
+      const sub = document.createElement('div');
+      sub.className = 'kpi-sub';
+      sub.textContent = formatCost(srv.totalCost) + ' · ' + srv.tools.length + ' tools';
+      card.appendChild(label);
+      card.appendChild(value);
+      card.appendChild(sub);
+      mcpCards.appendChild(card);
+    }
+  } else {
+    mcpSection.style.display = 'none';
+  }
+
+  // Sub-agent section
+  const subSection = document.getElementById('subagent-section');
+  const subKpis = document.getElementById('subagent-kpis');
+  if (subagentStats.messages > 0) {
+    subSection.style.display = '';
+    subKpis.textContent = '';
+    const items = [
+      { label: t('subAgentMessages'), value: formatNumber(subagentStats.messages), sub: subagentStats.pctMessages + '% ' + t('subAgentPct') },
+      { label: t('subAgentTokens'), value: formatTokens(subagentStats.tokens) },
+      { label: t('subAgentCost'), value: formatCost(subagentStats.cost), sub: subagentStats.pctCost + '% ' + t('subAgentPct') }
+    ];
+    for (const item of items) {
+      const card = document.createElement('div');
+      card.className = 'kpi';
+      const lbl = document.createElement('div');
+      lbl.className = 'kpi-label';
+      lbl.textContent = item.label;
+      const val = document.createElement('div');
+      val.className = 'kpi-value';
+      val.textContent = item.value;
+      card.appendChild(lbl);
+      card.appendChild(val);
+      if (item.sub) {
+        const sub = document.createElement('div');
+        sub.className = 'kpi-sub';
+        sub.textContent = item.sub;
+        card.appendChild(sub);
+      }
+      subKpis.appendChild(card);
+    }
+  } else {
+    subSection.style.display = 'none';
+  }
+
+  // Enhanced table with cost data
+  const thead = document.querySelector('#tools-table thead tr');
+  if (thead) {
+    thead.textContent = '';
+    const headers = [
+      { text: t('tool') },
+      { text: t('type') },
+      { text: t('calls'), cls: 'num' },
+      { text: t('estCost'), cls: 'num' },
+      { text: t('tokens'), cls: 'num' },
+      { text: t('pctTotal'), cls: 'num' }
+    ];
+    for (const h of headers) {
+      const th = document.createElement('th');
+      th.textContent = h.text;
+      if (h.cls) th.className = h.cls;
+      thead.appendChild(th);
+    }
+  }
+
+  storeTableData('tools-tbody', toolStats, [
+    { value: ts => ts.displayName || ts.name },
+    { value: ts => ts.type === 'mcp' ? 'MCP' : t('builtIn') },
+    { value: ts => formatNumber(ts.calls), className: 'num' },
+    { value: ts => formatCost(ts.cost), className: 'num' },
+    { value: ts => formatTokens(ts.tokens), className: 'num' },
+    { value: ts => ts.percentage + '%', className: 'num' }
   ]);
 }
 

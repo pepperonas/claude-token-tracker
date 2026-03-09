@@ -367,6 +367,108 @@ function createToolBarChart(canvasId, data) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+function createToolCostBarChart(canvasId, data) {
+  destroyChart(canvasId);
+  const top = data.slice(0, 15);
+  if (top.length === 0) return;
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top.map(d => { const max = isMobile() ? 15 : 25; const n = d.displayName || d.name; return n.length > max ? n.slice(0, max) + '...' : n; }),
+      datasets: [{
+        label: 'Cost',
+        data: top.map(d => d.cost),
+        backgroundColor: COLORS.cost + '80',
+        borderColor: COLORS.cost,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => '$' + ctx.raw.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { callback: v => '$' + v.toFixed(2) } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+function createToolCostDailyChart(canvasId, dailyData) {
+  destroyChart(canvasId);
+  if (!dailyData || dailyData.length === 0) return;
+
+  // Find top 8 tools by total cost
+  const toolTotals = {};
+  for (const d of dailyData) {
+    for (const [key, val] of Object.entries(d)) {
+      if (key === 'date') continue;
+      toolTotals[key] = (toolTotals[key] || 0) + val;
+    }
+  }
+  const topTools = Object.entries(toolTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name]) => name);
+
+  if (topTools.length === 0) return;
+
+  const palette = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149', '#39d2c0', '#f0883e', '#8b949e'];
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dailyData.map(d => formatChartDate(d.date)),
+      datasets: topTools.map((tool, i) => ({
+        label: tool.length > 20 ? tool.slice(0, 18) + '...' : tool,
+        data: dailyData.map(d => Math.round((d[tool] || 0) * 100) / 100),
+        borderColor: palette[i % palette.length],
+        backgroundColor: palette[i % palette.length] + '30',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 1.5
+      }))
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': $' + ctx.raw.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { callback: v => '$' + v.toFixed(2) },
+          grid: { color: '#30363d40' }
+        }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 function createModelAreaChart(canvasId, data) {
   destroyChart(canvasId);
   if (!data || data.length === 0) return;

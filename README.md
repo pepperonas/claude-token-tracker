@@ -93,6 +93,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **25+ interactive charts** across 10 tabs with real-time SSE updates
 - **Claude API tab** — Anthropic Admin API usage/cost dashboard: budget tracking with progress bar, 4 KPIs (total cost, tokens, avg cost/day, cache efficiency), daily cost/token charts by model, model distribution doughnut, cumulative cost trend. **Per-API-key breakdown**: horizontal stacked bar chart showing cost per key by model, daily cost timeline per key, key comparison table (tokens, input, output, cache %, calculated cost, last used), token history timeline (stacked area). Costs per key calculated via model pricing since the cost API doesn't support `group_by api_key_id`. Key names resolved via `/v1/organizations/api_keys`. AES-256-GCM encrypted key storage, SWR caching with configurable TTL
 - **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
+- **Tool Cost Attribution** — proportional cost/token distribution per tool, MCP server breakdown (auto-detected via `mcp__` prefix), sub-agent tracking (via `/subagents/` path), cost-over-time chart, enhanced table with Type/Cost/Tokens columns
 - **Rate-Limit Tracking** — automatic detection of Claude Code rate-limit events from JSONL logs, daily aggregation, KPI card, backfill for historical data
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
@@ -113,7 +114,7 @@ Open [http://localhost:5010](http://localhost:5010)
 | ![Overview](public/screenshots/01-overview.png) | ![Sessions](public/screenshots/02-sessions.png) |
 | **Overview** — KPI cards, token breakdown, lines of code, daily charts | **Sessions** — sortable table with project, model, duration, tokens, cost |
 | ![Projects](public/screenshots/03-projects.png) | ![Tools](public/screenshots/04-tools.png) |
-| **Projects** — per-project statistics and cost breakdown | **Tools** — tool usage frequency and distribution |
+| **Projects** — per-project statistics and cost breakdown | **Tools** — tool cost attribution, MCP server breakdown, sub-agent tracking |
 | ![Models](public/screenshots/05-models.png) | ![Insights](public/screenshots/06-insights.png) |
 | **Models** — model usage, daily tokens by model, cost breakdown | **Insights** — cache efficiency, stop reasons, lines of code chart |
 | ![Productivity](public/screenshots/07-productivity.png) | ![Achievements](public/screenshots/08-achievements.png) |

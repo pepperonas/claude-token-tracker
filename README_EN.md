@@ -78,6 +78,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 ### Dashboard & Visualization
 
 - **25+ interactive charts** across 10 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, GitHub, Claude API, Info)
+- **Tool Cost Attribution** — proportional cost/token distribution per tool, MCP server breakdown (auto-detected via `mcp__` prefix), sub-agent tracking (via `/subagents/` path), cost-over-time chart, enhanced table with Type/Cost/Tokens columns
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
@@ -174,8 +175,8 @@ Multi-User:
 
 | Module | Description |
 |--------|-------------|
-| `lib/parser.js` | Reads JSONL files, extracts token counts, tools, model, and lines-of-code from `type: 'assistant'` messages |
-| `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly` maps |
+| `lib/parser.js` | Reads JSONL files, extracts token counts, tools (with per-tool call counts), model, lines-of-code, and sub-agent flag from `type: 'assistant'` messages |
+| `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` maps |
 | `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements` tables |
 | `lib/pricing.js` | Model pricing (input/output/cacheRead/cacheCreate per 1M tokens) |
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
@@ -363,6 +364,10 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/projects` | GET | Project statistics |
 | `/api/models` | GET | Model statistics |
 | `/api/tools` | GET | Tool usage statistics |
+| `/api/tool-stats` | GET | Tool cost attribution (cost, tokens, type per tool) |
+| `/api/mcp-servers` | GET | MCP server breakdown with per-tool stats |
+| `/api/subagent-stats` | GET | Sub-agent message/token/cost statistics |
+| `/api/tool-cost-daily` | GET | Daily tool cost breakdown (top tools over time) |
 | `/api/hourly` | GET | Hourly activity |
 | `/api/daily-by-model` | GET | Daily tokens by model |
 | `/api/daily-cost-breakdown` | GET | Daily cost by token type |

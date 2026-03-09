@@ -340,20 +340,63 @@
 
     <!-- Tab 4: Tools -->
     <div id="tab-tools" class="tab-panel">
-      <div class="chart-grid full">
+      <div class="kpi-grid" id="tools-kpi-grid">
+        <div class="kpi c-blue" id="kpi-unique-tools">
+          <div class="kpi-label" data-i18n="uniqueTools">Einzigartige Tools</div>
+          <div class="kpi-value" id="kpi-unique-tools-val">0</div>
+        </div>
+        <div class="kpi c-green" id="kpi-total-calls">
+          <div class="kpi-label" data-i18n="toolsTotalCalls">Aufrufe gesamt</div>
+          <div class="kpi-value" id="kpi-total-calls-val">0</div>
+        </div>
+        <div class="kpi c-yellow" id="kpi-tools-cost">
+          <div class="kpi-label" data-i18n="toolsTotalCost">Gesch. Kosten</div>
+          <div class="kpi-value" id="kpi-tools-cost-val">$0.00</div>
+        </div>
+        <div class="kpi c-teal" id="kpi-mcp-servers">
+          <div class="kpi-label" data-i18n="toolsMcpServers">MCP-Server</div>
+          <div class="kpi-value" id="kpi-mcp-servers-val">0</div>
+        </div>
+      </div>
+      <div class="chart-grid">
         <div class="chart-box">
           <h3 data-i18n="toolUsage">Tool-Nutzung</h3>
           <div class="chart-container" style="height: 400px;">
             <canvas id="chart-tools"></canvas>
           </div>
         </div>
+        <div class="chart-box">
+          <h3 data-i18n="toolCostAttribution">Tool-Kostenverteilung</h3>
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="chart-tool-cost"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="toolCostOverTime">Tool-Kosten im Zeitverlauf</h3>
+          <div class="chart-container">
+            <canvas id="chart-tool-cost-daily"></canvas>
+          </div>
+        </div>
+      </div>
+      <div id="mcp-servers-section" style="display:none;">
+        <h3 data-i18n="mcpServers">MCP-Server</h3>
+        <div id="mcp-servers-cards" class="kpi-grid"></div>
+      </div>
+      <div id="subagent-section" style="display:none;">
+        <h3 data-i18n="subAgentStats">Sub-Agent-Statistik</h3>
+        <div id="subagent-kpis" class="kpi-grid"></div>
       </div>
       <div class="table-wrapper">
-        <table class="data-table">
+        <table class="data-table" id="tools-table">
           <thead>
             <tr>
               <th data-i18n="tool">Tool</th>
+              <th data-i18n="type">Typ</th>
               <th class="num" data-i18n="calls">Aufrufe</th>
+              <th class="num" data-i18n="estCost">Gesch. Kosten</th>
+              <th class="num" data-i18n="tokens">Tokens</th>
               <th class="num" data-i18n="pctTotal">% gesamt</th>
             </tr>
           </thead>

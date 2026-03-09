@@ -78,6 +78,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 ### Dashboard & Visualisierung
 
 - **25+ interaktive Charts** über 10 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Produktivität, Achievements, GitHub, Claude API, Info)
+- **Tool-Kostenverteilung** — proportionale Kosten-/Token-Verteilung pro Tool, MCP-Server-Aufschlüsselung (automatisch erkannt über `mcp__`-Präfix), Sub-Agent-Tracking (über `/subagents/`-Pfad), Kosten-Zeitverlauf-Chart, erweiterte Tabelle mit Typ-/Kosten-/Token-Spalten
 - **Aktive Sitzungen** — Live-Anzeige aktuell laufender Claude-Code-Sessions mit Projekt, Modell, Dauer und Kosten
 - **Token-Aufschlüsselung** — Detail-KPI-Cards für Input, Output, Cache Read und Cache Create Tokens mit Einzelkosten
 - **Lines of Code** — Write (grün), Edit (gelb), Delete (rot) mit Netto-Änderungsberechnung und adaptivem Stunden-/Tages-Chart
@@ -174,8 +175,8 @@ Multi-User:
 
 | Modul | Beschreibung |
 |-------|-------------|
-| `lib/parser.js` | Liest JSONL-Dateien, extrahiert Token-Zähler, Tools, Modell und Lines-of-Code aus `type: 'assistant'` Nachrichten |
-| `lib/aggregator.js` | In-Memory Analytics-Engine mit `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly` Maps |
+| `lib/parser.js` | Liest JSONL-Dateien, extrahiert Token-Zähler, Tools (mit Aufrufzählung pro Tool), Modell, Lines-of-Code und Sub-Agent-Flag aus `type: 'assistant'` Nachrichten |
+| `lib/aggregator.js` | In-Memory Analytics-Engine mit `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` Maps |
 | `lib/db.js` | SQLite-Schicht mit `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements` Tabellen |
 | `lib/pricing.js` | Modellpreise (Input/Output/CacheRead/CacheCreate pro 1M Tokens) |
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
@@ -363,6 +364,10 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/projects` | GET | Projektstatistiken |
 | `/api/models` | GET | Modellstatistiken |
 | `/api/tools` | GET | Tool-Nutzungsstatistiken |
+| `/api/tool-stats` | GET | Tool-Kostenverteilung (Kosten, Tokens, Typ pro Tool) |
+| `/api/mcp-servers` | GET | MCP-Server-Aufschlüsselung mit Per-Tool-Statistiken |
+| `/api/subagent-stats` | GET | Sub-Agent Nachrichten-/Token-/Kostenstatistiken |
+| `/api/tool-cost-daily` | GET | Tägliche Tool-Kostenaufschlüsselung (Top-Tools im Zeitverlauf) |
 | `/api/hourly` | GET | Stündliche Aktivität |
 | `/api/daily-by-model` | GET | Tägliche Tokens nach Modell |
 | `/api/daily-cost-breakdown` | GET | Tägliche Kosten nach Token-Typ |

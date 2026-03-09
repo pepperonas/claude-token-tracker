@@ -713,6 +713,22 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getTools(query.from, query.to));
   }
 
+  if (pathname === '/api/tool-stats') {
+    return sendJSON(res, agg.getToolStats(query.from, query.to));
+  }
+
+  if (pathname === '/api/mcp-servers') {
+    return sendJSON(res, agg.getMcpServers(query.from, query.to));
+  }
+
+  if (pathname === '/api/subagent-stats') {
+    return sendJSON(res, agg.getSubagentStats(query.from, query.to));
+  }
+
+  if (pathname === '/api/tool-cost-daily') {
+    return sendJSON(res, agg.getToolCostDaily(query.from, query.to));
+  }
+
   if (pathname === '/api/hourly') {
     return sendJSON(res, agg.getHourly(query.from, query.to));
   }
@@ -808,6 +824,7 @@ const server = http.createServer((req, res) => {
     const projects = agg.getProjects(query.from, query.to);
     const models = agg.getModels(query.from, query.to);
     const tools = agg.getTools(query.from, query.to);
+    const toolStats = agg.getToolStats(query.from, query.to);
     const hourly = agg.getHourly(query.from, query.to);
     const productivity = agg.getProductivity(query.from, query.to);
     const stopReasons = agg.getStopReasons(query.from, query.to);
@@ -840,7 +857,7 @@ const server = http.createServer((req, res) => {
       const githubData = (ghBilling || ghStats || ghActions || ghCodeStats)
         ? { billing: ghBilling, stats: ghStats, actions: ghActions, codeStats: ghCodeStats }
         : null;
-      const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, hourly, productivity, stopReasons, weekday, achievements: achData, rateLimits, periodLabel, githubData, anthropicData });
+      const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, toolStats, hourly, productivity, stopReasons, weekday, achievements: achData, rateLimits, periodLabel, githubData, anthropicData });
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="claude-tracker-${new Date().toISOString().slice(0, 10)}.html"`,
