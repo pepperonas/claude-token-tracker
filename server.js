@@ -818,13 +818,39 @@ const server = http.createServer((req, res) => {
     const periodLabel = query.from && query.to
       ? `${query.from} — ${query.to}`
       : query.from ? `From ${query.from}` : 'All Time';
-    const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, hourly, productivity, stopReasons, weekday, achievements: achData, rateLimits, periodLabel });
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Content-Disposition': `attachment; filename="claude-tracker-${new Date().toISOString().slice(0, 10)}.html"`,
-      'Cache-Control': 'no-cache'
+
+    // Fetch GitHub and Anthropic data (best-effort, no secrets exported)
+    const githubToken = github.getToken(user);
+    const anthropicToken = anthropicApi.getAdminToken(user);
+    const promises = [];
+    promises.push(githubToken
+      ? Promise.all([
+        github.getBillingInfo(githubToken, user.id).catch(() => null),
+        github.getContributionsAndRepos(githubToken, user.id).catch(() => null),
+        github.getActionsUsageByRepo(githubToken, user.id).catch(() => null),
+        github.getCodeStats(githubToken, user.id).catch(() => null)
+      ])
+      : Promise.resolve([null, null, null, null]));
+    promises.push(anthropicToken
+      ? anthropicApi.getDashboardData(anthropicToken, user.id).catch(() => null)
+      : Promise.resolve(null));
+
+    Promise.all(promises).then(([ghResults, anthropicData]) => {
+      const [ghBilling, ghStats, ghActions, ghCodeStats] = ghResults;
+      const githubData = (ghBilling || ghStats || ghActions || ghCodeStats)
+        ? { billing: ghBilling, stats: ghStats, actions: ghActions, codeStats: ghCodeStats }
+        : null;
+      const html = generateExportHTML({ overview, daily, sessions, projects, models, tools, hourly, productivity, stopReasons, weekday, achievements: achData, rateLimits, periodLabel, githubData, anthropicData });
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `attachment; filename="claude-tracker-${new Date().toISOString().slice(0, 10)}.html"`,
+        'Cache-Control': 'no-cache'
+      });
+      res.end(html);
+    }).catch(err => {
+      sendJSON(res, { error: err.message }, 500);
     });
-    return res.end(html);
+    return;
   }
 
   if (pathname === '/api/rebuild' && req.method === 'POST') {
