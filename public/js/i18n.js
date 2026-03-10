@@ -1832,6 +1832,8 @@ const LANG = {
     deviceCreated: 'Device created — copy the API key now, it will not be shown again.',
     installFor: 'Install',
     installCommand: 'Install Command',
+    renameDevice: 'Click to rename',
+    renameDevicePrompt: 'New device name:',
     regenerateKey: 'Regenerate Key',
     regenerateConfirm: 'Regenerate API key? The sync agent on this device will need to be reinstalled.',
   },
@@ -3668,6 +3670,8 @@ const LANG = {
     deviceCreated: 'Gerät erstellt — kopiere jetzt den API-Key, er wird nicht erneut angezeigt.',
     installFor: 'Installieren',
     installCommand: 'Installations-Befehl',
+    renameDevice: 'Klicken zum Umbenennen',
+    renameDevicePrompt: 'Neuer Gerätename:',
     regenerateKey: 'Key erneuern',
     regenerateConfirm: 'API-Key erneuern? Der Sync-Agent auf diesem Gerät muss neu installiert werden.',
   }

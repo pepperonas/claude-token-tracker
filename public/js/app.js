@@ -2255,6 +2255,9 @@ async function loadDeviceManagement() {
     state.devices = devices;
     const list = document.getElementById('device-list');
     list.textContent = '';
+    // Clear any lingering "new key" box
+    const oldKeyBox = section.querySelector('.device-new-key');
+    if (oldKeyBox) oldKeyBox.remove();
 
     for (const d of devices) {
       const row = document.createElement('div');
@@ -2265,6 +2268,22 @@ async function loadDeviceManagement() {
       const nameEl = document.createElement('div');
       nameEl.className = 'device-item-name';
       nameEl.textContent = d.name;
+      nameEl.title = t('renameDevice') || 'Click to rename';
+      nameEl.style.cursor = 'pointer';
+      nameEl.addEventListener('click', async () => {
+        const newName = prompt(t('renameDevicePrompt') || 'New device name:', d.name);
+        if (!newName || newName.trim() === '' || newName.trim() === d.name) return;
+        const res = await fetch(`/api/devices/${d.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+        const data = await res.json();
+        if (!data.error) {
+          loadDeviceManagement();
+          loadDevices();
+        }
+      });
       const meta = document.createElement('div');
       meta.className = 'device-item-meta';
       const syncText = d.lastSyncAt
@@ -2353,23 +2372,52 @@ function _showNewDeviceKey(name, apiKey, container) {
     setTimeout(() => { copyBtn.textContent = t('copy') || 'Copy'; }, 1500);
   });
 
-  // Install command
-  const os = detectSyncOs();
+  // Install command with OS toggle
+  const installHeader = document.createElement('div');
+  installHeader.style.display = 'flex';
+  installHeader.style.alignItems = 'center';
+  installHeader.style.gap = '8px';
+  installHeader.style.marginTop = '8px';
+  installHeader.style.marginBottom = '2px';
   const installLabel = document.createElement('div');
   installLabel.textContent = t('installCommand') || 'Install Command:';
   installLabel.style.fontSize = '11px';
   installLabel.style.color = 'var(--muted)';
-  installLabel.style.marginTop = '8px';
-  installLabel.style.marginBottom = '2px';
+  const osToggle = document.createElement('div');
+  osToggle.style.display = 'flex';
+  osToggle.style.gap = '2px';
+  const detectedOs = detectSyncOs();
+  const unixBtn = document.createElement('button');
+  unixBtn.className = 'btn-small' + (detectedOs !== 'windows' ? ' active' : '');
+  unixBtn.textContent = 'macOS/Linux';
+  unixBtn.style.fontSize = '10px';
+  unixBtn.style.padding = '1px 6px';
+  const winBtn = document.createElement('button');
+  winBtn.className = 'btn-small' + (detectedOs === 'windows' ? ' active' : '');
+  winBtn.textContent = 'Windows';
+  winBtn.style.fontSize = '10px';
+  winBtn.style.padding = '1px 6px';
+  osToggle.appendChild(unixBtn);
+  osToggle.appendChild(winBtn);
+  installHeader.appendChild(installLabel);
+  installHeader.appendChild(osToggle);
   const installCode = document.createElement('code');
   installCode.style.display = 'block';
   installCode.style.wordBreak = 'break-all';
   installCode.style.fontSize = '12px';
-  if (os === 'windows') {
-    installCode.textContent = `powershell -ExecutionPolicy Bypass -Command "irm '${location.origin}/api/sync-agent/install.ps1?key=${apiKey}' | iex"`;
-  } else {
-    installCode.textContent = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
-  }
+  const curlCmd = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
+  const psCmd = `powershell -ExecutionPolicy Bypass -Command "irm '${location.origin}/api/sync-agent/install.ps1?key=${apiKey}' | iex"`;
+  installCode.textContent = detectedOs === 'windows' ? psCmd : curlCmd;
+  unixBtn.addEventListener('click', () => {
+    installCode.textContent = curlCmd;
+    unixBtn.classList.add('active');
+    winBtn.classList.remove('active');
+  });
+  winBtn.addEventListener('click', () => {
+    installCode.textContent = psCmd;
+    winBtn.classList.add('active');
+    unixBtn.classList.remove('active');
+  });
   const copyInstallBtn = document.createElement('button');
   copyInstallBtn.className = 'btn-small';
   copyInstallBtn.textContent = t('copy') || 'Copy';
@@ -2384,7 +2432,7 @@ function _showNewDeviceKey(name, apiKey, container) {
   box.appendChild(keyLabel);
   box.appendChild(code);
   box.appendChild(copyBtn);
-  box.appendChild(installLabel);
+  box.appendChild(installHeader);
   box.appendChild(installCode);
   box.appendChild(copyInstallBtn);
   container.parentElement.insertBefore(box, container.parentElement.querySelector('.device-add-row'));

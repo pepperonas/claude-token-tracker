@@ -132,7 +132,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 ### Multi-User & Deployment
 
-- **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view
+- **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view, click-to-rename devices, OS-selectable install commands
 - **Multi-user mode** — GitHub OAuth, personal API keys, per-user data isolation
 - **Sync Agent** — one-click install via curl (macOS/Linux) or PowerShell (Windows), watches local session files and uploads to server
 - **Autostart** — install script automatically sets up launchd (macOS), systemd (Linux), or Task Scheduler (Windows)

@@ -134,6 +134,13 @@ body {
 .device-list-item .device-info .device-item-name {
   font-weight: 600;
   color: var(--text);
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  display: inline;
+}
+.device-list-item .device-info .device-item-name:hover {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
 }
 .device-list-item .device-info .device-item-meta {
   font-size: 12px;

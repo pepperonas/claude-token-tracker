@@ -132,7 +132,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 
 ### Multi-User & Deployment
 
-- **Multi-Device-Tracking** — Nutzung über mehrere Geräte tracken (MacBook, VPS, Desktop), eigene API-Keys pro Gerät, Geräte-Umschalter im Dashboard, aggregierte „Alle Geräte"-Ansicht
+- **Multi-Device-Tracking** — Nutzung über mehrere Geräte tracken (MacBook, VPS, Desktop), eigene API-Keys pro Gerät, Geräte-Umschalter im Dashboard, aggregierte „Alle Geräte"-Ansicht, Klick-zum-Umbenennen, OS-wählbare Installations-Befehle
 - **Multi-User-Modus** — GitHub OAuth, persönliche API-Keys, Datenisolation pro User
 - **Sync Agent** — Ein-Klick-Installation via curl (macOS/Linux) oder PowerShell (Windows), überwacht lokale Sitzungsdateien und überträgt an den Server
 - **Autostart** — Install-Script richtet automatisch launchd (macOS), systemd (Linux) oder Task Scheduler (Windows) ein
