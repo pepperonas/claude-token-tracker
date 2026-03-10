@@ -2268,22 +2268,6 @@ async function loadDeviceManagement() {
       const nameEl = document.createElement('div');
       nameEl.className = 'device-item-name';
       nameEl.textContent = d.name;
-      nameEl.title = t('renameDevice') || 'Click to rename';
-      nameEl.style.cursor = 'pointer';
-      nameEl.addEventListener('click', async () => {
-        const newName = prompt(t('renameDevicePrompt') || 'New device name:', d.name);
-        if (!newName || newName.trim() === '' || newName.trim() === d.name) return;
-        const res = await fetch(`/api/devices/${d.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newName.trim() })
-        });
-        const data = await res.json();
-        if (!data.error) {
-          loadDeviceManagement();
-          loadDevices();
-        }
-      });
       const meta = document.createElement('div');
       meta.className = 'device-item-meta';
       const syncText = d.lastSyncAt
@@ -2331,6 +2315,26 @@ async function loadDeviceManagement() {
         loadDevices();
       });
 
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'btn-small btn-icon';
+      renameBtn.textContent = '\u270E';
+      renameBtn.title = t('renameDevice') || 'Rename';
+      renameBtn.addEventListener('click', async () => {
+        const newName = prompt(t('renameDevicePrompt') || 'New device name:', d.name);
+        if (!newName || newName.trim() === '' || newName.trim() === d.name) return;
+        const res = await fetch(`/api/devices/${d.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+        const data = await res.json();
+        if (!data.error) {
+          loadDeviceManagement();
+          loadDevices();
+        }
+      });
+
+      actions.appendChild(renameBtn);
       actions.appendChild(installBtn);
       actions.appendChild(regenBtn);
       actions.appendChild(delBtn);
@@ -2344,7 +2348,7 @@ async function loadDeviceManagement() {
   }
 }
 
-function _showNewDeviceKey(name, apiKey, container) {
+function _showNewDeviceKey(name, apiKey, container, osOverride) {
   const existing = container.parentElement.querySelector('.device-new-key');
   if (existing) existing.remove();
   const box = document.createElement('div');
@@ -2386,14 +2390,14 @@ function _showNewDeviceKey(name, apiKey, container) {
   const osToggle = document.createElement('div');
   osToggle.style.display = 'flex';
   osToggle.style.gap = '2px';
-  const detectedOs = detectSyncOs();
+  const initialOs = osOverride || detectSyncOs();
   const unixBtn = document.createElement('button');
-  unixBtn.className = 'btn-small' + (detectedOs !== 'windows' ? ' active' : '');
+  unixBtn.className = 'btn-small' + (initialOs !== 'windows' ? ' active' : '');
   unixBtn.textContent = 'macOS/Linux';
   unixBtn.style.fontSize = '10px';
   unixBtn.style.padding = '1px 6px';
   const winBtn = document.createElement('button');
-  winBtn.className = 'btn-small' + (detectedOs === 'windows' ? ' active' : '');
+  winBtn.className = 'btn-small' + (initialOs === 'windows' ? ' active' : '');
   winBtn.textContent = 'Windows';
   winBtn.style.fontSize = '10px';
   winBtn.style.padding = '1px 6px';
@@ -2407,7 +2411,7 @@ function _showNewDeviceKey(name, apiKey, container) {
   installCode.style.fontSize = '12px';
   const curlCmd = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
   const psCmd = `powershell -ExecutionPolicy Bypass -Command "irm '${location.origin}/api/sync-agent/install.ps1?key=${apiKey}' | iex"`;
-  installCode.textContent = detectedOs === 'windows' ? psCmd : curlCmd;
+  installCode.textContent = initialOs === 'windows' ? psCmd : curlCmd;
   unixBtn.addEventListener('click', () => {
     installCode.textContent = curlCmd;
     unixBtn.classList.add('active');
@@ -2721,11 +2725,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadTab(state.activeTab);
   });
 
+  // Device OS toggle
+  const osToggle = document.getElementById('device-os-toggle');
+  if (osToggle) {
+    const detectedOs = detectSyncOs();
+    osToggle.querySelectorAll('.btn-small').forEach(btn => {
+      btn.classList.toggle('active', (detectedOs === 'windows') === (btn.dataset.os === 'windows'));
+      btn.addEventListener('click', () => {
+        osToggle.querySelectorAll('.btn-small').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
   // Add device button
   document.getElementById('add-device-btn')?.addEventListener('click', async () => {
     const input = document.getElementById('new-device-name');
     const name = (input.value || '').trim();
     if (!name) return;
+    const activeOsBtn = document.querySelector('#device-os-toggle .btn-small.active');
+    const selectedOs = activeOsBtn?.dataset.os === 'windows' ? 'windows' : 'unix';
     try {
       const res = await fetch('/api/devices', {
         method: 'POST',
@@ -2735,7 +2754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       if (data.error) { alert(data.error); return; }
       input.value = '';
-      _showNewDeviceKey(name, data.apiKey, document.getElementById('device-list'));
+      _showNewDeviceKey(name, data.apiKey, document.getElementById('device-list'), selectedOs);
       loadDeviceManagement();
       loadDevices();
     } catch { /* ignore */ }

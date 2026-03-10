@@ -1297,6 +1297,10 @@ Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
           <div id="device-list"></div>
           <div class="device-add-row">
             <input type="text" id="new-device-name" placeholder="z.B. VPS, Desktop" maxlength="50" class="device-name-input">
+            <div class="device-os-toggle" id="device-os-toggle">
+              <button class="btn-small" data-os="unix">macOS/Linux</button>
+              <button class="btn-small" data-os="windows">Windows</button>
+            </div>
             <button class="btn-small" id="add-device-btn" data-i18n="addDevice">Gerät hinzufügen</button>
           </div>
         </div>

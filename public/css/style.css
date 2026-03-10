@@ -134,13 +134,11 @@ body {
 .device-list-item .device-info .device-item-name {
   font-weight: 600;
   color: var(--text);
-  cursor: pointer;
-  border-bottom: 1px dashed transparent;
-  display: inline;
 }
-.device-list-item .device-info .device-item-name:hover {
-  border-bottom-color: var(--blue);
-  color: var(--blue);
+.btn-icon {
+  font-size: 14px;
+  padding: 2px 6px;
+  line-height: 1;
 }
 .device-list-item .device-info .device-item-meta {
   font-size: 12px;
@@ -169,6 +167,20 @@ body {
 }
 .device-name-input:focus {
   border-color: var(--blue);
+}
+.device-os-toggle {
+  display: flex;
+  gap: 2px;
+}
+.device-os-toggle .btn-small {
+  font-size: 11px;
+  padding: 4px 8px;
+  opacity: 0.5;
+}
+.device-os-toggle .btn-small.active {
+  opacity: 1;
+  border-color: var(--blue);
+  color: var(--blue);
 }
 .device-new-key {
   background: var(--card-bg);
