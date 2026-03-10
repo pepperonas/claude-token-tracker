@@ -1808,6 +1808,17 @@ const LANG = {
     caKeyLastUsed: 'Last Used',
     caKeyTimeline: 'Token History per Key',
     caKeyCostTimeline: 'Daily Costs per Key',
+    // Plan Usage
+    planUsageHeader: 'Plan Usage Limits',
+    planSession: 'Current Session',
+    planWeeklyHeader: 'Weekly Limits',
+    planWeeklyAll: 'All Models',
+    planWeeklySonnet: 'Sonnet Only',
+    planUsed: 'used',
+    planResetIn: 'Resets in {h} hrs {m} min',
+    planResetAt: 'Resets {day}, {time}',
+    planUpdatedAgo: 'Updated {0} min ago',
+    planTokenExpired: 'OAuth token expired — please update in Settings',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -3618,6 +3629,17 @@ const LANG = {
     caKeyLastUsed: 'Letzter Aufruf',
     caKeyTimeline: 'Token-Verlauf pro Key',
     caKeyCostTimeline: 'Tägliche Kosten pro Key',
+    // Plan Usage
+    planUsageHeader: 'Plan-Nutzungslimits',
+    planSession: 'Aktuelle Sitzung',
+    planWeeklyHeader: 'Wöchentliche Limits',
+    planWeeklyAll: 'Alle Modelle',
+    planWeeklySonnet: 'Nur Sonnet',
+    planUsed: 'verwendet',
+    planResetIn: 'Zurücksetzung in {h} Std. {m} Min.',
+    planResetAt: 'Zurücksetzung {day}, {time}',
+    planUpdatedAgo: 'Aktualisiert vor {0} Min.',
+    planTokenExpired: 'OAuth-Token abgelaufen — bitte in Einstellungen erneuern',
   }
 };
 

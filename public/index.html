@@ -154,6 +154,51 @@
         <div class="active-sessions-grid" id="active-sessions-grid"></div>
       </div>
 
+      <!-- Plan Usage Limits -->
+      <div class="plan-usage-section" id="plan-usage-section" style="display:none;">
+        <div class="plan-usage-header">
+          <h3 data-i18n="planUsageHeader">Plan-Nutzungslimits</h3>
+        </div>
+        <div class="plan-usage-grid">
+          <div class="plan-usage-item">
+            <div class="plan-usage-label" data-i18n="planSession">Aktuelle Sitzung</div>
+            <div class="plan-usage-meta" id="plan-session-reset"></div>
+            <div class="plan-usage-bar-row">
+              <div class="plan-usage-bar-container">
+                <div class="plan-usage-bar" id="plan-session-bar"></div>
+              </div>
+              <div class="plan-usage-pct" id="plan-session-pct"></div>
+            </div>
+          </div>
+          <div class="plan-usage-divider"></div>
+          <div class="plan-usage-sub-header" data-i18n="planWeeklyHeader">Wöchentliche Limits</div>
+          <div class="plan-usage-item">
+            <div class="plan-usage-label" data-i18n="planWeeklyAll">Alle Modelle</div>
+            <div class="plan-usage-meta" id="plan-weekly-all-reset"></div>
+            <div class="plan-usage-bar-row">
+              <div class="plan-usage-bar-container">
+                <div class="plan-usage-bar" id="plan-weekly-all-bar"></div>
+              </div>
+              <div class="plan-usage-pct" id="plan-weekly-all-pct"></div>
+            </div>
+          </div>
+          <div class="plan-usage-item">
+            <div class="plan-usage-label" data-i18n="planWeeklySonnet">Nur Sonnet</div>
+            <div class="plan-usage-meta" id="plan-weekly-sonnet-reset"></div>
+            <div class="plan-usage-bar-row">
+              <div class="plan-usage-bar-container">
+                <div class="plan-usage-bar" id="plan-weekly-sonnet-bar"></div>
+              </div>
+              <div class="plan-usage-pct" id="plan-weekly-sonnet-pct"></div>
+            </div>
+          </div>
+        </div>
+        <div class="plan-usage-footer">
+          <span id="plan-usage-age"></span>
+          <button class="rebuild-btn" id="plan-usage-refresh" data-i18n="caRefresh">Aktualisieren</button>
+        </div>
+      </div>
+
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label" data-i18n="totalTokens" data-tooltip-key="tooltipTotalTokens">Tokens gesamt</div>

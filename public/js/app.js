@@ -355,6 +355,10 @@ function downloadPsScript() {
   }
 }
 
+function detectSyncOs() {
+  return /Win/.test(navigator.platform) ? 'windows' : 'unix';
+}
+
 function switchSyncOs(os) {
   const unixPanel = document.getElementById('sync-panel-unix');
   const winPanel = document.getElementById('sync-panel-windows');
@@ -541,6 +545,77 @@ async function loadActiveSessions() {
   }
 }
 
+async function loadPlanUsage() {
+  const section = document.getElementById('plan-usage-section');
+  if (!section) return;
+  try {
+    const res = await api('plan-usage');
+    if (!res || !res.planUsage) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    const pu = res.planUsage;
+
+    _renderUsageBar('plan-session', pu.currentSession?.percentUsed,
+      _formatResetSeconds(pu.currentSession?.resetsInSeconds));
+    _renderUsageBar('plan-weekly-all', pu.weeklyAllModels?.percentUsed,
+      _formatResetDate(pu.weeklyAllModels?.resetsAt));
+    _renderUsageBar('plan-weekly-sonnet', pu.weeklySonnet?.percentUsed,
+      _formatResetDate(pu.weeklySonnet?.resetsAt));
+
+    const ageEl = document.getElementById('plan-usage-age');
+    if (pu.fetchedAt) {
+      const ageMin = Math.round((Date.now() - new Date(pu.fetchedAt).getTime()) / 60000);
+      ageEl.textContent = t('planUpdatedAgo').replace('{0}', ageMin < 1 ? '< 1' : String(ageMin));
+    }
+
+    if (res.error === 'TOKEN_EXPIRED') {
+      const err = document.createElement('div');
+      err.className = 'plan-usage-error';
+      err.textContent = t('planTokenExpired');
+      section.querySelector('.plan-usage-grid').appendChild(err);
+    }
+  } catch {
+    section.style.display = 'none';
+  }
+}
+
+function _renderUsageBar(prefix, pct, resetText) {
+  const bar = document.getElementById(prefix + '-bar');
+  const pctEl = document.getElementById(prefix + '-pct');
+  const resetEl = document.getElementById(prefix + '-reset');
+  if (!bar || !pctEl) return;
+
+  if (pct == null) {
+    pctEl.textContent = '\u2014';
+    bar.style.width = '0%';
+    bar.className = 'plan-usage-bar';
+    return;
+  }
+
+  pctEl.textContent = pct + ' % ' + t('planUsed');
+  bar.style.width = Math.min(pct, 100) + '%';
+  bar.className = 'plan-usage-bar' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+  if (resetEl && resetText) resetEl.textContent = resetText;
+}
+
+function _formatResetSeconds(seconds) {
+  if (!seconds && seconds !== 0) return '';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return t('planResetIn').replace('{h}', h).replace('{m}', m);
+}
+
+function _formatResetDate(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const lang = currentLang === 'de' ? 'de-DE' : 'en-US';
+  const day = d.toLocaleDateString(lang, { weekday: 'short' });
+  const time = d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+  return t('planResetAt').replace('{day}', day).replace('{time}', time);
+}
+
 async function loadOverview() {
   const [overview, daily, models, hourly, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
@@ -551,6 +626,7 @@ async function loadOverview() {
   ]);
 
   loadActiveSessions();
+  loadPlanUsage();
 
   // KPI Cards — respect cache toggle
   const displayTokens = getDisplayTokens(overview);
@@ -2120,6 +2196,7 @@ async function loadSettings() {
   if (state.multiUser) {
     loadSyncKey();
   }
+  switchSyncOs(detectSyncOs());
   loadAnthropicKeyStatus();
 }
 
@@ -2272,11 +2349,14 @@ function connectSSE() {
 
   evtSource.onopen = () => { dot.classList.remove('disconnected'); };
 
+  let _sseReloadTimer = null;
   evtSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'update' || data.type === 'new-session') {
       chartAnimateNext = false;
-      loadTab(state.activeTab);
+      // Debounce rapid SSE updates to prevent duplicate renders
+      clearTimeout(_sseReloadTimer);
+      _sseReloadTimer = setTimeout(() => loadTab(state.activeTab), 300);
     } else if (data.type === 'achievement-unlocked' && data.achievements) {
       showAchievementNotification(data.achievements);
     }
@@ -2372,6 +2452,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('rebuild-btn')?.addEventListener('click', rebuild);
+  document.getElementById('plan-usage-refresh')?.addEventListener('click', async () => {
+    const btn = document.getElementById('plan-usage-refresh');
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      await fetch('/api/plan-usage/refresh', { method: 'POST' });
+      await loadPlanUsage();
+    } catch { /* ignore */ }
+    btn.disabled = false;
+    btn.textContent = t('caRefresh');
+  });
   document.getElementById('export-html-btn')?.addEventListener('click', exportHtml);
   document.getElementById('logout-btn')?.addEventListener('click', logout);
   document.getElementById('copy-api-key')?.addEventListener('click', copySyncKey);

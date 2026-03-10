@@ -23,6 +23,7 @@ const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 const github = require('./lib/github');
 const anthropicApi = require('./lib/anthropic-api');
+const planUsage = require('./lib/plan-usage');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -63,6 +64,9 @@ github.initGithub(require('./lib/db'));
 
 // 1c. Initialize Anthropic API module with DB reference
 anthropicApi.initAnthropicApi(require('./lib/db'));
+
+// 1d. Initialize Plan Usage module with DB reference
+planUsage.initPlanUsage(require('./lib/db'));
 
 // 2. Load existing messages from SQLite (single-user aggregator)
 const aggregator = new Aggregator();
@@ -573,8 +577,9 @@ const server = http.createServer((req, res) => {
       const hasMessages = Array.isArray(messages) && messages.length > 0;
       const hasRateLimitEvents = Array.isArray(rateLimitEvents) && rateLimitEvents.length > 0;
 
-      if (!hasMessages && !hasRateLimitEvents) {
-        return sendJSON(res, { error: 'No messages provided' }, 400);
+      const hasPlanUsage = !!body.planUsage;
+      if (!hasMessages && !hasRateLimitEvents && !hasPlanUsage) {
+        return sendJSON(res, { error: 'No data provided' }, 400);
       }
 
       if (hasMessages) {
@@ -583,6 +588,11 @@ const server = http.createServer((req, res) => {
 
       if (hasRateLimitEvents) {
         insertRateLimitEventsForUser(rateLimitEvents, user.id);
+      }
+
+      // Store plan usage data if provided (backwards-compatible)
+      if (body.planUsage) {
+        planUsage.storeSyncedPlanUsage(user.id, body.planUsage);
       }
 
       // Invalidate aggregator cache for this user
@@ -1049,6 +1059,53 @@ const server = http.createServer((req, res) => {
       setMetadata(`anthropic_budget_${uid}`, String(val));
       return sendJSON(res, { budget: val });
     }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  // Plan Usage endpoints
+  if (pathname === '/api/plan-usage' && req.method === 'GET') {
+    planUsage.getPlanUsage(user).then(data => {
+      sendJSON(res, { planUsage: data, hasToken: planUsage.hasOAuthToken(user) });
+    }).catch(err => {
+      const isExpired = err.message === 'TOKEN_EXPIRED';
+      sendJSON(res, {
+        planUsage: null,
+        hasToken: planUsage.hasOAuthToken(user),
+        error: isExpired ? 'TOKEN_EXPIRED' : err.message
+      }, isExpired ? 200 : 200);
+    });
+    return;
+  }
+
+  if (pathname === '/api/plan-usage/token' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const token = (body.token || '').trim();
+      if (!token.startsWith('sk-ant-oat01-')) {
+        return sendJSON(res, { error: 'Invalid token format — must start with sk-ant-oat01-' }, 400);
+      }
+      const uid = MULTI_USER ? user.id : 0;
+      planUsage.saveOAuthToken(uid, token);
+      planUsage.clearCache(uid);
+      return sendJSON(res, { saved: true });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  if (pathname === '/api/plan-usage/token' && req.method === 'DELETE') {
+    const uid = MULTI_USER ? user.id : 0;
+    planUsage.deleteOAuthToken(uid);
+    planUsage.clearCache(uid);
+    return sendJSON(res, { deleted: true });
+  }
+
+  if (pathname === '/api/plan-usage/refresh' && req.method === 'POST') {
+    const uid = MULTI_USER ? user.id : 0;
+    planUsage.clearCache(uid);
+    planUsage.getPlanUsage(user).then(data => {
+      sendJSON(res, { planUsage: data });
+    }).catch(err => {
+      sendJSON(res, { planUsage: null, error: err.message });
+    });
     return;
   }
 

@@ -237,6 +237,92 @@ body {
 .data-table th.sort-asc::after { content: ' \25B2'; font-size: 9px; }
 .data-table th.sort-desc::after { content: ' \25BC'; font-size: 9px; }
 
+/* Plan Usage Limits */
+.plan-usage-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.plan-usage-header h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.05em;
+  font-weight: 600;
+  color: var(--text);
+}
+.plan-usage-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.plan-usage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.plan-usage-label {
+  font-weight: 600;
+  font-size: 0.92em;
+  color: var(--text);
+}
+.plan-usage-meta {
+  font-size: 0.82em;
+  color: var(--text-muted);
+}
+.plan-usage-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.plan-usage-bar-container {
+  flex: 1;
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.plan-usage-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  min-width: 0;
+}
+.plan-usage-bar.warn { background: var(--orange); }
+.plan-usage-bar.danger { background: var(--red); }
+.plan-usage-pct {
+  font-size: 0.88em;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: right;
+}
+.plan-usage-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+.plan-usage-sub-header {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text);
+}
+.plan-usage-footer {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82em;
+  color: var(--text-muted);
+}
+.plan-usage-error {
+  font-size: 0.85em;
+  color: var(--orange);
+  margin-top: 8px;
+}
+
 /* Active Sessions */
 .active-sessions {
   background: var(--surface);
