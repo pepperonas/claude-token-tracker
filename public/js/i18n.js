@@ -1819,6 +1819,20 @@ const LANG = {
     planResetAt: 'Resets {day}, {time}',
     planUpdatedAgo: 'Updated {0} min ago',
     planTokenExpired: 'OAuth token expired — please update in Settings',
+    // Devices
+    allDevices: 'All Devices',
+    devicesTitle: 'Devices',
+    addDevice: 'Add Device',
+    deviceName: 'Device Name',
+    deviceKey: 'API Key',
+    deviceLastSync: 'Last Sync',
+    deviceNever: 'Never',
+    deleteDeviceConfirm: 'Delete this device? Messages remain but will not be filterable.',
+    cannotDeleteLast: 'Cannot delete last device',
+    deviceCreated: 'Device created — copy the API key now, it will not be shown again.',
+    installFor: 'Install',
+    regenerateKey: 'Regenerate Key',
+    regenerateConfirm: 'Regenerate API key? The sync agent on this device will need to be reinstalled.',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -3640,6 +3654,20 @@ const LANG = {
     planResetAt: 'Zurücksetzung {day}, {time}',
     planUpdatedAgo: 'Aktualisiert vor {0} Min.',
     planTokenExpired: 'OAuth-Token abgelaufen — bitte in Einstellungen erneuern',
+    // Devices
+    allDevices: 'Alle Geräte',
+    devicesTitle: 'Geräte',
+    addDevice: 'Gerät hinzufügen',
+    deviceName: 'Gerätename',
+    deviceKey: 'API-Key',
+    deviceLastSync: 'Letzte Synchronisierung',
+    deviceNever: 'Nie',
+    deleteDeviceConfirm: 'Gerät wirklich löschen? Nachrichten bleiben erhalten, sind aber nicht mehr filterbar.',
+    cannotDeleteLast: 'Das letzte Gerät kann nicht gelöscht werden',
+    deviceCreated: 'Gerät erstellt — kopiere jetzt den API-Key, er wird nicht erneut angezeigt.',
+    installFor: 'Installieren',
+    regenerateKey: 'Key erneuern',
+    regenerateConfirm: 'API-Key erneuern? Der Sync-Agent auf diesem Gerät muss neu installiert werden.',
   }
 };
 

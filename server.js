@@ -15,7 +15,9 @@ const {
   getUnlockedAchievements, unlockAchievementsBatch,
   getMetadata, setMetadata,
   insertRateLimitEvents, insertRateLimitEventsForUser,
-  getAllRateLimitEvents, getRateLimitEventsForUser
+  getAllRateLimitEvents, getRateLimitEventsForUser,
+  createDevice, getDevicesForUser, getDeviceById, findDeviceByApiKey, findUserById,
+  renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
@@ -213,10 +215,11 @@ function readBody(req, maxBytes = 10 * 1024 * 1024) {
  * Get the aggregator for the current request.
  * In single-user mode: returns the global aggregator.
  * In multi-user mode: returns a per-user aggregator from the cache.
+ * If deviceId is provided, returns a device-filtered aggregator.
  */
-function getAggregator(user) {
+function getAggregator(user, deviceId) {
   if (!MULTI_USER) return aggregator;
-  return aggregatorCache.get(user.id);
+  return aggregatorCache.get(user.id, deviceId || null);
 }
 
 /**
@@ -568,8 +571,11 @@ const server = http.createServer((req, res) => {
 
   // Sync endpoint — API key auth, separate from session auth
   if (pathname === '/api/sync' && req.method === 'POST') {
-    const user = authenticateApiKey(req);
-    if (!user) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    const auth = authenticateApiKey(req);
+    if (!auth) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    const syncUser = auth.user;
+    const syncDevice = auth.device;
+    const deviceId = syncDevice ? syncDevice.id : null;
 
     readBody(req).then(body => {
       const messages = body.messages;
@@ -583,32 +589,35 @@ const server = http.createServer((req, res) => {
       }
 
       if (hasMessages) {
-        insertMessagesForUser(messages, calculateCost, user.id);
+        insertMessagesForUser(messages, calculateCost, syncUser.id, deviceId);
       }
 
       if (hasRateLimitEvents) {
-        insertRateLimitEventsForUser(rateLimitEvents, user.id);
+        insertRateLimitEventsForUser(rateLimitEvents, syncUser.id, deviceId);
       }
 
       // Store plan usage data if provided (backwards-compatible)
       if (body.planUsage) {
-        planUsage.storeSyncedPlanUsage(user.id, body.planUsage);
+        planUsage.storeSyncedPlanUsage(syncUser.id, body.planUsage);
       }
 
-      // Invalidate aggregator cache for this user
-      if (aggregatorCache) aggregatorCache.invalidateUser(user.id);
+      // Update device last sync time
+      if (deviceId) updateDeviceLastSync(deviceId);
 
-      // Check achievements for this user
+      // Invalidate aggregator cache for this user
+      if (aggregatorCache) aggregatorCache.invalidateUser(syncUser.id);
+
+      // Check achievements for this user (always use all-devices aggregator)
       try {
-        const userAgg = aggregatorCache.get(user.id);
-        const newAch = achievements.checkAchievements(userAgg, user.id, achievementsDb);
+        const userAgg = aggregatorCache.get(syncUser.id);
+        const newAch = achievements.checkAchievements(userAgg, syncUser.id, achievementsDb);
         if (newAch.length > 0) {
-          watcher.broadcast({ type: 'achievement-unlocked', achievements: achievements.getAchievementsByKeys(newAch), userId: user.id });
+          watcher.broadcast({ type: 'achievement-unlocked', achievements: achievements.getAchievementsByKeys(newAch), userId: syncUser.id });
         }
-      } catch (e) { console.error('Achievement check failed for user', user.id, ':', e.message); }
+      } catch (e) { console.error('Achievement check failed for user', syncUser.id, ':', e.message); }
 
       // Broadcast SSE update to this user's clients
-      watcher.broadcast({ type: 'update', count: hasMessages ? messages.length : 0, userId: user.id });
+      watcher.broadcast({ type: 'update', count: hasMessages ? messages.length : 0, userId: syncUser.id });
 
       return sendJSON(res, { inserted: hasMessages ? messages.length : 0, rateLimitEvents: hasRateLimitEvents ? rateLimitEvents.length : 0 });
     }).catch(err => {
@@ -617,18 +626,32 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Sync agent install script download
+  // Sync agent install script download — uses device-specific API key
   if (pathname === '/api/sync-agent/install.sh' && req.method === 'GET') {
     if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
 
-    // Auth via session cookie or ?key= query parameter
     let scriptUser = authenticateRequest(req);
     if (!scriptUser && query.key) {
       scriptUser = findUserByApiKey(query.key);
+      if (!scriptUser) {
+        const dev = findDeviceByApiKey(query.key);
+        if (dev) scriptUser = findUserById(dev.user_id);
+      }
     }
     if (!scriptUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
 
-    const script = generateInstallScript(BASE_URL, scriptUser.api_key);
+    // Resolve device API key
+    let apiKey;
+    if (query.device) {
+      const device = getDeviceById(parseInt(query.device));
+      if (!device || device.user_id !== scriptUser.id) return sendJSON(res, { error: 'Device not found' }, 404);
+      apiKey = device.api_key;
+    } else {
+      const devices = getDevicesForUser(scriptUser.id);
+      apiKey = devices.length > 0 ? devices[0].api_key : scriptUser.api_key;
+    }
+
+    const script = generateInstallScript(BASE_URL, apiKey);
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
       'Content-Disposition': 'attachment; filename="install-sync-agent.sh"',
@@ -644,10 +667,24 @@ const server = http.createServer((req, res) => {
     let scriptUser = authenticateRequest(req);
     if (!scriptUser && query.key) {
       scriptUser = findUserByApiKey(query.key);
+      if (!scriptUser) {
+        const dev = findDeviceByApiKey(query.key);
+        if (dev) scriptUser = findUserById(dev.user_id);
+      }
     }
     if (!scriptUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
 
-    const script = generateWindowsInstallScript(BASE_URL, scriptUser.api_key);
+    let apiKey;
+    if (query.device) {
+      const device = getDeviceById(parseInt(query.device));
+      if (!device || device.user_id !== scriptUser.id) return sendJSON(res, { error: 'Device not found' }, 404);
+      apiKey = device.api_key;
+    } else {
+      const devices = getDevicesForUser(scriptUser.id);
+      apiKey = devices.length > 0 ? devices[0].api_key : scriptUser.api_key;
+    }
+
+    const script = generateWindowsInstallScript(BASE_URL, apiKey);
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
       'Content-Disposition': 'attachment; filename="install-sync-agent.ps1"',
@@ -676,7 +713,8 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, { error: 'Unauthorized' }, 401);
   }
 
-  const agg = getAggregator(user);
+  const deviceFilter = query.device ? parseInt(query.device) : null;
+  const agg = getAggregator(user, deviceFilter);
 
   // API routes
   if (pathname === '/api/active-sessions') {
@@ -906,6 +944,65 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/sync-key' && req.method === 'POST') {
     if (!MULTI_USER) return sendJSON(res, { error: 'Not available in single-user mode' }, 404);
     const newKey = regenerateApiKey(user.id);
+    return sendJSON(res, { apiKey: newKey });
+  }
+
+  // Device management endpoints
+  if (pathname === '/api/devices' && req.method === 'GET') {
+    const userId = MULTI_USER ? user.id : 0;
+    const devices = getDevicesForUser(userId);
+    return sendJSON(res, devices.map(d => ({
+      id: d.id,
+      name: d.name,
+      apiKeyLast8: d.api_key.slice(-8),
+      createdAt: d.created_at,
+      lastSyncAt: d.last_sync_at
+    })));
+  }
+
+  if (pathname === '/api/devices' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const name = (body.name || '').trim();
+      if (!name) return sendJSON(res, { error: 'Device name required' }, 400);
+      if (name.length > 50) return sendJSON(res, { error: 'Name too long (max 50)' }, 400);
+      const userId = MULTI_USER ? user.id : 0;
+      const device = createDevice(userId, name);
+      return sendJSON(res, { id: device.id, name: device.name, apiKey: device.api_key, createdAt: device.created_at });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  if (pathname.match(/^\/api\/devices\/\d+$/) && req.method === 'PUT') {
+    const deviceId = parseInt(pathname.split('/').pop());
+    const device = getDeviceById(deviceId);
+    const userId = MULTI_USER ? user.id : 0;
+    if (!device || device.user_id !== userId) return sendJSON(res, { error: 'Not found' }, 404);
+    readBody(req).then(body => {
+      const name = (body.name || '').trim();
+      if (!name) return sendJSON(res, { error: 'Device name required' }, 400);
+      renameDevice(deviceId, name);
+      return sendJSON(res, { renamed: true });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  if (pathname.match(/^\/api\/devices\/\d+$/) && req.method === 'DELETE') {
+    const deviceId = parseInt(pathname.split('/').pop());
+    const device = getDeviceById(deviceId);
+    const userId = MULTI_USER ? user.id : 0;
+    if (!device || device.user_id !== userId) return sendJSON(res, { error: 'Not found' }, 404);
+    const devices = getDevicesForUser(userId);
+    if (devices.length <= 1) return sendJSON(res, { error: 'Cannot delete last device' }, 400);
+    deleteDevice(deviceId);
+    return sendJSON(res, { deleted: true });
+  }
+
+  if (pathname.match(/^\/api\/devices\/\d+\/regenerate-key$/) && req.method === 'POST') {
+    const deviceId = parseInt(pathname.split('/')[3]);
+    const device = getDeviceById(deviceId);
+    const userId = MULTI_USER ? user.id : 0;
+    if (!device || device.user_id !== userId) return sendJSON(res, { error: 'Not found' }, 404);
+    const newKey = regenerateDeviceKey(deviceId);
     return sendJSON(res, { apiKey: newKey });
   }
 

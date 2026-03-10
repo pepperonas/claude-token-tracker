@@ -8,6 +8,8 @@ let state = {
   multiUser: false,
   user: null,
   demoMode: false,
+  device: localStorage.getItem('device') || '',
+  devices: [],
   periodB: localStorage.getItem('periodB') || 'off',
   periodBFrom: localStorage.getItem('periodBFrom') || '',
   periodBTo: localStorage.getItem('periodBTo') || ''
@@ -72,6 +74,7 @@ function periodQuery() {
   const params = [];
   if (from) params.push('from=' + from);
   if (to) params.push('to=' + to);
+  if (state.device) params.push('device=' + state.device);
   return params.length ? '?' + params.join('&') : '';
 }
 
@@ -2198,6 +2201,154 @@ async function loadSettings() {
   }
   switchSyncOs(detectSyncOs());
   loadAnthropicKeyStatus();
+  loadDeviceManagement();
+}
+
+async function loadDevices() {
+  try {
+    const devices = await api('devices');
+    if (!Array.isArray(devices)) return;
+    state.devices = devices;
+    const switcher = document.getElementById('device-switcher');
+    const select = document.getElementById('device-select');
+    if (!switcher || !select) return;
+
+    if (devices.length <= 1) {
+      switcher.style.display = 'none';
+      if (state.device) {
+        state.device = '';
+        localStorage.removeItem('device');
+      }
+      return;
+    }
+
+    switcher.style.display = '';
+    const current = state.device;
+    select.textContent = '';
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = t('allDevices');
+    select.appendChild(allOpt);
+    for (const d of devices) {
+      const opt = document.createElement('option');
+      opt.value = String(d.id);
+      opt.textContent = d.name;
+      if (String(d.id) === current) opt.selected = true;
+      select.appendChild(opt);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function loadDeviceManagement() {
+  const section = document.getElementById('device-management');
+  if (!section) return;
+
+  try {
+    const devices = await api('devices');
+    if (!Array.isArray(devices) || devices.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    state.devices = devices;
+    const list = document.getElementById('device-list');
+    list.textContent = '';
+
+    for (const d of devices) {
+      const row = document.createElement('div');
+      row.className = 'device-list-item';
+
+      const info = document.createElement('div');
+      info.className = 'device-info';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'device-item-name';
+      nameEl.textContent = d.name;
+      const meta = document.createElement('div');
+      meta.className = 'device-item-meta';
+      const syncText = d.lastSyncAt
+        ? t('deviceLastSync') + ': ' + new Date(d.lastSyncAt + 'Z').toLocaleString()
+        : t('deviceLastSync') + ': ' + t('deviceNever');
+      meta.textContent = syncText + ' · Key: …' + d.apiKeyLast8;
+      info.appendChild(nameEl);
+      info.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'device-actions';
+
+      const installBtn = document.createElement('button');
+      installBtn.className = 'btn-small';
+      installBtn.textContent = t('installFor');
+      installBtn.addEventListener('click', () => {
+        const os = detectSyncOs();
+        const ext = os === 'windows' ? 'ps1' : 'sh';
+        window.location.href = `/api/sync-agent/install.${ext}?device=${d.id}`;
+      });
+
+      const regenBtn = document.createElement('button');
+      regenBtn.className = 'btn-small';
+      regenBtn.textContent = t('regenerateKey');
+      regenBtn.addEventListener('click', async () => {
+        if (!confirm(t('regenerateConfirm'))) return;
+        const res = await fetch(`/api/devices/${d.id}/regenerate-key`, { method: 'POST' });
+        const data = await res.json();
+        if (data.apiKey) {
+          _showNewDeviceKey(d.name, data.apiKey, list);
+          loadDeviceManagement();
+        }
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-small btn-danger';
+      delBtn.textContent = '\u00D7';
+      delBtn.title = 'Delete';
+      delBtn.addEventListener('click', async () => {
+        if (!confirm(t('deleteDeviceConfirm'))) return;
+        const res = await fetch(`/api/devices/${d.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        loadDeviceManagement();
+        loadDevices();
+      });
+
+      actions.appendChild(installBtn);
+      actions.appendChild(regenBtn);
+      actions.appendChild(delBtn);
+
+      row.appendChild(info);
+      row.appendChild(actions);
+      list.appendChild(row);
+    }
+  } catch {
+    section.style.display = 'none';
+  }
+}
+
+function _showNewDeviceKey(name, apiKey, container) {
+  const existing = container.parentElement.querySelector('.device-new-key');
+  if (existing) existing.remove();
+  const box = document.createElement('div');
+  box.className = 'device-new-key';
+  const msg = document.createElement('div');
+  msg.textContent = t('deviceCreated');
+  msg.style.marginBottom = '6px';
+  msg.style.fontSize = '13px';
+  const code = document.createElement('code');
+  code.textContent = apiKey;
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-small';
+  copyBtn.textContent = t('copy') || 'Copy';
+  copyBtn.style.marginLeft = '8px';
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(apiKey);
+    copyBtn.textContent = '\u2713';
+    setTimeout(() => { copyBtn.textContent = t('copy') || 'Copy'; }, 1500);
+  });
+  box.appendChild(msg);
+  box.appendChild(code);
+  box.appendChild(copyBtn);
+  container.parentElement.insertBefore(box, container.parentElement.querySelector('.device-add-row'));
 }
 
 async function loadAnthropicKeyStatus() {
@@ -2472,6 +2623,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('copy-ps-cmd')?.addEventListener('click', copyPsCommand);
   document.getElementById('download-ps-script')?.addEventListener('click', downloadPsScript);
 
+  // Device switcher
+  document.getElementById('device-select')?.addEventListener('change', (e) => {
+    state.device = e.target.value;
+    if (state.device) {
+      localStorage.setItem('device', state.device);
+    } else {
+      localStorage.removeItem('device');
+    }
+    loadTab(state.activeTab);
+  });
+
+  // Add device button
+  document.getElementById('add-device-btn')?.addEventListener('click', async () => {
+    const input = document.getElementById('new-device-name');
+    const name = (input.value || '').trim();
+    if (!name) return;
+    try {
+      const res = await fetch('/api/devices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      input.value = '';
+      _showNewDeviceKey(name, data.apiKey, document.getElementById('device-list'));
+      loadDeviceManagement();
+      loadDevices();
+    } catch { /* ignore */ }
+  });
+
   // Period comparison
   document.querySelectorAll('.period-btn-b').forEach(btn => {
     btn.addEventListener('click', () => setPeriodB(btn.dataset.periodB));
@@ -2513,6 +2695,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (authed) {
+    // Load devices for switcher
+    await loadDevices();
+
     // Restore saved period
     if (state.customDate) {
       document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));

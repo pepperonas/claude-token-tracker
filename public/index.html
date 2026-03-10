@@ -104,6 +104,9 @@
           <input type="date" id="custom-date-picker" class="custom-date-picker">
           <button class="period-nav-btn" id="period-next" title="Next period">&rarr;</button>
         </div>
+        <div class="device-switcher" id="device-switcher" style="display:none;">
+          <select id="device-select"></select>
+        </div>
         <script>
         (function() {
           var cd = localStorage.getItem('customDate');
@@ -1285,6 +1288,16 @@ Start-ScheduledTask -TaskName ClaudeSyncAgent
 # Entfernen
 Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
             </div>
+          </div>
+        </div>
+
+        <!-- Device Management -->
+        <div class="info-section" id="device-management" style="display:none;">
+          <h3 data-i18n="devicesTitle">Geräte</h3>
+          <div id="device-list"></div>
+          <div class="device-add-row">
+            <input type="text" id="new-device-name" placeholder="z.B. VPS, Desktop" maxlength="50" class="device-name-input">
+            <button class="btn-small" id="add-device-btn" data-i18n="addDevice">Gerät hinzufügen</button>
           </div>
         </div>
 

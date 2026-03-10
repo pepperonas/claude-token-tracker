@@ -99,6 +99,83 @@ body {
   padding: 3px;
 }
 
+/* Device Switcher */
+.device-switcher {
+  margin-left: 8px;
+}
+.device-switcher select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.device-switcher select:focus {
+  border-color: var(--blue);
+}
+
+/* Device Management (Settings) */
+.device-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.device-list-item .device-info {
+  flex: 1;
+  min-width: 0;
+}
+.device-list-item .device-info .device-item-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.device-list-item .device-info .device-item-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.device-list-item .device-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.device-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.device-name-input {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+.device-name-input:focus {
+  border-color: var(--blue);
+}
+.device-new-key {
+  background: var(--card-bg);
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.device-new-key code {
+  word-break: break-all;
+  font-size: 12px;
+}
+
 .period-btn {
   padding: 6px 12px;
   border: none;

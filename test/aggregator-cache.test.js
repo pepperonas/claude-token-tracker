@@ -130,7 +130,7 @@ describe('AggregatorCache', () => {
     expect(cache.size).toBe(1);
 
     // Manually set lastAccess to 31 minutes ago
-    const entry = cache._cache.get(user.id);
+    const entry = cache._cache.get(`${user.id}:all`);
     entry.lastAccess = Date.now() - 31 * 60 * 1000;
 
     // Trigger eviction
