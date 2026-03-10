@@ -1831,6 +1831,7 @@ const LANG = {
     cannotDeleteLast: 'Cannot delete last device',
     deviceCreated: 'Device created — copy the API key now, it will not be shown again.',
     installFor: 'Install',
+    installCommand: 'Install Command',
     regenerateKey: 'Regenerate Key',
     regenerateConfirm: 'Regenerate API key? The sync agent on this device will need to be reinstalled.',
   },
@@ -3666,6 +3667,7 @@ const LANG = {
     cannotDeleteLast: 'Das letzte Gerät kann nicht gelöscht werden',
     deviceCreated: 'Gerät erstellt — kopiere jetzt den API-Key, er wird nicht erneut angezeigt.',
     installFor: 'Installieren',
+    installCommand: 'Installations-Befehl',
     regenerateKey: 'Key erneuern',
     regenerateConfirm: 'API-Key erneuern? Der Sync-Agent auf diesem Gerät muss neu installiert werden.',
   }

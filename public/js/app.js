@@ -2334,6 +2334,13 @@ function _showNewDeviceKey(name, apiKey, container) {
   msg.textContent = t('deviceCreated');
   msg.style.marginBottom = '6px';
   msg.style.fontSize = '13px';
+
+  // API Key
+  const keyLabel = document.createElement('div');
+  keyLabel.textContent = 'API Key:';
+  keyLabel.style.fontSize = '11px';
+  keyLabel.style.color = 'var(--muted)';
+  keyLabel.style.marginBottom = '2px';
   const code = document.createElement('code');
   code.textContent = apiKey;
   const copyBtn = document.createElement('button');
@@ -2345,9 +2352,41 @@ function _showNewDeviceKey(name, apiKey, container) {
     copyBtn.textContent = '\u2713';
     setTimeout(() => { copyBtn.textContent = t('copy') || 'Copy'; }, 1500);
   });
+
+  // Install command
+  const os = detectSyncOs();
+  const installLabel = document.createElement('div');
+  installLabel.textContent = t('installCommand') || 'Install Command:';
+  installLabel.style.fontSize = '11px';
+  installLabel.style.color = 'var(--muted)';
+  installLabel.style.marginTop = '8px';
+  installLabel.style.marginBottom = '2px';
+  const installCode = document.createElement('code');
+  installCode.style.display = 'block';
+  installCode.style.wordBreak = 'break-all';
+  installCode.style.fontSize = '12px';
+  if (os === 'windows') {
+    installCode.textContent = `powershell -ExecutionPolicy Bypass -Command "irm '${location.origin}/api/sync-agent/install.ps1?key=${apiKey}' | iex"`;
+  } else {
+    installCode.textContent = `curl -sL "${location.origin}/api/sync-agent/install.sh?key=${apiKey}" | bash`;
+  }
+  const copyInstallBtn = document.createElement('button');
+  copyInstallBtn.className = 'btn-small';
+  copyInstallBtn.textContent = t('copy') || 'Copy';
+  copyInstallBtn.style.marginTop = '4px';
+  copyInstallBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(installCode.textContent);
+    copyInstallBtn.textContent = '\u2713';
+    setTimeout(() => { copyInstallBtn.textContent = t('copy') || 'Copy'; }, 1500);
+  });
+
   box.appendChild(msg);
+  box.appendChild(keyLabel);
   box.appendChild(code);
   box.appendChild(copyBtn);
+  box.appendChild(installLabel);
+  box.appendChild(installCode);
+  box.appendChild(copyInstallBtn);
   container.parentElement.insertBefore(box, container.parentElement.querySelector('.device-add-row'));
 }
 
