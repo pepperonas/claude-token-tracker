@@ -132,6 +132,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 
 ### Multi-User & Deployment
 
+- **Multi-Device-Tracking** — Nutzung über mehrere Geräte tracken (MacBook, VPS, Desktop), eigene API-Keys pro Gerät, Geräte-Umschalter im Dashboard, aggregierte „Alle Geräte"-Ansicht
 - **Multi-User-Modus** — GitHub OAuth, persönliche API-Keys, Datenisolation pro User
 - **Sync Agent** — Ein-Klick-Installation via curl (macOS/Linux) oder PowerShell (Windows), überwacht lokale Sitzungsdateien und überträgt an den Server
 - **Autostart** — Install-Script richtet automatisch launchd (macOS), systemd (Linux) oder Task Scheduler (Windows) ein
@@ -158,9 +159,9 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 Single-User:
   ~/.claude/projects/**/*.jsonl
       → Parser (inkrementell, Byte-Offset)
-      → SQLite (WAL, INSERT OR REPLACE)
+      → SQLite (WAL, 10 Tabellen, INSERT OR REPLACE)
       → Aggregator (In-Memory, vorberechnete Maps)
-      → HTTP-Server (25+ JSON-Endpoints + SSE)
+      → HTTP-Server (50+ JSON-Endpoints + SSE)
       → Frontend (Chart.js, i18n DE/EN, sortierbare Tabellen)
 
 Multi-User:
@@ -177,16 +178,16 @@ Multi-User:
 |-------|-------------|
 | `lib/parser.js` | Liest JSONL-Dateien, extrahiert Token-Zähler, Tools (mit Aufrufzählung pro Tool), Modell, Lines-of-Code und Sub-Agent-Flag aus `type: 'assistant'` Nachrichten |
 | `lib/aggregator.js` | In-Memory Analytics-Engine mit `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` Maps |
-| `lib/db.js` | SQLite-Schicht mit `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements` Tabellen |
+| `lib/db.js` | SQLite-Schicht mit `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache`, `rate_limit_events`, `devices` Tabellen |
 | `lib/pricing.js` | Modellpreise (Input/Output/CacheRead/CacheCreate pro 1M Tokens) |
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
-| `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien |
+| `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien, 50%-Größen-Sicherheitscheck |
 | `lib/achievements.js` | 700 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
 | `lib/github.js` | GitHub-API-Integration (REST + GraphQL), Billing via Usage-Summary-API, PR-Statistiken, Contributions, Code-Statistiken, Actions-Nutzung pro Repo mit OS-Multiplikatoren, Stale-While-Revalidate-Cache (60-Min-TTL) |
 | `lib/anthropic-api.js` | Anthropic Admin API Integration — Usage/Cost-Reports, Per-API-Key-Aufschlüsselung (4 parallele Requests: Usage nach Modell, Usage nach Key+Modell, Cost-Report, API-Key-Namen), SWR-Cache, AES-256-GCM Key-Verschlüsselung |
 | `lib/export-html.js` | Mobil-optimierter HTML-Snapshot-Generator mit Chart.js, 8 Tabs, 12+ Charts, sortierbaren Tabellen und responsiven Breakpoints (768px/480px/412px) |
-| `server.js` | Vanilla `http.createServer` mit 25+ API-Routen, SSE und statischen Dateien |
+| `server.js` | Vanilla `http.createServer` mit 50+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
 
 ## Installation
@@ -259,8 +260,8 @@ Jeder User bekommt einen persönlichen **API-Key** für den Sync Agent, einsehba
 |--------|-------------|------------|
 | Datenquelle | Lokale JSONL-Dateien (Chokidar-Watcher) | Sync Agent Uploads via API |
 | Authentifizierung | Keine | GitHub OAuth + Session Cookies |
-| Datenisolation | Keine (alle Daten gehören einem User) | Per-User via `user_id` Spalte |
-| Aggregation | Ein globaler Aggregator | AggregatorCache (lazy, 30min Eviction) |
+| Datenisolation | Keine (alle Daten gehören einem User) | Per-User via `user_id`, per-Gerät via `device_id` |
+| Aggregation | Ein globaler Aggregator | AggregatorCache (per-User, per-Gerät, 30min Eviction) |
 | File Watcher | Aktiv | Deaktiviert |
 
 ## Sync Agent
@@ -333,6 +334,7 @@ Im Übersicht-Tab werden aktive Claude-Code-Sessions live angezeigt (grüne Sekt
 - Backups werden beim Start und im konfigurierten Intervall erstellt
 - Maximal 10 Backup-Kopien (ältere werden automatisch gelöscht)
 - Atomares Backup via SQLite `VACUUM INTO`
+- Sicherheitscheck: Backups kleiner als 50% des letzten Backups werden abgelehnt, um korrupte/leere Datenbanken zu verhindern
 
 ## Deployment
 
@@ -388,6 +390,10 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/anthropic/dashboard` | GET | Anthropic API Usage/Cost Dashboard mit Per-Key-Aufschlüsselung |
 | `/api/anthropic/budget` | GET/POST | Monatliches Budget abfragen oder setzen |
 | `/api/anthropic/refresh` | POST | Anthropic-Daten-Cache aktualisieren |
+| `/api/rate-limits` | GET | Rate-Limit-Ereignisstatistiken (gesamt, täglich) |
+| `/api/devices` | GET/POST | Geräte auflisten oder erstellen (Multi-User) |
+| `/api/devices/:id` | PUT/DELETE | Gerät umbenennen oder löschen |
+| `/api/devices/:id/regenerate-key` | POST | Geräte-API-Key erneuern |
 | `/api/global-averages` | GET | Eigene vs. durchschnittliche Statistiken (Multi-User) |
 | `/api/rebuild` | POST | Cache neu aufbauen |
 | `/api/backup` | POST | Manuelles Backup erstellen |
@@ -395,7 +401,7 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/sync` | POST | Nachrichten synchronisieren (Multi-User) |
 | `/api/live` | GET | SSE-Stream für Echtzeit-Updates |
 
-Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Parameter.
+Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Parameter. Analytics-Endpunkte unterstützen auch `?device=ID` für gerätespezifische Filterung (Multi-User-Modus).
 
 ## Entwicklung
 

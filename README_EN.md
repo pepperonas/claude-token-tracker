@@ -132,6 +132,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 ### Multi-User & Deployment
 
+- **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view
 - **Multi-user mode** — GitHub OAuth, personal API keys, per-user data isolation
 - **Sync Agent** — one-click install via curl (macOS/Linux) or PowerShell (Windows), watches local session files and uploads to server
 - **Autostart** — install script automatically sets up launchd (macOS), systemd (Linux), or Task Scheduler (Windows)
@@ -158,9 +159,9 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 Single-User:
   ~/.claude/projects/**/*.jsonl
       -> Parser (incremental, byte-offset)
-      -> SQLite (WAL, INSERT OR REPLACE)
+      -> SQLite (WAL, 10 tables, INSERT OR REPLACE)
       -> Aggregator (in-memory, pre-computed maps)
-      -> HTTP Server (25+ JSON endpoints + SSE)
+      -> HTTP Server (50+ JSON endpoints + SSE)
       -> Frontend (Chart.js, i18n DE/EN, sortable tables)
 
 Multi-User:
@@ -177,16 +178,16 @@ Multi-User:
 |--------|-------------|
 | `lib/parser.js` | Reads JSONL files, extracts token counts, tools (with per-tool call counts), model, lines-of-code, and sub-agent flag from `type: 'assistant'` messages |
 | `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` maps |
-| `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements` tables |
+| `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache`, `rate_limit_events`, `devices` tables |
 | `lib/pricing.js` | Model pricing (input/output/cacheRead/cacheCreate per 1M tokens) |
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
-| `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies |
+| `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies, 50% size safety check |
 | `lib/achievements.js` | 700 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
 | `lib/github.js` | GitHub API integration (REST + GraphQL), billing via usage summary API, PR stats, contributions, code stats, actions usage per repo with OS multipliers, stale-while-revalidate cache (60-min TTL) |
 | `lib/anthropic-api.js` | Anthropic Admin API integration — usage/cost reports, per-API-key breakdown (4 parallel requests: usage by model, usage by key+model, cost report, API key names), SWR cache, AES-256-GCM key encryption |
 | `lib/export-html.js` | Mobile-responsive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, sortable tables, and responsive breakpoints (768px/480px/412px) |
-| `server.js` | Vanilla `http.createServer` with 25+ API routes, SSE, and static file serving |
+| `server.js` | Vanilla `http.createServer` with 50+ API routes, SSE, and static file serving |
 | `sync-agent/` | Standalone CLI tool for client-side watching and uploading |
 
 ## Installation
@@ -259,8 +260,8 @@ Each user gets a personal **API key** for the Sync Agent, visible in the Info ta
 |--------|-------------|------------|
 | Data source | Local JSONL files (Chokidar watcher) | Sync Agent uploads via API |
 | Authentication | None | GitHub OAuth + session cookies |
-| Data isolation | None (all data belongs to one user) | Per-user via `user_id` column |
-| Aggregation | One global aggregator | AggregatorCache (lazy, 30min eviction) |
+| Data isolation | None (all data belongs to one user) | Per-user via `user_id`, per-device via `device_id` |
+| Aggregation | One global aggregator | AggregatorCache (per-user, per-device, 30min eviction) |
 | File watcher | Active | Disabled |
 
 ## Sync Agent
@@ -333,6 +334,7 @@ The Overview tab displays currently active Claude Code sessions live (green sect
 - Backups are created on startup and at the configured interval
 - Maximum 10 backup copies (older ones are automatically deleted)
 - Atomic backup via SQLite `VACUUM INTO`
+- Safety check: rejects backups smaller than 50% of last backup to prevent saving corrupt/empty databases
 
 ## Deployment
 
@@ -388,6 +390,10 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/anthropic/dashboard` | GET | Anthropic API usage/cost dashboard with per-key breakdown |
 | `/api/anthropic/budget` | GET/POST | Get or set monthly budget |
 | `/api/anthropic/refresh` | POST | Force refresh Anthropic data cache |
+| `/api/rate-limits` | GET | Rate-limit event statistics (total, daily) |
+| `/api/devices` | GET/POST | List or create devices (multi-user) |
+| `/api/devices/:id` | PUT/DELETE | Rename or delete a device |
+| `/api/devices/:id/regenerate-key` | POST | Regenerate device API key |
 | `/api/global-averages` | GET | Personal vs average stats (multi-user) |
 | `/api/rebuild` | POST | Rebuild cache |
 | `/api/backup` | POST | Create manual backup |
@@ -395,7 +401,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/sync` | POST | Sync messages (multi-user) |
 | `/api/live` | GET | SSE stream for real-time updates |
 
-All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters.
+All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters. Analytics endpoints also support `?device=ID` for per-device filtering (multi-user mode).
 
 ## Development
 
