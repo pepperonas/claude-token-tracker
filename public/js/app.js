@@ -2297,8 +2297,8 @@ async function loadDeviceManagement() {
         const res = await fetch(`/api/devices/${d.id}/regenerate-key`, { method: 'POST' });
         const data = await res.json();
         if (data.apiKey) {
-          _showNewDeviceKey(d.name, data.apiKey, list);
-          loadDeviceManagement();
+          await loadDeviceManagement();
+          _showNewDeviceKey(d.name, data.apiKey, document.getElementById('device-list'));
         }
       });
 
@@ -2754,8 +2754,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       if (data.error) { alert(data.error); return; }
       input.value = '';
+      await loadDeviceManagement();
       _showNewDeviceKey(name, data.apiKey, document.getElementById('device-list'), selectedOs);
-      loadDeviceManagement();
       loadDevices();
     } catch { /* ignore */ }
   });
