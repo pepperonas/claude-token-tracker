@@ -512,7 +512,10 @@ async function watch(config) {
   console.log(`Watching ${PROJECTS_DIR} for changes...`);
 
   const watcher = chokidar.watch(PROJECTS_DIR, {
-    ignored: [/(^|[\/\\])\../, /subagents/],
+    ignored: (filePath) => {
+      const base = require('path').basename(filePath);
+      return base !== '.' && base !== '..' && base.startsWith('.') || base === 'subagents';
+    },
     persistent: true,
     ignoreInitial: true,
     awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 }

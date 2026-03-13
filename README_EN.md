@@ -312,7 +312,7 @@ pm2 save
 
 | Property | Value |
 |----------|-------|
-| File watcher | Chokidar with `awaitWriteFinish` debouncing |
+| File watcher | Chokidar 4.x with `awaitWriteFinish` debouncing, path-based ignore function (compatible with full-path matching) |
 | Parsing | Incremental (byte-offset, new data only) |
 | Batch size | Max 500 messages per request |
 | Retry | Exponential backoff (3 attempts) |
