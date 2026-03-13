@@ -297,7 +297,10 @@ async function fetchPlanUsage() {
     return result;
   } catch (err) {
     if (_planUsageCache) return _planUsageCache;
-    console.error(`Plan usage fetch error: ${err.message}`);
+    if (!fetchPlanUsage._errorLogged) {
+      console.error(`Plan usage fetch error: ${err.message} (suppressing further)`);
+      fetchPlanUsage._errorLogged = true;
+    }
     return null;
   }
 }
@@ -515,6 +518,9 @@ async function watch(config) {
     awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 }
   });
 
+  let lastSyncTs = Date.now();
+  let planUsageErrorLogged = false;
+
   const processFile = async (filePath) => {
     if (!filePath.endsWith('.jsonl')) return;
     if (filePath.includes('/subagents/')) return;
@@ -525,8 +531,9 @@ async function watch(config) {
       const { messages, rateLimitEvents, newOffset } = parseSessionFile(filePath, offset);
 
       if (messages.length > 0 || rateLimitEvents.length > 0) {
-        const planUsage = await fetchPlanUsage();
+        const planUsage = await fetchPlanUsage().catch(() => null);
         await sendWithRetry(config.serverUrl, config.apiKey, messages, rateLimitEvents, planUsage);
+        lastSyncTs = Date.now();
         const parts = [];
         if (messages.length > 0) parts.push(`${messages.length} messages`);
         if (rateLimitEvents.length > 0) parts.push(`${rateLimitEvents.length} rate-limit events`);
@@ -543,6 +550,12 @@ async function watch(config) {
 
   watcher.on('change', processFile);
   watcher.on('add', processFile);
+  watcher.on('error', (err) => {
+    console.error(`Watcher error: ${err.message}`);
+  });
+  watcher.on('ready', () => {
+    console.log('File watcher ready.');
+  });
 
   // Periodic plan usage sync (every 5 min, even without file changes)
   const planUsageTimer = setInterval(async () => {
@@ -553,14 +566,29 @@ async function watch(config) {
         console.log(`[${new Date().toTimeString().slice(0, 8)}] Synced plan usage`);
       }
     } catch (err) {
-      console.error(`Plan usage sync error: ${err.message}`);
+      if (!planUsageErrorLogged) {
+        console.error(`Plan usage sync error: ${err.message} (suppressing further)`);
+        planUsageErrorLogged = true;
+      }
     }
   }, PLAN_USAGE_INTERVAL_MS);
+
+  // Heartbeat every 30 min — shows agent is alive
+  const heartbeatTimer = setInterval(() => {
+    const ago = Math.round((Date.now() - lastSyncTs) / 60000);
+    console.log(`[${new Date().toTimeString().slice(0, 8)}] Heartbeat — watching, last sync ${ago}m ago`);
+  }, 30 * 60 * 1000);
+
+  // Catch unhandled rejections to prevent silent death
+  process.on('unhandledRejection', (err) => {
+    console.error(`Unhandled rejection: ${err && err.message || err}`);
+  });
 
   // Keep alive
   process.on('SIGINT', () => {
     console.log('\nStopping sync agent...');
     clearInterval(planUsageTimer);
+    clearInterval(heartbeatTimer);
     watcher.close();
     saveState(state);
     process.exit(0);
