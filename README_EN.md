@@ -318,6 +318,8 @@ pm2 save
 | Retry | Exponential backoff (3 attempts) |
 | Response time | ~600ms after each Claude response |
 | State | Persisted in `.sync-state.json` |
+| Heartbeat | Logs status every 30 minutes |
+| Error handling | FSEvents error recovery, unhandled rejection guard |
 
 ## Active Sessions
 
