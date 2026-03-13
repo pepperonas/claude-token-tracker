@@ -1310,15 +1310,15 @@ Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
           <h3 data-i18n="caKeyTitle">Anthropic Admin Key</h3>
           <div class="settings-warning" data-i18n="caKeyWarning">Dein Key wird AES-256-GCM verschlüsselt in der Datenbank gespeichert und nie im Klartext zurückgegeben.</div>
           <p class="settings-desc" data-i18n="caKeyDesc">Erstelle einen Admin Key unter console.anthropic.com/settings/admin-keys mit dem Prefix sk-ant-admin.</p>
-          <div class="api-key-box">
+          <form class="api-key-box" onsubmit="return false" autocomplete="off">
             <label data-i18n="caKeyLabel">Admin Key</label>
             <div class="api-key-row">
-              <input type="password" id="anthropic-key-input" class="api-key-value" placeholder="sk-ant-admin..." style="font-family:monospace;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;flex:1;font-size:13px;">
-              <button class="btn-small" id="save-anthropic-key" data-i18n="save">Speichern</button>
-              <button class="btn-small btn-danger" id="delete-anthropic-key" data-i18n="delete">Löschen</button>
+              <input type="password" id="anthropic-key-input" class="api-key-value" placeholder="sk-ant-admin..." autocomplete="off" style="font-family:monospace;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;flex:1;font-size:13px;">
+              <button type="button" class="btn-small" id="save-anthropic-key" data-i18n="save">Speichern</button>
+              <button type="button" class="btn-small btn-danger" id="delete-anthropic-key" data-i18n="delete">Löschen</button>
             </div>
             <div class="settings-status" id="anthropic-key-status"></div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
