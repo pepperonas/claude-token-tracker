@@ -178,7 +178,7 @@ Multi-User:
 |-------|-------------|
 | `lib/parser.js` | Liest JSONL-Dateien, extrahiert Token-Zähler, Tools (mit Aufrufzählung pro Tool), Modell, Lines-of-Code und Sub-Agent-Flag aus `type: 'assistant'` Nachrichten |
 | `lib/aggregator.js` | In-Memory Analytics-Engine mit `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` Maps |
-| `lib/db.js` | SQLite-Schicht mit `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache`, `rate_limit_events`, `devices` Tabellen |
+| `lib/db.js` | SQLite-Schicht mit `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache`, `rate_limit_events`, `devices` Tabellen. Compound-Indexes für Multi-User/Device-Abfragen |
 | `lib/pricing.js` | Modellpreise (Input/Output/CacheRead/CacheCreate pro 1M Tokens) |
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
