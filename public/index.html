@@ -755,6 +755,7 @@
         <div id="github-billing" class="chart-box" style="display:none;">
           <div class="github-billing-header">
             <h3 data-i18n="ghBilling">GitHub Billing</h3>
+            <span class="gh-period-hint" id="gh-billing-period-hint" style="display:none;"></span>
             <span class="github-plan-badge" id="gh-plan-badge"></span>
           </div>
           <div class="github-billing-grid">
@@ -914,6 +915,7 @@
         <!-- Actions Usage by Repository -->
         <div id="github-actions-usage" class="chart-box" style="display:none;">
           <h3 data-i18n="ghActionsUsageByRepo">Actions Usage by Repository</h3>
+          <span class="gh-period-hint" id="gh-actions-period-hint" style="display:none;"></span>
           <div class="chart-container">
             <canvas id="chart-gh-actions-repo"></canvas>
           </div>
@@ -934,6 +936,7 @@
         <!-- Repo table -->
         <div class="chart-box">
           <h3 data-i18n="ghRepoOverview">Repository-Übersicht</h3>
+          <span class="gh-period-hint" id="gh-repos-period-hint" style="display:none;"></span>
           <div class="table-wrapper">
             <table class="data-table">
               <thead>

@@ -1991,6 +1991,14 @@ body {
   margin-bottom: 4px;
 }
 .github-billing-header h3 { margin: 0; }
+.gh-period-hint {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.78em;
+  font-weight: 400;
+  opacity: 0.5;
+  vertical-align: middle;
+}
 .github-plan-badge {
   display: inline-block;
   padding: 2px 10px;

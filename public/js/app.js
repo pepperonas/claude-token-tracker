@@ -1630,6 +1630,13 @@ async function loadGlobalComparison() {
 // --- GitHub Tab ---
 let _ghConfig = null;
 
+function _setGhPeriodHint(id, text) {
+  let el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text ? '(' + text + ')' : '';
+  el.style.display = text ? '' : 'none';
+}
+
 async function loadGithub() {
   const setupEl = document.getElementById('github-setup');
   const loadingEl = document.getElementById('github-loading');
@@ -1782,6 +1789,11 @@ async function loadGithub() {
     document.getElementById('gh-kpi-repos').textContent = formatNumber(data.repoCount);
     document.getElementById('gh-kpi-repos-sub').textContent =
       (pFrom ? t('ghTotal') + ' · ' : '') + `${t('ghTotalStars')}: ${data.totalStars} | ${t('ghTotalForks')}: ${data.totalForks}`;
+
+    // Period hint badges on non-filterable sections
+    _setGhPeriodHint('gh-billing-period-hint', pFrom ? t('ghCurrentCycle') : '');
+    _setGhPeriodHint('gh-actions-period-hint', pFrom ? t('ghNotFilterable') : '');
+    _setGhPeriodHint('gh-repos-period-hint', pFrom ? t('ghNotFilterable') : '');
 
     // Heatmap — always show full year regardless of period
     renderGithubHeatmap(document.getElementById('github-heatmap'), data.heatmap);
