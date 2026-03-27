@@ -762,7 +762,8 @@ const server = http.createServer((req, res) => {
     const projectData = shareAgg.getProjectDetail(share.project, query.from, query.to);
     if (!projectData) return sendJSON(res, { error: 'Not found' }, 404);
 
-    // Return sanitized data — no cost, no internal paths, no session IDs
+    // Return full project data for customer transparency
+    const sessionList = Array.isArray(projectData.sessionList) ? projectData.sessionList : [];
     const response = {
       label: share.label || 'Projekt',
       period: { from: query.from || null, to: query.to || null },
@@ -773,18 +774,46 @@ const server = http.createServer((req, res) => {
         total_cache_create_tokens: projectData.cacheCreateTokens || 0,
         total_messages: projectData.messages || 0,
         total_sessions: projectData.sessions || 0,
+        total_cost: projectData.cost || 0,
         lines_added: projectData.linesAdded || 0,
         lines_removed: projectData.linesRemoved || 0,
         lines_written: projectData.linesWritten || 0,
+        total_duration_min: projectData.totalDurationMin || 0,
         first_activity: projectData.firstTs || null,
         last_activity: projectData.lastTs || null,
-        models_used: (projectData.models || []).map(m => ({ name: m.name, messages: m.messages })),
+        models_used: (projectData.models || []).map(m => ({
+          name: m.name,
+          messages: m.messages,
+          cost: m.cost || 0,
+        })),
+        tools: (projectData.tools || []).slice(0, 15).map(t => ({
+          name: t.name,
+          calls: t.calls || t.count || 0,
+        })),
       },
       daily: (projectData.daily || []).map(d => ({
         date: d.date,
         input_tokens: d.inputTokens || 0,
         output_tokens: d.outputTokens || 0,
+        cache_read_tokens: d.cacheReadTokens || 0,
         messages: d.messages || 0,
+        cost: d.cost || 0,
+        lines_added: d.linesAdded || 0,
+        lines_removed: d.linesRemoved || 0,
+        lines_written: d.linesWritten || 0,
+      })),
+      sessions: sessionList.map(s => ({
+        start: s.firstMessage,
+        end: s.lastMessage,
+        messages: s.messages || 0,
+        input_tokens: s.inputTokens || 0,
+        output_tokens: s.outputTokens || 0,
+        cost: s.cost || 0,
+        duration_min: s.durationMin || 0,
+        model: s.model,
+        lines_added: s.linesAdded || 0,
+        lines_removed: s.linesRemoved || 0,
+        lines_written: s.linesWritten || 0,
       })),
     };
 
