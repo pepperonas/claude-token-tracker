@@ -814,10 +814,44 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
+  // --- Share admin key management (session auth only, for settings UI) ---
+  if (pathname === '/api/share-admin-key' && req.method === 'GET') {
+    const sessionUser = authenticateRequest(req);
+    if (MULTI_USER && !sessionUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    return sendJSON(res, {
+      key: SHARE_ADMIN_KEY || null,
+      base_url: BASE_URL || `http://localhost:${PORT}`,
+    });
+  }
+
+  if (pathname === '/api/share-admin-key' && req.method === 'POST') {
+    const sessionUser = authenticateRequest(req);
+    if (MULTI_USER && !sessionUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    const crypto = require('crypto');
+    const newKey = crypto.randomBytes(32).toString('hex');
+    // Write to .env file
+    const envPath = path.join(__dirname, '.env');
+    try {
+      let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf-8') : '';
+      if (envContent.includes('SHARE_ADMIN_KEY=')) {
+        envContent = envContent.replace(/SHARE_ADMIN_KEY=.*/g, `SHARE_ADMIN_KEY=${newKey}`);
+      } else {
+        envContent += `\nSHARE_ADMIN_KEY=${newKey}`;
+      }
+      fs.writeFileSync(envPath, envContent);
+      // Update in-memory (requires restart for full effect, but update the module cache)
+      require('./lib/config').SHARE_ADMIN_KEY = newKey;
+      return sendJSON(res, { key: newKey, note: 'Key aktualisiert. Server-Neustart empfohlen.' });
+    } catch (err) {
+      return sendJSON(res, { error: err.message }, 500);
+    }
+  }
+
   // --- Share admin API (admin key auth, before multi-user check) ---
   if (pathname.startsWith('/api/shares')) {
     const authHeader = req.headers.authorization || '';
-    const isAdmin = SHARE_ADMIN_KEY && authHeader === `Bearer ${SHARE_ADMIN_KEY}`;
+    const currentShareKey = require('./lib/config').SHARE_ADMIN_KEY;
+    const isAdmin = currentShareKey && authHeader === `Bearer ${currentShareKey}`;
     const sessionUser = authenticateRequest(req);
     if (!isAdmin && !(MULTI_USER ? sessionUser : true)) {
       return sendJSON(res, { error: 'Unauthorized' }, 401);

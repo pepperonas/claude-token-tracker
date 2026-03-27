@@ -2423,6 +2423,52 @@ async function loadSettings() {
   switchSyncOs(detectSyncOs());
   loadAnthropicKeyStatus();
   loadDeviceManagement();
+  loadShareAdminKey();
+}
+
+async function loadShareAdminKey() {
+  const section = document.getElementById('share-api-key-section');
+  if (!section) return;
+  const keyEl = document.getElementById('share-admin-key-value');
+  const urlEl = document.getElementById('share-tracker-url');
+  const statusEl = document.getElementById('share-admin-key-status');
+
+  try {
+    const data = await api('share-admin-key');
+    keyEl.textContent = data.key || 'Nicht konfiguriert — klicke "Neu generieren"';
+    urlEl.textContent = data.base_url || window.location.origin;
+  } catch {
+    keyEl.textContent = 'Fehler beim Laden';
+  }
+
+  document.getElementById('copy-share-admin-key').onclick = () => {
+    const key = keyEl.textContent;
+    if (!key || key.includes('Nicht konfiguriert') || key.includes('Fehler')) return;
+    navigator.clipboard.writeText(key);
+    statusEl.textContent = 'Key kopiert!';
+    statusEl.className = 'settings-status success';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  };
+
+  document.getElementById('copy-tracker-url').onclick = () => {
+    navigator.clipboard.writeText(urlEl.textContent);
+    statusEl.textContent = 'URL kopiert!';
+    statusEl.className = 'settings-status success';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  };
+
+  document.getElementById('regenerate-share-admin-key').onclick = async () => {
+    if (!confirm('Neuen Share Admin Key generieren? Der alte Key wird ungültig.')) return;
+    try {
+      const data = await api('share-admin-key', { method: 'POST' });
+      keyEl.textContent = data.key;
+      statusEl.textContent = 'Neuer Key generiert. Bitte auch in celox ops aktualisieren.';
+      statusEl.className = 'settings-status success';
+    } catch {
+      statusEl.textContent = 'Fehler beim Generieren';
+      statusEl.className = 'settings-status error';
+    }
+  };
 }
 
 async function loadDevices() {
