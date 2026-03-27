@@ -436,6 +436,16 @@ npm run lint          # ESLint (lib/ + server.js)
 - Costs: rounded to 2 decimal places
 - Unused variables: prefix `_` (ESLint)
 
+## Better Together: OPS Integration
+
+[OPS](https://github.com/pepperonas/OPS) is a business management app for freelancers and IT consultants. Combined with the Token Tracker, AI usage data flows directly into customer management:
+
+- Customers see interactive dashboards with active work time, cost, and code lines
+- AI usage reports can be attached to invoice PDFs
+- CSV and HTML export for transparent client communication
+
+[OPS on GitHub](https://github.com/pepperonas/OPS)
+
 ## Author
 
 Built by [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)

@@ -106,7 +106,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view, click-to-rename devices, OS-selectable install commands
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
-- **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [celox ops](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
+- **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/OPS) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **151 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
@@ -151,7 +151,7 @@ Sync Agent (client) -> POST /api/sync (API key auth)
 
 **Share API (external integration):**
 ```
-celox ops -> POST /api/shares (admin key auth) -> project_shares table
+OPS -> POST /api/shares (admin key auth) -> project_shares table
 Customer browser -> GET /api/public/share/:token -> sanitized project data
 ```
 
@@ -201,12 +201,12 @@ SHARE_ADMIN_KEY=your-64-char-hex-key
 # Or generate in Settings -> Share API -> "Neu generieren"
 ```
 
-### Integration with celox ops
+### Integration with OPS
 
 1. Open Token Tracker -> Settings -> Share API
 2. Copy Tracker URL and Share Admin Key
-3. Add to celox ops .env: TOKEN_TRACKER_BASE_URL and TOKEN_TRACKER_ADMIN_KEY
-4. In celox ops: Edit customer -> "Projekt verknuepfen" -> select project
+3. Add to OPS .env: TOKEN_TRACKER_BASE_URL and TOKEN_TRACKER_ADMIN_KEY
+4. In OPS: Edit customer -> "Projekt verknuepfen" -> select project
 5. Customer detail page shows KI-Nutzung tab with charts, costs, and sessions
 
 ### Public Response Format

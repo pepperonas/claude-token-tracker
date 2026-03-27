@@ -437,6 +437,16 @@ npm run lint          # ESLint (lib/ + server.js)
 - Unbenutzte Variablen: Prefix `_` (ESLint)
 - Deutsche Texte: richtige Umlaute (ü, ö, ä, ß), niemals ASCII-Ersatz
 
+## Besser zusammen: OPS Integration
+
+[OPS](https://github.com/pepperonas/OPS) ist eine Business-Management-App fuer Freelancer und IT-Consultants. Durch die Kombination mit dem Token Tracker fliessen KI-Nutzungsdaten direkt in die Kundenverwaltung:
+
+- Kunden sehen interaktive Dashboards mit aktiver Arbeitszeit, Kosten und Codezeilen
+- KI-Nutzungsberichte koennen als PDF-Anhang an Rechnungen gehaengt werden
+- CSV- und HTML-Export fuer transparente Kundenkommunikation
+
+[OPS auf GitHub](https://github.com/pepperonas/OPS)
+
 ## Autor
 
 Entwickelt von [Martin Pfeffer](https://celox.io) | [GitHub](https://github.com/pepperonas)
