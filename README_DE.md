@@ -84,6 +84,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Lines of Code** — Write (grün), Edit (gelb), Delete (rot) mit Netto-Änderungsberechnung und adaptivem Stunden-/Tages-Chart
 - **Globaler Zeitraumfilter** — Heute / 7 Tage / 30 Tage / Gesamt mit Vor-/Zurück-Navigationspfeilen, wirkt auf alle Tabs
 - **Sortierbare Tabellen** — Alle Datentabellen durch Klick auf Spaltenüberschriften sortierbar
+- **Projekt-Detail-Dialog** — Projekte in Chart oder Tabelle anklicken öffnet ein Detail-Modal mit 6 KPIs (Tokens, Kosten, Sessions, Nachrichten, Gesamtdauer, Netto-Zeilen), täglichem Token-Chart, Modellverteilungs-Doughnut, Top-Tools, Session-Liste und JSON-Export in die Zwischenablage
 - **CSS-only Tooltips** mit Erklärungen auf KPI-Labels und Chart-Titeln
 - **Chart-Legenden-Persistenz** — Legenden-Auswahl und Zeitraumfilter werden im localStorage gespeichert
 - **Mobil-optimiert** — optimiert für Smartphones (ab 393px) mit Touch-Targets, adaptiven Charts und kompaktem Layout
