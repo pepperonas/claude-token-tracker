@@ -752,12 +752,17 @@ const server = http.createServer((req, res) => {
     const share = getProjectShare(shareToken);
     if (!share) return sendJSON(res, { error: 'Not found' }, 404);
 
-    // In multi-user mode, build a temporary aggregator from all messages
+    // In multi-user mode, use cached global aggregator
     const shareAgg = MULTI_USER ? (() => {
-      const { getAllMessages } = require('./lib/db');
-      const a = new Aggregator();
-      a.addMessages(getAllMessages());
-      return a;
+      const now = Date.now();
+      if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
+        const { getAllMessages } = require('./lib/db');
+        const a = new Aggregator();
+        a.addMessages(getAllMessages());
+        global._shareAggCache = a;
+        global._shareAggCacheTime = now;
+      }
+      return global._shareAggCache;
     })() : aggregator;
     const projectData = shareAgg.getProjectDetail(share.project, query.from, query.to);
     if (!projectData) return sendJSON(res, { error: 'Not found' }, 404);
@@ -888,12 +893,17 @@ const server = http.createServer((req, res) => {
       return sendJSON(res, { error: 'Unauthorized' }, 401);
     }
 
-    // In multi-user mode, use a global aggregator for project listing
+    // In multi-user mode, use a cached global aggregator (rebuilt every 5 min)
     const shareAgg = MULTI_USER ? (() => {
-      const { getAllMessages } = require('./lib/db');
-      const a = new Aggregator();
-      a.addMessages(getAllMessages());
-      return a;
+      const now = Date.now();
+      if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
+        const { getAllMessages } = require('./lib/db');
+        const a = new Aggregator();
+        a.addMessages(getAllMessages());
+        global._shareAggCache = a;
+        global._shareAggCacheTime = now;
+      }
+      return global._shareAggCache;
     })() : aggregator;
 
     if (pathname === '/api/shares/projects' && req.method === 'GET') {
