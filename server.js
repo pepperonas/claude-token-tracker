@@ -17,7 +17,8 @@ const {
   insertRateLimitEvents, insertRateLimitEventsForUser,
   getAllRateLimitEvents, getRateLimitEventsForUser,
   createDevice, getDevicesForUser, getDeviceById, findDeviceByApiKey, findUserById,
-  renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync
+  renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync,
+  getProjectShare, listProjectShares, createProjectShare, deleteProjectShare
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
@@ -720,6 +721,61 @@ const server = http.createServer((req, res) => {
     return serveStatic(res, filePath);
   }
 
+  // --- Public share endpoint (no auth required) ---
+  if (pathname.startsWith('/api/public/share/') && req.method === 'GET') {
+    const shareToken = pathname.split('/api/public/share/')[1];
+    if (!shareToken) return sendJSON(res, { error: 'Token required' }, 400);
+
+    const share = getProjectShare(shareToken);
+    if (!share) return sendJSON(res, { error: 'Invalid or expired share token' }, 404);
+
+    // Get project data from aggregator (single-user mode)
+    const projectData = aggregator.getProjectDetail(share.project, query.from, query.to);
+    if (!projectData) return sendJSON(res, { error: 'Project not found' }, 404);
+
+    // Return sanitized data (no cost info)
+    const sessionList = Array.isArray(projectData.sessionList) ? projectData.sessionList : [];
+    const response = {
+      project: share.project,
+      label: share.label,
+      period: { from: query.from || null, to: query.to || null },
+      summary: {
+        total_input_tokens: projectData.inputTokens || 0,
+        total_output_tokens: projectData.outputTokens || 0,
+        total_cache_read_tokens: projectData.cacheReadTokens || 0,
+        total_cache_create_tokens: projectData.cacheCreateTokens || 0,
+        total_messages: projectData.messages || 0,
+        total_sessions: projectData.sessions || 0,
+        lines_added: projectData.linesAdded || 0,
+        lines_removed: projectData.linesRemoved || 0,
+        lines_written: projectData.linesWritten || 0,
+        first_activity: projectData.firstTs || null,
+        last_activity: projectData.lastTs || null,
+        models_used: (projectData.models || []).map(m => ({ name: m.name, messages: m.messages })),
+      },
+      daily: (projectData.daily || []).map(d => ({
+        date: d.date,
+        input_tokens: d.inputTokens || 0,
+        output_tokens: d.outputTokens || 0,
+        cache_read_tokens: d.cacheReadTokens || 0,
+        messages: d.messages || 0,
+      })),
+      sessions: sessionList.map(s => ({
+        id: s.id,
+        start: s.firstMessage,
+        end: s.lastMessage,
+        messages: s.messages,
+        input_tokens: s.inputTokens || 0,
+        output_tokens: s.outputTokens || 0,
+        model: s.model,
+      })),
+    };
+
+    // CORS for cross-origin access from celox ops
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return sendJSON(res, response);
+  }
+
   // --- All /api/* routes below require authentication in multi-user mode ---
   const user = authenticateRequest(req);
   if (MULTI_USER && !user) {
@@ -1254,6 +1310,34 @@ const server = http.createServer((req, res) => {
     } catch (err) {
       return sendJSON(res, { error: err.message }, 500);
     }
+  }
+
+  // --- Share management ---
+  if (pathname === '/api/shares' && req.method === 'GET') {
+    return sendJSON(res, listProjectShares());
+  }
+
+  if (pathname === '/api/shares' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { project, label, expires_in_days } = JSON.parse(body);
+        if (!project) return sendJSON(res, { error: 'project is required' }, 400);
+        const share = createProjectShare(project, label, expires_in_days);
+        return sendJSON(res, share, 201);
+      } catch (err) {
+        return sendJSON(res, { error: err.message }, 400);
+      }
+    });
+    return;
+  }
+
+  if (pathname.startsWith('/api/shares/') && req.method === 'DELETE') {
+    const shareId = pathname.split('/api/shares/')[1];
+    deleteProjectShare(shareId);
+    res.writeHead(204);
+    return res.end();
   }
 
   // 404
