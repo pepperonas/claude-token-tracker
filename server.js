@@ -70,55 +70,58 @@ anthropicApi.initAnthropicApi(require('./lib/db'));
 // 1d. Initialize Plan Usage module with DB reference
 planUsage.initPlanUsage(require('./lib/db'));
 
-// 2. Load existing messages from SQLite (single-user aggregator)
+// 2. Load existing messages and parse JSONL (single-user only; multi-user uses per-user cache)
 const aggregator = new Aggregator();
-const existingMessages = getAllMessages();
-if (existingMessages.length > 0) {
-  aggregator.addMessages(existingMessages);
-  console.log(`Loaded ${existingMessages.length} messages from database`);
-}
-
-// 2b. Load existing rate-limit events from SQLite
-const existingRateLimitEvents = getAllRateLimitEvents();
-if (existingRateLimitEvents.length > 0) {
-  aggregator.addRateLimitEvents(existingRateLimitEvents);
-  console.log(`Loaded ${existingRateLimitEvents.length} rate-limit events from database`);
-}
-
-// 3. Parse new JSONL data incrementally (only in single-user mode)
-const t0 = Date.now();
-const savedParseState = getParseState();
-const { messages: newMessages, rateLimitEvents: newRateLimitEvents, parseState: newParseState } = parseAll(savedParseState);
-let parseState = newParseState;
-
-if (newMessages.length > 0) {
-  const existingIds = new Set(existingMessages.map(m => m.id));
-  const trulyNew = newMessages.filter(m => !existingIds.has(m.id));
-  if (trulyNew.length > 0) {
-    insertMessages(trulyNew, calculateCost);
-    aggregator.addMessages(trulyNew);
-    console.log(`Parsed ${trulyNew.length} new messages in ${Date.now() - t0}ms`);
+let parseState = {};
+if (!MULTI_USER) {
+  const existingMessages = getAllMessages();
+  if (existingMessages.length > 0) {
+    aggregator.addMessages(existingMessages);
+    console.log(`Loaded ${existingMessages.length} messages from database`);
   }
-}
 
-if (newRateLimitEvents.length > 0) {
-  insertRateLimitEvents(newRateLimitEvents);
-  aggregator.addRateLimitEvents(newRateLimitEvents);
-  console.log(`Parsed ${newRateLimitEvents.length} new rate-limit events`);
-}
-
-// Backfill: if DB has no rate-limit events but JSONL files might, do a full re-scan
-if (!MULTI_USER && existingRateLimitEvents.length === 0 && newRateLimitEvents.length === 0) {
-  const backfilled = backfillRateLimitEvents();
-  if (backfilled.length > 0) {
-    insertRateLimitEvents(backfilled);
-    aggregator.addRateLimitEvents(backfilled);
-    console.log(`Backfilled ${backfilled.length} rate-limit events from existing JSONL files`);
+  const existingRateLimitEvents = getAllRateLimitEvents();
+  if (existingRateLimitEvents.length > 0) {
+    aggregator.addRateLimitEvents(existingRateLimitEvents);
+    console.log(`Loaded ${existingRateLimitEvents.length} rate-limit events from database`);
   }
-}
 
-// 4. Save parse state
-setParseState(parseState);
+  // Parse new JSONL data incrementally
+  const t0 = Date.now();
+  const savedParseState = getParseState();
+  const { messages: newMessages, rateLimitEvents: newRateLimitEvents, parseState: newParseState } = parseAll(savedParseState);
+  parseState = newParseState;
+
+  if (newMessages.length > 0) {
+    const existingIds = new Set(existingMessages.map(m => m.id));
+    const trulyNew = newMessages.filter(m => !existingIds.has(m.id));
+    if (trulyNew.length > 0) {
+      insertMessages(trulyNew, calculateCost);
+      aggregator.addMessages(trulyNew);
+      console.log(`Parsed ${trulyNew.length} new messages in ${Date.now() - t0}ms`);
+    }
+  }
+
+  if (newRateLimitEvents.length > 0) {
+    insertRateLimitEvents(newRateLimitEvents);
+    aggregator.addRateLimitEvents(newRateLimitEvents);
+    console.log(`Parsed ${newRateLimitEvents.length} new rate-limit events`);
+  }
+
+  // Backfill rate-limit events if needed
+  if (existingRateLimitEvents.length === 0 && newRateLimitEvents.length === 0) {
+    const backfilled = backfillRateLimitEvents();
+    if (backfilled.length > 0) {
+      insertRateLimitEvents(backfilled);
+      aggregator.addRateLimitEvents(backfilled);
+      console.log(`Backfilled ${backfilled.length} rate-limit events from existing JSONL files`);
+    }
+  }
+
+  setParseState(parseState);
+} else {
+  console.log('Multi-user mode: skipping global aggregator (per-user cache used instead)');
+}
 
 // DB helper for achievements module
 const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch };
@@ -604,8 +607,18 @@ const server = http.createServer((req, res) => {
       // Update device last sync time
       if (deviceId) updateDeviceLastSync(deviceId);
 
-      // Invalidate aggregator cache for this user
-      if (aggregatorCache) aggregatorCache.invalidateUser(syncUser.id);
+      // Incrementally update cached aggregators (avoids full rebuild from 67k+ messages)
+      if (aggregatorCache && (hasMessages || hasRateLimitEvents)) {
+        const aggMessages = hasMessages ? messages.map(m => ({
+          id: m.uuid, timestamp: m.timestamp, model: m.model, sessionId: m.sessionId,
+          project: m.project, inputTokens: m.inputTokens || 0, outputTokens: m.outputTokens || 0,
+          cacheReadTokens: m.cacheReadTokens || 0, cacheCreateTokens: m.cacheCreateTokens || 0,
+          stopReason: m.stopReason, tools: m.tools || [], toolCounts: m.toolCounts || {},
+          isSubagent: !!(m.isSubagent), linesAdded: m.linesAdded || 0,
+          linesRemoved: m.linesRemoved || 0, linesWritten: m.linesWritten || 0
+        })) : null;
+        aggregatorCache.addToUser(syncUser.id, aggMessages, hasRateLimitEvents ? rateLimitEvents : null);
+      }
 
       // Check achievements for this user (always use all-devices aggregator)
       try {

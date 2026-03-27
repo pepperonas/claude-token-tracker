@@ -143,7 +143,7 @@ Open [http://localhost:5010](http://localhost:5010)
 ```
 Sync Agent (client) -> POST /api/sync (API key auth)
     -> Per-user SQLite storage
-    -> AggregatorCache (lazy loaded, 30min eviction)
+    -> AggregatorCache (lazy loaded, incremental sync, 30min eviction)
     -> GitHub OAuth sessions
 ```
 

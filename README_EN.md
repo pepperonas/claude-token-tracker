@@ -125,7 +125,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 
 - **Incremental parsing** — only new data is processed (byte-offset tracking)
 - **SQLite database** with WAL mode for persistent storage and fast queries
-- **In-memory aggregation** — pre-computed maps for fast API responses
+- **In-memory aggregation** — pre-computed maps for fast API responses, incremental cache updates on sync (no full rebuild)
 - **Real-time updates** via Server-Sent Events (animation-free on live updates)
 - **API-equivalent cost estimation** for all Claude models (Opus 4.5/4.6, Sonnet 4.5, Haiku 4.5, Sonnet 3.7) — shows what your usage would cost at standard API rates, not actual billing (Claude Code uses a flat subscription)
 - **Automatic backups** (configurable, e.g. to Google Drive)
@@ -167,7 +167,7 @@ Single-User:
 Multi-User:
   Sync Agent (client) -> POST /api/sync (API key auth)
       -> SQLite (per user, user_id)
-      -> AggregatorCache (lazy, 30min eviction)
+      -> AggregatorCache (lazy, incremental sync, 30min eviction)
       -> HTTP Server (GitHub OAuth + session cookies)
       -> Frontend (login overlay, sync setup, active sessions)
 ```
@@ -177,7 +177,7 @@ Multi-User:
 | Module | Description |
 |--------|-------------|
 | `lib/parser.js` | Reads JSONL files, extracts token counts, tools (with per-tool call counts), model, lines-of-code, and sub-agent flag from `type: 'assistant'` messages |
-| `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` maps |
+| `lib/aggregator.js` | In-memory analytics engine with `_daily`, `_sessions`, `_projects`, `_models`, `_tools`, `_hourly`, `_toolStats`, `_mcpServers`, `_subagentStats` maps. `AggregatorCache` supports incremental updates via `addToUser()` to avoid full rebuilds on sync |
 | `lib/db.js` | SQLite layer with `messages`, `message_tools`, `parse_state`, `metadata`, `users`, `user_sessions`, `achievements`, `github_cache`, `rate_limit_events`, `devices` tables. Compound indexes for multi-user/device queries |
 | `lib/pricing.js` | Model pricing (input/output/cacheRead/cacheCreate per 1M tokens) |
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
@@ -261,7 +261,7 @@ Each user gets a personal **API key** for the Sync Agent, visible in the Info ta
 | Data source | Local JSONL files (Chokidar watcher) | Sync Agent uploads via API |
 | Authentication | None | GitHub OAuth + session cookies |
 | Data isolation | None (all data belongs to one user) | Per-user via `user_id`, per-device via `device_id` |
-| Aggregation | One global aggregator | AggregatorCache (per-user, per-device, 30min eviction) |
+| Aggregation | One global aggregator | AggregatorCache (per-user, per-device, incremental sync updates, 30min eviction) |
 | File watcher | Active | Disabled |
 
 ## Sync Agent
