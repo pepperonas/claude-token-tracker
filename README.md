@@ -105,6 +105,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view, click-to-rename devices, OS-selectable install commands
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
+- **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [celox ops](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **151 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
@@ -147,6 +148,12 @@ Sync Agent (client) -> POST /api/sync (API key auth)
     -> GitHub OAuth sessions
 ```
 
+**Share API (external integration):**
+```
+celox ops -> POST /api/shares (admin key auth) -> project_shares table
+Customer browser -> GET /api/public/share/:token -> sanitized project data
+```
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -161,6 +168,56 @@ Sync Agent (client) -> POST /api/sync (API key auth)
 | **Testing** | Vitest + Supertest |
 | **Linting** | ESLint 9 (flat config) |
 | **CI** | GitHub Actions |
+
+## Share API
+
+### Endpoints
+
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| GET /api/share-admin-key | Session | Get admin key + base URL (settings UI) |
+| POST /api/share-admin-key | Session | Regenerate admin key |
+| GET /api/shares | Admin Key / Session | List all shares |
+| POST /api/shares | Admin Key / Session | Create share { project, label, expires_in_days } |
+| DELETE /api/shares/:id | Admin Key / Session | Revoke a share |
+| GET /api/shares/projects | Admin Key / Session | List projects with stats |
+| GET /api/public/share/:token | Public | Get project data (rate limited) |
+
+### Security
+
+- Share tokens: 48-char hex (24 bytes / 192-bit cryptographic randomness)
+- Admin key: 64-char hex, stored in .env, required for management endpoints
+- Rate limiting: 30 requests/minute per IP on public endpoint
+- CORS: restricted to configured origins (ops.celox.io, tracker.celox.io)
+- No internal paths exposed, no project enumeration possible
+- Optional expiry dates on share tokens
+
+### Setup
+
+```bash
+# Add to .env
+SHARE_ADMIN_KEY=your-64-char-hex-key
+# Or generate in Settings -> Share API -> "Neu generieren"
+```
+
+### Integration with celox ops
+
+1. Open Token Tracker -> Settings -> Share API
+2. Copy Tracker URL and Share Admin Key
+3. Add to celox ops .env: TOKEN_TRACKER_BASE_URL and TOKEN_TRACKER_ADMIN_KEY
+4. In celox ops: Edit customer -> "Projekt verknuepfen" -> select project
+5. Customer detail page shows KI-Nutzung tab with charts, costs, and sessions
+
+### Public Response Format
+
+```json
+{
+  "label": "Project Label",
+  "summary": { "total_cost", "total_sessions", "lines_written", "..." },
+  "daily": [{ "date", "messages", "cost", "lines_written", "..." }],
+  "sessions": [{ "start", "end", "duration_min", "cost", "model", "..." }]
+}
+```
 
 ## Links
 
