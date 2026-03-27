@@ -779,6 +779,7 @@ const server = http.createServer((req, res) => {
         lines_removed: projectData.linesRemoved || 0,
         lines_written: projectData.linesWritten || 0,
         total_duration_min: projectData.totalDurationMin || 0,
+        total_active_min: projectData.totalActiveMin || 0,
         first_activity: projectData.firstTs || null,
         last_activity: projectData.lastTs || null,
         models_used: (projectData.models || []).map(m => ({
@@ -810,6 +811,7 @@ const server = http.createServer((req, res) => {
         output_tokens: s.outputTokens || 0,
         cost: s.cost || 0,
         duration_min: s.durationMin || 0,
+        active_min: s.activeMin || 0,
         model: s.model,
         lines_added: s.linesAdded || 0,
         lines_removed: s.linesRemoved || 0,
