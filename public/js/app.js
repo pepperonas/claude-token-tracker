@@ -124,7 +124,7 @@ function parseSortValue(str) {
   return null;
 }
 
-function storeTableData(tbodyId, rows, cellDefs, limit) {
+function storeTableData(tbodyId, rows, cellDefs, limit, onRowClick) {
   if (!tableState[tbodyId]) {
     tableState[tbodyId] = { sortCol: -1, sortAsc: true };
   }
@@ -135,6 +135,7 @@ function storeTableData(tbodyId, rows, cellDefs, limit) {
   tableState[tbodyId].rows = rows;
   tableState[tbodyId].cellDefs = cellDefs;
   tableState[tbodyId].limit = limit || 0;
+  tableState[tbodyId].onRowClick = onRowClick || null;
   renderSortedTable(tbodyId);
   initTableSort(tbodyId);
 }
@@ -159,6 +160,15 @@ function renderSortedTable(tbodyId) {
   if (ts.limit > 0) rows = rows.slice(0, ts.limit);
   const tbody = document.getElementById(tbodyId);
   buildTableRows(tbody, rows, ts.cellDefs);
+  if (ts.onRowClick) {
+    const trs = tbody.querySelectorAll('tr');
+    trs.forEach((tr, i) => {
+      if (rows[i]) {
+        tr.className = 'project-clickable';
+        tr.onclick = () => ts.onRowClick(rows[i]);
+      }
+    });
+  }
   updateSortIndicators(tbodyId);
 }
 
@@ -787,6 +797,20 @@ async function loadProjects() {
   const projects = await api('projects' + periodQuery());
   createProjectBarChart('chart-projects', projects, false);
 
+  // Make chart bars clickable
+  const chart = chartInstances['chart-projects'];
+  if (chart) {
+    chart.options.onClick = (_evt, elements) => {
+      if (elements.length > 0) {
+        const idx = elements[0].index;
+        const top = projects.slice(0, 15);
+        if (top[idx]) openProjectDetail(top[idx].name);
+      }
+    };
+    chart.canvas.style.cursor = 'pointer';
+    chart.update();
+  }
+
   const tbody = document.getElementById('projects-tbody');
   const cellDefs = [
     { value: p => p.name },
@@ -829,8 +853,193 @@ async function loadProjects() {
     }
   }
 
-  storeTableData('projects-tbody', projects, cellDefs);
+  storeTableData('projects-tbody', projects, cellDefs, 0, (p) => openProjectDetail(p.name));
 }
+
+
+
+// --- Project Detail Dialog ---
+let _projectDetailData = null;
+
+async function openProjectDetail(projectName) {
+  const dialog = document.getElementById('project-detail-dialog');
+  dialog.style.display = 'flex';
+  document.getElementById('project-detail-title').textContent = projectName;
+
+  const pq = periodQuery();
+  const data = await api('project-detail?name=' + encodeURIComponent(projectName) + pq.replace('?', '&'));
+  _projectDetailData = data;
+
+  // KPIs
+  const kpiGrid = document.getElementById('project-detail-kpis');
+  kpiGrid.textContent = '';
+  const kpis = [
+    { label: t('totalTokensH'), value: formatTokens(data.totalTokens), cls: 'c-blue' },
+    { label: t('cost'), value: formatCost(data.cost), cls: 'c-orange' },
+    { label: t('sessionsLabel'), value: formatNumber(data.sessions), cls: 'c-green' },
+    { label: t('messagesLabel'), value: formatNumber(data.messages), cls: 'c-purple' },
+    { label: t('pdTotalTime'), value: data.totalDurationMin > 0 ? _formatDuration(data.totalDurationMin) : '-', cls: 'c-cyan' },
+    { label: t('pdNetLines'), value: _formatNetLines(data), cls: 'c-green' },
+  ];
+  for (const k of kpis) {
+    const div = document.createElement('div');
+    div.className = 'kpi ' + k.cls;
+    div.innerHTML = '';
+    const lbl = document.createElement('div');
+    lbl.className = 'kpi-label';
+    lbl.textContent = k.label;
+    const val = document.createElement('div');
+    val.className = 'kpi-value';
+    val.textContent = k.value;
+    div.appendChild(lbl);
+    div.appendChild(val);
+    kpiGrid.appendChild(div);
+  }
+
+  // Daily chart
+  _renderProjectDailyChart(data.daily);
+
+  // Models chart
+  _renderProjectModelsChart(data.models);
+
+  // Tools
+  const toolsSection = document.getElementById('project-detail-tools-section');
+  const toolsList = document.getElementById('project-detail-tools');
+  if (data.tools && data.tools.length > 0) {
+    toolsSection.style.display = '';
+    toolsList.textContent = '';
+    for (const t of data.tools) {
+      const tag = document.createElement('span');
+      tag.className = 'pd-tool-tag';
+      const nameSpan = document.createTextNode(t.name + ' ');
+      const countSpan = document.createElement('span');
+      countSpan.className = 'pd-tool-count';
+      countSpan.textContent = t.calls;
+      tag.appendChild(nameSpan);
+      tag.appendChild(countSpan);
+      toolsList.appendChild(tag);
+    }
+  } else {
+    toolsSection.style.display = 'none';
+  }
+
+  // Sessions table
+  const tbody = document.getElementById('project-detail-sessions-tbody');
+  tbody.textContent = '';
+  for (const s of data.sessionList) {
+    const tr = document.createElement('tr');
+    const cells = [
+      s.firstTs ? s.firstTs.slice(0, 10) : '-',
+      s.models.join(', '),
+      s.durationMin > 0 ? s.durationMin + 'm' : '<1m',
+      formatNumber(s.messages),
+      formatTokens(s.totalTokens),
+      _sessionLines(s),
+      formatCost(s.cost)
+    ];
+    for (let i = 0; i < cells.length; i++) {
+      const td = document.createElement('td');
+      if (i >= 2) td.className = 'num';
+      td.textContent = cells[i];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  // Export button
+  document.getElementById('project-detail-export').onclick = () => {
+    const json = JSON.stringify(data, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+      const btn = document.getElementById('project-detail-export');
+      const orig = btn.textContent;
+      btn.textContent = t('pdExportSuccess');
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  };
+}
+
+function closeProjectDetail() {
+  document.getElementById('project-detail-dialog').style.display = 'none';
+  _projectDetailData = null;
+  destroyChart('chart-project-detail-daily');
+  destroyChart('chart-project-detail-models');
+}
+
+function _formatDuration(min) {
+  if (min < 60) return min + 'm';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h + 'h ' + m + 'm';
+}
+
+function _formatNetLines(data) {
+  const net = (data.linesAdded || 0) + (data.linesWritten || 0) - (data.linesRemoved || 0);
+  if (net === 0 && !data.linesAdded && !data.linesWritten && !data.linesRemoved) return '-';
+  return (net >= 0 ? '+' : '') + formatNumber(net);
+}
+
+function _sessionLines(s) {
+  const a = s.linesAdded || 0;
+  const r = s.linesRemoved || 0;
+  const w = s.linesWritten || 0;
+  if (a + r + w === 0) return '-';
+  return '+' + formatNumber(a) + ' -' + formatNumber(r);
+}
+
+function _renderProjectDailyChart(daily) {
+  destroyChart('chart-project-detail-daily');
+  if (!daily || daily.length === 0) return;
+  const ctx = document.getElementById('chart-project-detail-daily').getContext('2d');
+  chartInstances['chart-project-detail-daily'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: daily.map(d => d.date.slice(5)),
+      datasets: [
+        { label: 'Input', data: daily.map(d => d.inputTokens), backgroundColor: COLORS.input + 'cc', stack: 's' },
+        { label: 'Output', data: daily.map(d => d.outputTokens), backgroundColor: COLORS.output + 'cc', stack: 's' },
+        { label: 'Cache', data: daily.map(d => d.cacheReadTokens + d.cacheCreateTokens), backgroundColor: COLORS.cacheRead + '80', stack: 's' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 10 } } },
+        y: { ticks: { callback: v => formatTokens(v) }, stacked: true }
+      }
+    }
+  });
+}
+
+function _renderProjectModelsChart(models) {
+  destroyChart('chart-project-detail-models');
+  if (!models || models.length === 0) return;
+  const ctx = document.getElementById('chart-project-detail-models').getContext('2d');
+  chartInstances['chart-project-detail-models'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: models.map(m => m.name),
+      datasets: [{ data: models.map(m => m.tokens), backgroundColor: [COLORS.input, COLORS.output, COLORS.cacheRead, COLORS.cacheCreate, '#bc8cff', '#39d2c0'] }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+        tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + formatTokens(ctx.raw) } }
+      }
+    }
+  });
+}
+
+// Close modal on overlay click or Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('project-detail-dialog').style.display !== 'none') {
+    closeProjectDetail();
+  }
+});
+document.getElementById('project-detail-dialog')?.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeProjectDetail();
+});
 
 async function loadTools() {
   const pq = periodQuery();

@@ -42,6 +42,54 @@
 </head>
 <body>
 
+
+  <!-- Project Detail Dialog -->
+  <div id="project-detail-dialog" class="modal-overlay" style="display:none;">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h2 id="project-detail-title"></h2>
+        <div class="modal-header-actions">
+          <button class="btn-small" id="project-detail-export" title="Export JSON">Export JSON</button>
+          <button class="modal-close" onclick="closeProjectDetail()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="kpi-grid" id="project-detail-kpis"></div>
+        <div class="chart-grid two-col" id="project-detail-charts">
+          <div class="chart-box">
+            <h3 data-i18n="pdDailyTokens">Tägliche Tokens</h3>
+            <div class="chart-container" style="height:220px;"><canvas id="chart-project-detail-daily"></canvas></div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="pdModels">Modelle</h3>
+            <div class="chart-container" style="height:220px;"><canvas id="chart-project-detail-models"></canvas></div>
+          </div>
+        </div>
+        <div id="project-detail-tools-section" style="display:none;">
+          <h3 class="modal-section-title" data-i18n="pdTopTools">Top Tools</h3>
+          <div class="pd-tools-list" id="project-detail-tools"></div>
+        </div>
+        <div id="project-detail-sessions-section">
+          <h3 class="modal-section-title" data-i18n="pdSessions">Sitzungen</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr>
+                <th data-i18n="date">Datum</th>
+                <th data-i18n="model">Modell</th>
+                <th class="num" data-i18n="duration">Dauer</th>
+                <th class="num" data-i18n="messagesLabel">Nachrichten</th>
+                <th class="num" data-i18n="totalTokensH">Tokens</th>
+                <th class="num">+/-</th>
+                <th class="num" data-i18n="cost">Kosten</th>
+              </tr></thead>
+              <tbody id="project-detail-sessions-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Login Overlay (multi-user mode only) -->
   <div id="login-overlay" class="login-overlay" style="display:none;">
     <div class="login-card">

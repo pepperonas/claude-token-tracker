@@ -762,6 +762,11 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, session);
   }
 
+  if (pathname === '/api/project-detail') {
+    if (!query.name) return sendJSON(res, { error: 'name parameter required' }, 400);
+    return sendJSON(res, agg.getProjectDetail(query.name, query.from, query.to));
+  }
+
   if (pathname === '/api/projects') {
     return sendJSON(res, agg.getProjects(query.from, query.to));
   }

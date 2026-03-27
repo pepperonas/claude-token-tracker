@@ -1838,6 +1838,15 @@ const LANG = {
     renameDevicePrompt: 'New device name:',
     regenerateKey: 'Regenerate Key',
     regenerateConfirm: 'Regenerate API key? The sync agent on this device will need to be reinstalled.',
+    pdDailyTokens: 'Daily Tokens',
+    pdModels: 'Models',
+    pdTopTools: 'Top Tools',
+    pdSessions: 'Sessions',
+    pdFirstActivity: 'First Activity',
+    pdLastActivity: 'Last Activity',
+    pdTotalTime: 'Total Time',
+    pdNetLines: 'Net Lines',
+    pdExportSuccess: 'JSON copied to clipboard',
   },
   de: {
     title: 'Claude Token Tracker',
@@ -3678,6 +3687,15 @@ const LANG = {
     renameDevicePrompt: 'Neuer Gerätename:',
     regenerateKey: 'Key erneuern',
     regenerateConfirm: 'API-Key erneuern? Der Sync-Agent auf diesem Gerät muss neu installiert werden.',
+    pdDailyTokens: 'Tägliche Tokens',
+    pdModels: 'Modelle',
+    pdTopTools: 'Top Tools',
+    pdSessions: 'Sitzungen',
+    pdFirstActivity: 'Erste Aktivität',
+    pdLastActivity: 'Letzte Aktivität',
+    pdTotalTime: 'Gesamtzeit',
+    pdNetLines: 'Netto-Zeilen',
+    pdExportSuccess: 'JSON in Zwischenablage kopiert',
   }
 };
 
