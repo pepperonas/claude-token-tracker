@@ -722,22 +722,42 @@ const server = http.createServer((req, res) => {
   }
 
   // --- Public share endpoint (no auth required) ---
+  // Rate limiting for share endpoint: max 30 requests per minute per IP
+  if (!global._shareRateLimit) global._shareRateLimit = new Map();
   if (pathname.startsWith('/api/public/share/') && req.method === 'GET') {
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    const now = Date.now();
+    const windowMs = 60000;
+    const maxRequests = 30;
+    const ipHits = global._shareRateLimit.get(clientIp) || [];
+    const recentHits = ipHits.filter(t => t > now - windowMs);
+    if (recentHits.length >= maxRequests) {
+      res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+      return res.end(JSON.stringify({ error: 'Too many requests' }));
+    }
+    recentHits.push(now);
+    global._shareRateLimit.set(clientIp, recentHits);
+    // Cleanup old entries every 100 requests
+    if (global._shareRateLimit.size > 1000) {
+      for (const [ip, hits] of global._shareRateLimit) {
+        if (hits.every(t => t < now - windowMs)) global._shareRateLimit.delete(ip);
+      }
+    }
+
     const shareToken = pathname.split('/api/public/share/')[1];
-    if (!shareToken) return sendJSON(res, { error: 'Token required' }, 400);
+    if (!shareToken || shareToken.length !== 48 || !/^[a-f0-9]+$/.test(shareToken)) {
+      return sendJSON(res, { error: 'Invalid token format' }, 400);
+    }
 
     const share = getProjectShare(shareToken);
-    if (!share) return sendJSON(res, { error: 'Invalid or expired share token' }, 404);
+    if (!share) return sendJSON(res, { error: 'Not found' }, 404);
 
-    // Get project data from aggregator (single-user mode)
     const projectData = aggregator.getProjectDetail(share.project, query.from, query.to);
-    if (!projectData) return sendJSON(res, { error: 'Project not found' }, 404);
+    if (!projectData) return sendJSON(res, { error: 'Not found' }, 404);
 
-    // Return sanitized data (no cost info)
-    const sessionList = Array.isArray(projectData.sessionList) ? projectData.sessionList : [];
+    // Return sanitized data — no cost, no internal paths, no session IDs
     const response = {
-      project: share.project,
-      label: share.label,
+      label: share.label || 'Projekt',
       period: { from: query.from || null, to: query.to || null },
       summary: {
         total_input_tokens: projectData.inputTokens || 0,
@@ -757,23 +777,34 @@ const server = http.createServer((req, res) => {
         date: d.date,
         input_tokens: d.inputTokens || 0,
         output_tokens: d.outputTokens || 0,
-        cache_read_tokens: d.cacheReadTokens || 0,
         messages: d.messages || 0,
-      })),
-      sessions: sessionList.map(s => ({
-        id: s.id,
-        start: s.firstMessage,
-        end: s.lastMessage,
-        messages: s.messages,
-        input_tokens: s.inputTokens || 0,
-        output_tokens: s.outputTokens || 0,
-        model: s.model,
       })),
     };
 
-    // CORS for cross-origin access from celox ops
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Restrict CORS to known origins
+    const origin = req.headers.origin || '';
+    const allowedOrigins = ['https://ops.celox.io', 'https://tracker.celox.io', 'http://localhost:5173', 'http://localhost:8090'];
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     return sendJSON(res, response);
+  }
+
+  // CORS preflight for share endpoint
+  if (pathname.startsWith('/api/public/share/') && req.method === 'OPTIONS') {
+    const origin = req.headers.origin || '';
+    const allowedOrigins = ['https://ops.celox.io', 'https://tracker.celox.io', 'http://localhost:5173', 'http://localhost:8090'];
+    if (allowedOrigins.includes(origin)) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '86400',
+      });
+    } else {
+      res.writeHead(204);
+    }
+    return res.end();
   }
 
   // --- All /api/* routes below require authentication in multi-user mode ---
