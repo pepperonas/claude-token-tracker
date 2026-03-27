@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL } = require('./lib/config');
+const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY } = require('./lib/config');
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
@@ -752,7 +752,14 @@ const server = http.createServer((req, res) => {
     const share = getProjectShare(shareToken);
     if (!share) return sendJSON(res, { error: 'Not found' }, 404);
 
-    const projectData = aggregator.getProjectDetail(share.project, query.from, query.to);
+    // In multi-user mode, build a temporary aggregator from all messages
+    const shareAgg = MULTI_USER ? (() => {
+      const { getAllMessages } = require('./lib/db');
+      const a = new Aggregator();
+      a.addMessages(getAllMessages());
+      return a;
+    })() : aggregator;
+    const projectData = shareAgg.getProjectDetail(share.project, query.from, query.to);
     if (!projectData) return sendJSON(res, { error: 'Not found' }, 404);
 
     // Return sanitized data — no cost, no internal paths, no session IDs
@@ -805,6 +812,62 @@ const server = http.createServer((req, res) => {
       res.writeHead(204);
     }
     return res.end();
+  }
+
+  // --- Share admin API (admin key auth, before multi-user check) ---
+  if (pathname.startsWith('/api/shares')) {
+    const authHeader = req.headers.authorization || '';
+    const isAdmin = SHARE_ADMIN_KEY && authHeader === `Bearer ${SHARE_ADMIN_KEY}`;
+    const sessionUser = authenticateRequest(req);
+    if (!isAdmin && !(MULTI_USER ? sessionUser : true)) {
+      return sendJSON(res, { error: 'Unauthorized' }, 401);
+    }
+
+    // In multi-user mode, use a global aggregator for project listing
+    const shareAgg = MULTI_USER ? (() => {
+      const { getAllMessages } = require('./lib/db');
+      const a = new Aggregator();
+      a.addMessages(getAllMessages());
+      return a;
+    })() : aggregator;
+
+    if (pathname === '/api/shares/projects' && req.method === 'GET') {
+      const projects = shareAgg.getProjects();
+      return sendJSON(res, (projects || []).map(p => ({
+        name: p.name,
+        messages: p.messages,
+        sessions: p.sessions,
+        last_activity: p.lastTs,
+      })));
+    }
+
+    if (pathname === '/api/shares' && req.method === 'GET') {
+      return sendJSON(res, listProjectShares());
+    }
+
+    if (pathname === '/api/shares' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const { project, label, expires_in_days } = JSON.parse(body);
+          if (!project) return sendJSON(res, { error: 'project is required' }, 400);
+          const share = createProjectShare(project, label, expires_in_days);
+          return sendJSON(res, share, 201);
+        } catch (err) {
+          return sendJSON(res, { error: err.message }, 400);
+        }
+      });
+      return;
+    }
+
+    if (pathname.startsWith('/api/shares/') && req.method === 'DELETE') {
+      const shareId = pathname.split('/api/shares/')[1];
+      if (!shareId || shareId === 'projects') return sendJSON(res, { error: 'Invalid' }, 400);
+      deleteProjectShare(shareId);
+      res.writeHead(204);
+      return res.end();
+    }
   }
 
   // --- All /api/* routes below require authentication in multi-user mode ---
@@ -1341,34 +1404,6 @@ const server = http.createServer((req, res) => {
     } catch (err) {
       return sendJSON(res, { error: err.message }, 500);
     }
-  }
-
-  // --- Share management ---
-  if (pathname === '/api/shares' && req.method === 'GET') {
-    return sendJSON(res, listProjectShares());
-  }
-
-  if (pathname === '/api/shares' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const { project, label, expires_in_days } = JSON.parse(body);
-        if (!project) return sendJSON(res, { error: 'project is required' }, 400);
-        const share = createProjectShare(project, label, expires_in_days);
-        return sendJSON(res, share, 201);
-      } catch (err) {
-        return sendJSON(res, { error: err.message }, 400);
-      }
-    });
-    return;
-  }
-
-  if (pathname.startsWith('/api/shares/') && req.method === 'DELETE') {
-    const shareId = pathname.split('/api/shares/')[1];
-    deleteProjectShare(shareId);
-    res.writeHead(204);
-    return res.end();
   }
 
   // 404
