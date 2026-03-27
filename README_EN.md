@@ -438,13 +438,13 @@ npm run lint          # ESLint (lib/ + server.js)
 
 ## Better Together: OPS Integration
 
-[OPS](https://github.com/pepperonas/OPS) is a business management app for freelancers and IT consultants. Combined with the Token Tracker, AI usage data flows directly into customer management:
+[OPS](https://github.com/pepperonas/celox-ops) is a business management app for freelancers and IT consultants. Combined with the Token Tracker, AI usage data flows directly into customer management:
 
 - Customers see interactive dashboards with active work time, cost, and code lines
 - AI usage reports can be attached to invoice PDFs
 - CSV and HTML export for transparent client communication
 
-[OPS on GitHub](https://github.com/pepperonas/OPS)
+[OPS on GitHub](https://github.com/pepperonas/celox-ops)
 
 ## Author
 
