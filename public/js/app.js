@@ -2424,6 +2424,28 @@ async function loadSettings() {
   loadAnthropicKeyStatus();
   loadDeviceManagement();
   loadShareAdminKey();
+  setupDbDownload();
+}
+
+function setupDbDownload() {
+  const btn = document.getElementById('download-db-btn');
+  if (!btn) return;
+  btn.onclick = () => {
+    const statusEl = document.getElementById('download-db-status');
+    statusEl.textContent = t('dbDownloading');
+    statusEl.className = 'settings-status';
+    const a = document.createElement('a');
+    a.href = '/api/download-db';
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => {
+      statusEl.textContent = t('dbDownloadDone');
+      statusEl.className = 'settings-status success';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    }, 1000);
+  };
 }
 
 async function loadShareAdminKey() {

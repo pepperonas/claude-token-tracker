@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY } = require('./lib/config');
+const { PORT, DB_PATH, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY } = require('./lib/config');
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
@@ -1453,6 +1453,24 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/achievements') {
     const userId = MULTI_USER ? user.id : 0;
     return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb));
+  }
+
+  // Database download
+  if (pathname === '/api/download-db' && req.method === 'GET') {
+    try {
+      const stat = fs.statSync(DB_PATH);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      res.writeHead(200, {
+        'Content-Type': 'application/x-sqlite3',
+        'Content-Disposition': `attachment; filename="tracker-${dateStr}.db"`,
+        'Content-Length': stat.size
+      });
+      const stream = fs.createReadStream(DB_PATH);
+      stream.pipe(res);
+      return;
+    } catch (err) {
+      return sendJSON(res, { error: err.message }, 500);
+    }
   }
 
   // Backup endpoints

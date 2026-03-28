@@ -1372,6 +1372,16 @@ Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
           </form>
         </div>
 
+        <!-- Database Download -->
+        <div class="info-section">
+          <h3 data-i18n="dbDownloadTitle">Datenbank</h3>
+          <p class="settings-desc" data-i18n="dbDownloadDesc">SQLite-Datenbank mit allen Token-Daten, Sessions und Achievements herunterladen.</p>
+          <div class="api-key-row">
+            <button class="btn-small" id="download-db-btn" data-i18n="dbDownloadBtn">Datenbank herunterladen</button>
+            <span class="settings-status" id="download-db-status"></span>
+          </div>
+        </div>
+
         <!-- Share API Key (for external integrations like celox ops) -->
         <div class="info-section" id="share-api-key-section">
           <h3>Share API</h3>

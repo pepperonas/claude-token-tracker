@@ -231,6 +231,11 @@ const LANG = {
     caKeyDeleted: 'Key deleted.',
     caKeyInvalid: 'Invalid format — key must start with sk-ant-admin.',
     caKeyConfigured: 'Key is configured.',
+    dbDownloadTitle: 'Database',
+    dbDownloadDesc: 'Download SQLite database with all token data, sessions, and achievements.',
+    dbDownloadBtn: 'Download Database',
+    dbDownloading: 'Downloading...',
+    dbDownloadDone: 'Download started.',
     // Demo mode
     demoBannerText: 'You are viewing sample data.',
     demoBannerLogin: 'Sign in with GitHub',
@@ -2080,6 +2085,11 @@ const LANG = {
     caKeyDeleted: 'Key gelöscht.',
     caKeyInvalid: 'Ungültiges Format — Key muss mit sk-ant-admin beginnen.',
     caKeyConfigured: 'Key ist konfiguriert.',
+    dbDownloadTitle: 'Datenbank',
+    dbDownloadDesc: 'SQLite-Datenbank mit allen Token-Daten, Sessions und Achievements herunterladen.',
+    dbDownloadBtn: 'Datenbank herunterladen',
+    dbDownloading: 'Wird heruntergeladen...',
+    dbDownloadDone: 'Download gestartet.',
     // Demo mode
     demoBannerText: 'Du siehst Beispieldaten.',
     demoBannerLogin: 'Mit GitHub anmelden',
