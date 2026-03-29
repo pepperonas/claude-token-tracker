@@ -83,6 +83,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
 - **Global period filter** — Today / 7 Days / 30 Days / All Time with prev/next navigation arrows, applies to all tabs
+- **Database download** — download the full SQLite database from Settings for local backup or analysis
 - **Sortable tables** — all data tables sortable by clicking column headers
 - **Project Detail Dialog** — click any project in chart or table to open a detail modal with 6 KPIs (tokens, cost, sessions, messages, total time, net lines), daily token chart, model distribution doughnut, top tools, sessions list, and JSON export to clipboard
 - **CSS-only tooltips** with explanations on KPI labels and chart titles
