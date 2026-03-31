@@ -103,7 +103,7 @@ Key differences from single-user:
 
 ## Deployment
 
-VPS deployment to tracker.celox.io (69.62.121.168):
+VPS deployment to tracker.celox.io:
 - Port: 3007, PM2 process: `token-tracker` (started with `--node-args='--env-file=.env'`)
 - Nginx reverse proxy with SSL (certbot)
 - `scripts/deploy.sh` handles rsync + npm ci + PM2 restart
