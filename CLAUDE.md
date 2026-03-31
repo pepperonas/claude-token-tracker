@@ -28,7 +28,7 @@ Dashboard that tracks Claude Code token usage. Pure Node.js HTTP server (no Expr
     → lib/parser.js (incremental byte-offset parsing, dedup by message ID)
     → lib/db.js (SQLite with WAL mode, INSERT OR REPLACE)
     → lib/aggregator.js (in-memory stats, pre-computed on startup)
-    → server.js (50+ JSON API endpoints + SSE live updates)
+    → server.js (60+ JSON API endpoints + SSE live updates)
     → public/ (Chart.js charts, i18n DE/EN, cache toggle)
 ```
 
