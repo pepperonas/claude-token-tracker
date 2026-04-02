@@ -101,6 +101,14 @@ Key differences from single-user:
 - Login overlay shown until GitHub OAuth completes
 - Stats-cache endpoint disabled (no local `.claude/` directory)
 
+## Local (MacBook)
+
+LaunchAgent `io.celox.token-tracker` runs the local dashboard on port 5010:
+- `RunAtLoad: true` + `KeepAlive: true` — survives reboots and crashes
+- Plist: `~/Library/LaunchAgents/io.celox.token-tracker.plist`
+- Logs: `stdout.log` / `stderr.log` in project directory
+- Dashboard: http://localhost:5010
+
 ## Deployment
 
 VPS deployment to tracker.celox.io:
