@@ -629,6 +629,14 @@ function _formatResetDate(isoStr) {
   return t('planResetAt').replace('{day}', day).replace('{time}', time);
 }
 
+function _formatActiveTime(minutes) {
+  if (!minutes || minutes <= 0) return '-';
+  if (minutes < 60) return minutes + ' Min.';
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return m > 0 ? h + ' Std. ' + m + ' Min.' : h + ' Std.';
+}
+
 async function loadOverview() {
   const [overview, daily, models, hourly, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
@@ -652,6 +660,8 @@ async function loadOverview() {
   document.getElementById('kpi-cost-sub').textContent = t('costSubLabel');
   document.getElementById('kpi-sessions').textContent = formatNumber(overview.sessions);
   document.getElementById('kpi-messages').textContent = formatNumber(overview.messages);
+  document.getElementById('kpi-active-time').textContent = _formatActiveTime(overview.totalActiveMin);
+  document.getElementById('kpi-active-time-sub').textContent = overview.totalActiveMin > 0 ? t('activeTimeSub') : '-';
   document.getElementById('kpi-rate-limits').textContent = formatNumber(overview.rateLimitHits || 0);
 
   // Detail KPI cards
@@ -760,6 +770,7 @@ async function loadSessions() {
       { text: t('project') },
       { text: t('model') },
       { text: t('duration'), cls: 'num' },
+      { text: t('activeTime'), cls: 'num' },
       { text: t('messages'), cls: 'num' },
       { text: t('toolCalls'), cls: 'num' },
       { text: t('tokens'), cls: 'num' },
@@ -779,6 +790,7 @@ async function loadSessions() {
     { value: s => s.project },
     { value: s => s.models.join(', ') },
     { value: s => s.durationMin + 'm', className: 'num' },
+    { value: s => s.activeMin ? s.activeMin + 'm' : '-', className: 'num' },
     { value: s => formatNumber(s.messages), className: 'num' },
     { value: s => formatNumber(s.toolCalls), className: 'num' },
     { value: s => formatTokens(getDisplayTokens(s)), className: 'num' },
