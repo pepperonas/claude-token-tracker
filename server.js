@@ -611,7 +611,7 @@ const server = http.createServer((req, res) => {
       // Incrementally update cached aggregators (avoids full rebuild from 67k+ messages)
       if (aggregatorCache && (hasMessages || hasRateLimitEvents)) {
         const aggMessages = hasMessages ? messages.map(m => ({
-          id: m.uuid, timestamp: m.timestamp, model: m.model, sessionId: m.sessionId,
+          id: m.id, timestamp: m.timestamp, model: m.model, sessionId: m.sessionId,
           project: m.project, inputTokens: m.inputTokens || 0, outputTokens: m.outputTokens || 0,
           cacheReadTokens: m.cacheReadTokens || 0, cacheCreateTokens: m.cacheCreateTokens || 0,
           stopReason: m.stopReason, tools: m.tools || [], toolCounts: m.toolCounts || {},
