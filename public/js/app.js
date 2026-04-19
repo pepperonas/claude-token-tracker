@@ -663,6 +663,10 @@ async function loadOverview() {
   document.getElementById('kpi-active-time').textContent = _formatActiveTime(overview.totalActiveMin);
   document.getElementById('kpi-active-time-sub').textContent = overview.totalActiveMin > 0 ? t('activeTimeSub') : '-';
   document.getElementById('kpi-rate-limits').textContent = formatNumber(overview.rateLimitHits || 0);
+  document.getElementById('kpi-avg-active-time').textContent = _formatActiveTime(overview.avgActiveMinPerDay);
+  document.getElementById('kpi-avg-active-time-sub').textContent = overview.activeDays > 0
+    ? t('avgActiveTimeSub').replace('{days}', overview.activeDays)
+    : '-';
 
   // Detail KPI cards
   document.getElementById('kpi-input-tokens').textContent = formatTokens(overview.inputTokens);
