@@ -81,6 +81,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Tool Cost Attribution** — proportional cost/token distribution per tool, MCP server breakdown (auto-detected via `mcp__` prefix), sub-agent tracking (via `/subagents/` path), cost-over-time chart, enhanced table with Type/Cost/Tokens columns
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
+- **Active Work Time** — actual working time (wall-clock) computed from a unified message timeline within the period (gaps > 5 min counted as breaks). Additional "Avg Work Time/Day" KPI divides by days with actual activity (not by period length) — for a 30-day filter with only 15 active days, divisor is 15
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
 - **Global period filter** — Today / 7 Days / 30 Days / All Time with prev/next navigation arrows, applies to all tabs
 - **Database download** — download the full SQLite database from Settings for local backup or analysis

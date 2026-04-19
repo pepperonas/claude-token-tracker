@@ -81,6 +81,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Tool-Kostenverteilung** — proportionale Kosten-/Token-Verteilung pro Tool, MCP-Server-Aufschlüsselung (automatisch erkannt über `mcp__`-Präfix), Sub-Agent-Tracking (über `/subagents/`-Pfad), Kosten-Zeitverlauf-Chart, erweiterte Tabelle mit Typ-/Kosten-/Token-Spalten
 - **Aktive Sitzungen** — Live-Anzeige aktuell laufender Claude-Code-Sessions mit Projekt, Modell, Dauer und Kosten
 - **Token-Aufschlüsselung** — Detail-KPI-Cards für Input, Output, Cache Read und Cache Create Tokens mit Einzelkosten
+- **Aktive Arbeitszeit** — tatsächliche Arbeitszeit (Wall-Clock) berechnet aus einer vereinten Message-Timeline im Zeitraum (Lücken > 5 Min. als Pause gewertet). Zusätzliche KPI „Ø Arbeitszeit/Tag" teilt durch Tage mit tatsächlicher Aktivität (nicht durch Zeitraumlänge) — bei 30-Tage-Filter mit nur 15 aktiven Tagen wird durch 15 geteilt
 - **Lines of Code** — Write (grün), Edit (gelb), Delete (rot) mit Netto-Änderungsberechnung und adaptivem Stunden-/Tages-Chart
 - **Globaler Zeitraumfilter** — Heute / 7 Tage / 30 Tage / Gesamt mit Vor-/Zurück-Navigationspfeilen, wirkt auf alle Tabs
 - **Datenbank-Download** — SQLite-Datenbank direkt aus den Einstellungen herunterladen für lokales Backup oder Analyse
