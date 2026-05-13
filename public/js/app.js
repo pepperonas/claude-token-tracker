@@ -38,10 +38,25 @@ function getDisplayCost(obj) {
 // --- API helpers ---
 async function api(path) {
   if (state.demoMode && typeof DEMO_DATA !== 'undefined') {
-    const basePath = path.replace(/\?.*$/, '');
+    const [basePath, queryStr] = path.split('?');
     if (DEMO_DATA[basePath] !== undefined) {
-      return JSON.parse(JSON.stringify(DEMO_DATA[basePath]));
+      const val = DEMO_DATA[basePath];
+      if (typeof val === 'function') {
+        const params = {};
+        if (queryStr) {
+          for (const p of queryStr.split('&')) {
+            const [k, v] = p.split('=');
+            if (k) params[k] = decodeURIComponent(v || '');
+          }
+        }
+        return val(params);
+      }
+      return JSON.parse(JSON.stringify(val));
     }
+    // No demo data — fetch real API, but on 401 return null instead of forcing login
+    const res = await fetch('/api/' + path);
+    if (res.status === 401) return null;
+    return res.json();
   }
   const res = await fetch('/api/' + path);
   if (res.status === 401 && state.multiUser) {
@@ -279,6 +294,21 @@ function showDemoBanner() {
   if (rebuildBtn) rebuildBtn.style.display = 'none';
   const syncSetup = document.getElementById('sync-setup');
   if (syncSetup) syncSetup.style.display = 'none';
+  // Hide Settings tab (account-specific, not useful in demo)
+  const settingsTabBtn = document.querySelector('.tab-btn[data-tab="settings"]');
+  if (settingsTabBtn) settingsTabBtn.style.display = 'none';
+  // If user landed on settings tab (from localStorage), bounce them to overview
+  if (state.activeTab === 'settings') state.activeTab = 'overview';
+  // Wire up the "Try it" CTA to scroll to the dashboard content
+  const exploreCta = document.getElementById('demo-explore-cta');
+  if (exploreCta && !exploreCta._wired) {
+    exploreCta._wired = true;
+    exploreCta.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.getElementById('tabs');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 }
 
 function hideDemoBanner() {

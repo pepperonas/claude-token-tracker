@@ -7,6 +7,8 @@ data/
 .env
 coverage/
 .DS_Store
+.playwright-mcp/
+.serena/
 
 # Sync agent runtime files
 sync-agent/config.json

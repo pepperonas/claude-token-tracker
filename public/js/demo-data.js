@@ -24,6 +24,9 @@ const DEMO_DATA = (() => {
   ];
 
   // --- Overview ---
+  // activeDays: 12 of 15 demo days have activity (3 "off" days)
+  // totalActiveMin: 14h 23m active wall-clock across the period
+  // avgActiveMinPerDay: 14h 23m / 12 active days = 72 min/day avg
   const overview = {
     inputTokens: 1842560,
     outputTokens: 623480,
@@ -38,7 +41,11 @@ const DEMO_DATA = (() => {
     messages: 847,
     linesAdded: 3240,
     linesRemoved: 1180,
-    linesWritten: 5420
+    linesWritten: 5420,
+    totalActiveMin: 863,
+    avgActiveMinPerDay: 72,
+    activeDays: 12,
+    rateLimitHits: 4
   };
 
   // --- Daily data ---
@@ -95,19 +102,23 @@ const DEMO_DATA = (() => {
       const lW = Math.round(msgs * 6.4);
       const lA = Math.round(msgs * 3.8);
       const lR = Math.round(msgs * 1.4);
+      const sessId = `demo-session-${sessionIdx}`;
       sessionsData.push({
-        sessionId: `demo-session-${sessionIdx}`,
+        id: sessId,
+        sessionId: sessId,
         firstTs: `${date}T${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:00.000Z`,
         lastTs: `${date}T${String(hour + Math.floor(durMin / 60)).padStart(2, '0')}:${String((min + durMin) % 60).padStart(2, '0')}:00.000Z`,
         project: proj,
-        models: [model.id],
+        models: [model.label],
         messages: msgs,
         toolCalls,
         durationMin: durMin,
+        activeMin: Math.max(1, Math.min(durMin, Math.round(msgs * 1.4))),
         inputTokens: inputT,
         outputTokens: outputT,
         cacheReadTokens: cacheR,
         cacheCreateTokens: cacheC,
+        totalTokens: inputT + outputT + cacheR + cacheC,
         inputCost: Math.round(inputT * 3 / 1e6 * 100) / 100,
         outputCost: Math.round(outputT * 15 / 1e6 * 100) / 100,
         cacheReadCost: Math.round(cacheR * 0.3 / 1e6 * 100) / 100,
@@ -149,7 +160,7 @@ const DEMO_DATA = (() => {
 
   // --- Models ---
   const modelsData = models.map((m, i) => {
-    const sess = sessionsData.filter(s => s.models[0] === m.id);
+    const sess = sessionsData.filter(s => s.models[0] === m.label);
     const inputT = sess.reduce((a, s) => a + s.inputTokens, 0);
     const outputT = sess.reduce((a, s) => a + s.outputTokens, 0);
     const cacheR = sess.reduce((a, s) => a + s.cacheReadTokens, 0);
@@ -327,6 +338,541 @@ const DEMO_DATA = (() => {
     unlockedAt: unlockedKeys.has(key) ? days[Math.floor(Math.random() * days.length)] + 'T12:00:00Z' : null
   }));
 
+  // --- Tool stats (enhanced for Tools tab) ---
+  // Built-in tools + a few MCP tools with realistic cost/token attribution
+  const toolStatsRaw = [
+    { name: 'Read', calls: 1240, type: 'built-in' },
+    { name: 'Edit', calls: 685, type: 'built-in' },
+    { name: 'Bash', calls: 542, type: 'built-in' },
+    { name: 'Grep', calls: 418, type: 'built-in' },
+    { name: 'Glob', calls: 312, type: 'built-in' },
+    { name: 'Write', calls: 248, type: 'built-in' },
+    { name: 'Task', calls: 142, type: 'built-in' },
+    { name: 'TodoWrite', calls: 96, type: 'built-in' },
+    { name: 'WebFetch', calls: 64, type: 'built-in' },
+    { name: 'WebSearch', calls: 38, type: 'built-in' },
+    { name: 'NotebookEdit', calls: 22, type: 'built-in' },
+    { name: 'mcp__github__create_issue', calls: 18, type: 'mcp', server: 'github' },
+    { name: 'mcp__github__list_pull_requests', calls: 15, type: 'mcp', server: 'github' },
+    { name: 'mcp__github__create_pr_review', calls: 9, type: 'mcp', server: 'github' },
+    { name: 'mcp__slack__post_message', calls: 14, type: 'mcp', server: 'slack' },
+    { name: 'mcp__slack__search_messages', calls: 7, type: 'mcp', server: 'slack' },
+    { name: 'mcp__playwright__browser_navigate', calls: 12, type: 'mcp', server: 'playwright' },
+    { name: 'mcp__playwright__browser_snapshot', calls: 8, type: 'mcp', server: 'playwright' }
+  ];
+  const _toolTotalCalls = toolStatsRaw.reduce((a, t) => a + t.calls, 0);
+  const toolStatsData = toolStatsRaw
+    .map(t => {
+      const costPerCall = t.type === 'mcp' ? 0.018 : 0.012;
+      const tokensPerCall = t.type === 'mcp' ? 1850 : 1420;
+      const calls = t.calls;
+      const tokens = Math.round(calls * tokensPerCall);
+      const cost = Math.round(calls * costPerCall * 100) / 100;
+      const displayName = t.type === 'mcp' ? t.name.split('__').slice(2).join('__') : t.name;
+      return {
+        name: t.name,
+        displayName,
+        type: t.type,
+        server: t.server || null,
+        calls,
+        cost,
+        tokens,
+        inputTokens: Math.round(tokens * 0.32),
+        outputTokens: Math.round(tokens * 0.08),
+        cacheReadTokens: Math.round(tokens * 0.55),
+        cacheCreateTokens: Math.round(tokens * 0.05),
+        messages: Math.max(1, Math.round(calls / 4.5)),
+        percentage: Math.round((calls / _toolTotalCalls) * 1000) / 10
+      };
+    })
+    .sort((a, b) => b.cost - a.cost);
+
+  // --- MCP servers (auto-grouped from MCP entries above) ---
+  const mcpServersData = (() => {
+    const byServer = {};
+    for (const t of toolStatsData) {
+      if (t.type !== 'mcp') continue;
+      const srv = t.server;
+      if (!byServer[srv]) byServer[srv] = { name: srv, totalCalls: 0, totalCost: 0, totalTokens: 0, tools: [] };
+      byServer[srv].totalCalls += t.calls;
+      byServer[srv].totalCost += t.cost;
+      byServer[srv].totalTokens += t.tokens;
+      byServer[srv].tools.push({ name: t.displayName, calls: t.calls, cost: t.cost, tokens: t.tokens });
+    }
+    return Object.values(byServer)
+      .map(s => ({ ...s, totalCost: Math.round(s.totalCost * 100) / 100 }))
+      .sort((a, b) => b.totalCost - a.totalCost);
+  })();
+
+  // --- Sub-agent stats ---
+  const subagentStatsData = (() => {
+    const subMessages = 42;
+    const subCost = 1.84;
+    const subTokens = 246800;
+    const subDaily = days.map((date, i) => {
+      const factor = i >= 8 ? (0.4 + Math.random() * 0.7) : 0;
+      const msgs = Math.round(4 * factor);
+      const tokens = Math.round(28000 * factor);
+      const cost = Math.round(0.21 * factor * 100) / 100;
+      return msgs > 0 ? { date, messages: msgs, tokens, cost } : null;
+    }).filter(Boolean);
+    return {
+      messages: subMessages,
+      tokens: subTokens,
+      cost: subCost,
+      pctMessages: 5.0,
+      pctCost: 8.1,
+      daily: subDaily
+    };
+  })();
+
+  // --- Tool cost daily (stacked area chart input) ---
+  // Each day: { date, [toolName]: cost }
+  const toolCostDailyData = days.map((date, i) => {
+    const factor = 0.5 + Math.sin(i * 0.7) * 0.3 + (i / 15) * 0.3;
+    const entry = { date };
+    const topTools = ['Read', 'Edit', 'Bash', 'Grep', 'Glob', 'Write'];
+    for (const t of topTools) {
+      const base = { Read: 1.85, Edit: 1.20, Bash: 0.95, Grep: 0.55, Glob: 0.32, Write: 0.42 }[t];
+      entry[t] = Math.round(base * factor * 100) / 100;
+    }
+    return entry;
+  });
+
+  // --- Rate limit events ---
+  const rateLimitsData = (() => {
+    // 4 hits across the 15-day window, randomly distributed
+    const hits = [
+      { date: days[3], count: 1 },
+      { date: days[6], count: 2 },
+      { date: days[11], count: 1 }
+    ];
+    return { total: hits.reduce((a, h) => a + h.count, 0), daily: hits };
+  })();
+
+  // --- Plan usage (Claude.ai plan limits) ---
+  const planUsageData = {
+    planUsage: {
+      currentSession: {
+        percentUsed: 38,
+        resetsInSeconds: 3 * 3600 + 24 * 60
+      },
+      weeklyAllModels: {
+        percentUsed: 56,
+        resetsAt: new Date(Date.now() + 4 * 86400000).toISOString()
+      },
+      weeklySonnet: {
+        percentUsed: 41,
+        resetsAt: new Date(Date.now() + 4 * 86400000).toISOString()
+      },
+      fetchedAt: new Date(Date.now() - 90 * 1000).toISOString()
+    }
+  };
+
+  // --- GitHub: stats (heatmap, commits, repos, PRs, languages) ---
+  const githubStatsData = (() => {
+    // 365-day heatmap; commits cluster around weekdays + last 60 days higher
+    const heatmap = [];
+    const heatmapStart = new Date(now);
+    heatmapStart.setDate(heatmapStart.getDate() - 364);
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(heatmapStart);
+      d.setDate(d.getDate() + i);
+      const dayOfWeek = d.getDay();
+      const recencyBoost = i / 365;
+      const weekdayBoost = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1 : 0.4;
+      const r = Math.random();
+      let count = 0;
+      if (r < 0.30 * weekdayBoost + 0.20 * recencyBoost) count = 1 + Math.floor(Math.random() * 3);
+      if (r < 0.12 * weekdayBoost + 0.18 * recencyBoost) count = 4 + Math.floor(Math.random() * 4);
+      if (r < 0.04 * weekdayBoost + 0.10 * recencyBoost) count = 8 + Math.floor(Math.random() * 6);
+      heatmap.push({
+        date: d.toISOString().slice(0, 10),
+        count,
+        color: count === 0 ? '#161b22' : count < 4 ? '#0e4429' : count < 7 ? '#006d32' : count < 10 ? '#26a641' : '#39d353'
+      });
+    }
+    const commitDaily = heatmap.filter(d => d.count > 0).map(d => ({ date: d.date, commits: d.count }));
+    const totalContributions = heatmap.reduce((s, d) => s + d.count, 0);
+    const commitCount = commitDaily.reduce((s, d) => s + d.commits, 0);
+
+    const repoNames = [
+      ['token-tracker', 'JavaScript', '#f1e05a', 142, 18],
+      ['claude-remote', 'JavaScript', '#f1e05a', 89, 11],
+      ['smart-home-dashboard', 'HTML', '#e34c26', 67, 8],
+      ['go-sling', 'Go', '#00ADD8', 54, 6],
+      ['hue-controller', 'JavaScript', '#f1e05a', 38, 4],
+      ['lichtwerk-controller', 'JavaScript', '#f1e05a', 31, 3],
+      ['yamaha-controller', 'JavaScript', '#f1e05a', 24, 2],
+      ['fog-controller', 'JavaScript', '#f1e05a', 19, 2],
+      ['raspi-monitor', 'TypeScript', '#3178c6', 47, 5],
+      ['playground', 'HTML', '#e34c26', 12, 1],
+      ['weather-station', 'Python', '#3572A5', 28, 3],
+      ['dotfiles', 'Shell', '#89e051', 15, 2]
+    ];
+    const repos = repoNames.map(([name, lang, color, stars, forks], i) => ({
+      name,
+      nameWithOwner: 'demo-user/' + name,
+      stars,
+      forks,
+      language: lang,
+      languageColor: color,
+      updatedAt: new Date(now - i * 3 * 86400000).toISOString(),
+      isPrivate: i >= 9
+    }));
+    const totalStars = repos.reduce((s, r) => s + r.stars, 0);
+    const totalForks = repos.reduce((s, r) => s + r.forks, 0);
+
+    const langMap = {};
+    for (const r of repos) {
+      if (!langMap[r.language]) langMap[r.language] = { name: r.language, count: 0, color: r.languageColor };
+      langMap[r.language].count++;
+    }
+    const languages = Object.values(langMap).sort((a, b) => b.count - a.count);
+
+    // PR stats — 28 total PRs (20 merged, 5 open, 3 closed)
+    const prStats = {
+      total: 28,
+      open: 5,
+      merged: 20,
+      closed: 3,
+      totalAdditions: 12480,
+      totalDeletions: 4720,
+      netLines: 7760,
+      totalChangedFiles: 184,
+      codeByState: {
+        merged: { additions: 9450, deletions: 3580 },
+        open: { additions: 2240, deletions: 820 },
+        closed: { additions: 790, deletions: 320 }
+      }
+    };
+
+    return {
+      heatmap,
+      totalContributions,
+      commitCount,
+      prContributions: 28,
+      repos,
+      repoCount: repos.length,
+      totalStars,
+      totalForks,
+      prStats,
+      languages,
+      commitDaily,
+      _age: 12,
+      _cached: true
+    };
+  })();
+
+  // --- GitHub: billing (Actions minutes, storage, packages) ---
+  const githubBillingData = {
+    actions: {
+      plan: 'Pro',
+      totalMinutesUsed: 1842,
+      includedMinutes: 3000,
+      percentUsed: 61.4,
+      minutesUsedBreakdown: {
+        UBUNTU: 1420,
+        MACOS: 380,
+        WINDOWS: 42
+      }
+    },
+    storage: {
+      estimatedStorageGB: 0.84,
+      includedStorageGB: 2.0,
+      daysLeftInCycle: 12
+    },
+    packages: {
+      totalGigabytesBandwidthUsed: 0.18,
+      includedGigabytesBandwidth: 2.0
+    },
+    resetDate: (() => {
+      const d = new Date(now); d.setDate(d.getDate() + 12); return d.toISOString().slice(0, 10);
+    })()
+  };
+
+  // --- GitHub: actions usage (per-repo workflow minutes) ---
+  const githubActionsUsageData = {
+    repos: [
+      { name: 'token-tracker', totalMinutes: 620, workflows: [
+        { name: 'Deploy to VPS', billableMinutes: 420 },
+        { name: 'Tests', billableMinutes: 200 }
+      ]},
+      { name: 'smart-home-dashboard', totalMinutes: 380, workflows: [
+        { name: 'Build & Deploy', billableMinutes: 380 }
+      ]},
+      { name: 'claude-remote', totalMinutes: 260, workflows: [
+        { name: 'Tests', billableMinutes: 180 },
+        { name: 'Lint', billableMinutes: 80 }
+      ]},
+      { name: 'go-sling', totalMinutes: 195, workflows: [
+        { name: 'Cross-compile', billableMinutes: 195 }
+      ]},
+      { name: 'raspi-monitor', totalMinutes: 140, workflows: [
+        { name: 'CI', billableMinutes: 140 }
+      ]},
+      { name: 'playground', totalMinutes: 92, workflows: [
+        { name: 'Deploy', billableMinutes: 92 }
+      ]},
+      { name: 'weather-station', totalMinutes: 64, workflows: [
+        { name: 'Python tests', billableMinutes: 64 }
+      ]}
+    ]
+  };
+
+  // --- GitHub: code stats (LOC across top repos) ---
+  const githubCodeStatsData = (() => {
+    const weekly = [];
+    const weeks = 52;
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - weeks * 7);
+    for (let i = 0; i < weeks; i++) {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i * 7);
+      const factor = 0.3 + Math.sin(i * 0.3) * 0.4 + (i / weeks) * 0.5;
+      weekly.push({
+        week: d.toISOString().slice(0, 10),
+        additions: Math.round(620 * factor),
+        deletions: Math.round(280 * factor)
+      });
+    }
+    return { weekly, repos: 8, _age: 12, _cached: true };
+  })();
+
+  // --- GitHub: code frequency (per-repo weekly additions/deletions) ---
+  const githubCodeFrequencyData = (() => {
+    const weeks = 52;
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - weeks * 7);
+    const data = [];
+    for (let i = 0; i < weeks; i++) {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i * 7);
+      const factor = 0.4 + Math.sin(i * 0.4) * 0.5 + (i / weeks) * 0.4;
+      data.push({
+        week: d.toISOString().slice(0, 10),
+        additions: Math.round(180 * factor),
+        deletions: Math.round(90 * factor)
+      });
+    }
+    return data;
+  })();
+
+  // --- Anthropic API dashboard data ---
+  const anthropicDashboardData = (() => {
+    // Generate 30 days of API usage
+    const apiDays = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      apiDays.push(d.toISOString().slice(0, 10));
+    }
+    const apiModels = [
+      { id: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
+      { id: 'claude-opus-4-6', label: 'Opus 4.6' },
+      { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' }
+    ];
+    const dailyCosts = apiDays.map((date, i) => {
+      const factor = 0.4 + Math.sin(i * 0.5) * 0.3 + (i / 30) * 0.4;
+      const entry = { date, total: 0 };
+      for (const m of apiModels) {
+        const base = m.label.includes('Sonnet') ? 4.2 : m.label.includes('Opus') ? 6.8 : 0.6;
+        const c = Math.round(base * factor * 100) / 100;
+        entry[m.label] = c;
+        entry.total += c;
+      }
+      entry.total = Math.round(entry.total * 100) / 100;
+      return entry;
+    });
+    const dailyTokens = apiDays.map((date, i) => {
+      const factor = 0.4 + Math.sin(i * 0.5) * 0.3 + (i / 30) * 0.4;
+      return {
+        date,
+        input: Math.round(180000 * factor),
+        output: Math.round(64000 * factor),
+        cacheRead: Math.round(820000 * factor),
+        cacheCreate: Math.round(42000 * factor)
+      };
+    });
+    const totalCost = Math.round(dailyCosts.reduce((s, d) => s + d.total, 0) * 100) / 100;
+    const totalInput = dailyTokens.reduce((s, d) => s + d.input, 0);
+    const totalOutput = dailyTokens.reduce((s, d) => s + d.output, 0);
+    const totalCacheRead = dailyTokens.reduce((s, d) => s + d.cacheRead, 0);
+    const totalCacheCreate = dailyTokens.reduce((s, d) => s + d.cacheCreate, 0);
+    const totalTokens = totalInput + totalOutput + totalCacheRead + totalCacheCreate;
+    const activeDays = dailyCosts.filter(d => d.total > 0).length;
+    const modelBreakdown = apiModels.map(m => {
+      const cost = Math.round(dailyCosts.reduce((s, d) => s + (d[m.label] || 0), 0) * 100) / 100;
+      const shareFactor = m.label.includes('Sonnet') ? 0.50 : m.label.includes('Opus') ? 0.42 : 0.08;
+      return {
+        model: m.label,
+        input: Math.round(totalInput * shareFactor),
+        output: Math.round(totalOutput * shareFactor),
+        cacheRead: Math.round(totalCacheRead * shareFactor),
+        cacheCreate: Math.round(totalCacheCreate * shareFactor),
+        cost
+      };
+    });
+    // Per-API-key data: 2 keys (matches lib/anthropic-api.js schema)
+    const apiKeys = [
+      { keyId: 'apikey_01ABCDEFGHJKLMNPQR', keyName: 'prod-app', share: 0.72 },
+      { keyId: 'apikey_01ZYXWVUTSRQPONMLK', keyName: 'dev-experiments', share: 0.28 }
+    ];
+    const keyTotals = apiKeys.map(k => {
+      const tokens = Math.round(totalTokens * k.share);
+      const input = Math.round(totalInput * k.share);
+      const output = Math.round(totalOutput * k.share);
+      const cacheRead = Math.round(totalCacheRead * k.share);
+      const cacheCreate = Math.round(totalCacheCreate * k.share);
+      const calculatedCost = Math.round(totalCost * k.share * 100) / 100;
+      return {
+        keyId: k.keyId,
+        keyName: k.keyName,
+        totalTokens: tokens,
+        totalInput: input,
+        totalOutput: output,
+        totalCacheRead: cacheRead,
+        totalCacheCreate: cacheCreate,
+        calculatedCost,
+        lastUsed: apiDays[apiDays.length - 1 - Math.floor(Math.random() * 3)]
+      };
+    });
+    const keyBreakdown = [];
+    for (const k of apiKeys) {
+      for (const m of apiModels) {
+        const mb = modelBreakdown.find(x => x.model === m.label);
+        keyBreakdown.push({
+          keyId: k.keyId,
+          keyName: k.keyName,
+          model: m.label,
+          input: Math.round(mb.input * k.share),
+          output: Math.round(mb.output * k.share),
+          cacheRead: Math.round(mb.cacheRead * k.share),
+          cacheCreate: Math.round(mb.cacheCreate * k.share),
+          calculatedCost: Math.round(mb.cost * k.share * 100) / 100
+        });
+      }
+    }
+    const dailyTokensByKey = apiDays.map((date, i) => {
+      const byKey = {};
+      const dt = dailyTokens[i];
+      const dc = dailyCosts[i];
+      for (const k of apiKeys) {
+        byKey[k.keyId] = {
+          keyName: k.keyName,
+          input: Math.round(dt.input * k.share),
+          output: Math.round(dt.output * k.share),
+          cacheRead: Math.round(dt.cacheRead * k.share),
+          cacheCreate: Math.round(dt.cacheCreate * k.share),
+          total: Math.round((dt.input + dt.output + dt.cacheRead + dt.cacheCreate) * k.share),
+          calculatedCost: Math.round(dc.total * k.share * 100) / 100
+        };
+      }
+      return { date, byKey };
+    });
+
+    return {
+      totalCost,
+      totalTokens,
+      totalInput,
+      totalOutput,
+      totalCacheRead,
+      totalCacheCreate,
+      avgCostPerDay: activeDays > 0 ? Math.round((totalCost / activeDays) * 100) / 100 : 0,
+      cacheEfficiency: totalTokens > 0 ? Math.round((totalCacheRead / totalTokens) * 1000) / 10 : 0,
+      dailyCosts,
+      dailyTokens,
+      modelBreakdown,
+      keyTotals,
+      keyBreakdown,
+      dailyTokensByKey,
+      _age: 8,
+      _cached: true
+    };
+  })();
+
+  // --- Anthropic budget (set for demo) ---
+  const anthropicBudgetData = { budget: 250 };
+
+  // --- Project detail (dynamic factory: called with query params) ---
+  function buildProjectDetail(params) {
+    const name = params.name || projects[0];
+    const matchingSessions = sessionsData.filter(s => s.project === name);
+    const inputT = matchingSessions.reduce((a, s) => a + s.inputTokens, 0);
+    const outputT = matchingSessions.reduce((a, s) => a + s.outputTokens, 0);
+    const cacheR = matchingSessions.reduce((a, s) => a + s.cacheReadTokens, 0);
+    const cacheC = matchingSessions.reduce((a, s) => a + s.cacheCreateTokens, 0);
+    const cost = matchingSessions.reduce((a, s) => a + s.cost, 0);
+    const messages = matchingSessions.reduce((a, s) => a + s.messages, 0);
+    const linesAdded = matchingSessions.reduce((a, s) => a + s.linesAdded, 0);
+    const linesRemoved = matchingSessions.reduce((a, s) => a + s.linesRemoved, 0);
+    const linesWritten = matchingSessions.reduce((a, s) => a + s.linesWritten, 0);
+
+    // Daily breakdown
+    const dailyByDate = {};
+    for (const s of matchingSessions) {
+      const date = s.firstTs.slice(0, 10);
+      if (!dailyByDate[date]) {
+        dailyByDate[date] = { date, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 0, cost: 0, messages: 0, linesAdded: 0, linesRemoved: 0, linesWritten: 0 };
+      }
+      const d = dailyByDate[date];
+      d.inputTokens += s.inputTokens;
+      d.outputTokens += s.outputTokens;
+      d.cacheReadTokens += s.cacheReadTokens;
+      d.cacheCreateTokens += s.cacheCreateTokens;
+      d.cost += s.cost;
+      d.messages += s.messages;
+      d.linesAdded += s.linesAdded;
+      d.linesRemoved += s.linesRemoved;
+      d.linesWritten += s.linesWritten;
+    }
+    const dailyArr = Object.values(dailyByDate).sort((a, b) => a.date.localeCompare(b.date));
+
+    // Model breakdown
+    const modelMap = {};
+    for (const s of matchingSessions) {
+      const lbl = s.models[0];
+      if (!modelMap[lbl]) modelMap[lbl] = { name: lbl, messages: 0, tokens: 0, cost: 0 };
+      modelMap[lbl].messages += s.messages;
+      modelMap[lbl].tokens += s.inputTokens + s.outputTokens + s.cacheReadTokens + s.cacheCreateTokens;
+      modelMap[lbl].cost += s.cost;
+    }
+    const modelArr = Object.values(modelMap).map(m => ({ ...m, cost: Math.round(m.cost * 100) / 100 })).sort((a, b) => b.tokens - a.tokens);
+
+    // Active time approx: messages * 1.4 min avg, capped sensibly
+    const totalDurationMin = matchingSessions.reduce((a, s) => a + s.durationMin, 0);
+    const totalActiveMin = Math.min(totalDurationMin, Math.round(messages * 1.4));
+
+    return {
+      name,
+      totalTokens: inputT + outputT + cacheR + cacheC,
+      inputTokens: inputT, outputTokens: outputT,
+      cacheReadTokens: cacheR, cacheCreateTokens: cacheC,
+      cost: Math.round(cost * 100) / 100,
+      messages,
+      sessions: matchingSessions.length,
+      linesAdded, linesRemoved, linesWritten,
+      firstTs: matchingSessions[0]?.firstTs || null,
+      lastTs: matchingSessions[matchingSessions.length - 1]?.lastTs || null,
+      totalDurationMin,
+      totalActiveMin,
+      models: modelArr,
+      tools: [
+        { name: 'Read', calls: Math.round(messages * 1.6) },
+        { name: 'Edit', calls: Math.round(messages * 0.9) },
+        { name: 'Bash', calls: Math.round(messages * 0.7) },
+        { name: 'Grep', calls: Math.round(messages * 0.5) },
+        { name: 'Glob', calls: Math.round(messages * 0.4) },
+        { name: 'Write', calls: Math.round(messages * 0.3) }
+      ],
+      daily: dailyArr,
+      sessionList: matchingSessions.slice(0, 50)
+    };
+  }
+
+  // --- Devices (empty for demo — no devices configured) ---
+  const devicesData = [];
+
   // Build lookup table keyed by API endpoint path
   return {
     'overview': overview,
@@ -428,6 +974,21 @@ const DEMO_DATA = (() => {
       userCount: 8
     },
     'stats-cache': { error: 'Not available in demo mode' },
-    'achievements': achievementsData
+    'achievements': achievementsData,
+    'tool-stats': toolStatsData,
+    'mcp-servers': mcpServersData,
+    'subagent-stats': subagentStatsData,
+    'tool-cost-daily': toolCostDailyData,
+    'rate-limits': rateLimitsData,
+    'plan-usage': planUsageData,
+    'github/stats': githubStatsData,
+    'github/billing': githubBillingData,
+    'github/actions-usage': githubActionsUsageData,
+    'github/code-stats': githubCodeStatsData,
+    'github/code-frequency': githubCodeFrequencyData,
+    'anthropic/dashboard': anthropicDashboardData,
+    'anthropic/budget': anthropicBudgetData,
+    'devices': devicesData,
+    'project-detail': buildProjectDetail
   };
 })();

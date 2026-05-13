@@ -123,7 +123,7 @@
       </div>
     </header>
 
-    <nav class="tabs">
+    <nav class="tabs" id="tabs">
       <div class="tabs-left">
         <button class="tab-btn active" data-tab="overview" data-i18n="overview">Übersicht</button>
         <button class="tab-btn" data-tab="sessions" data-i18n="sessions">Sitzungen</button>
@@ -186,12 +186,59 @@
   <!-- Content -->
   <main class="content">
 
-    <!-- Demo banner (multi-user, not logged in) -->
-    <div class="demo-banner" id="demo-banner" style="display:none;">
-      <span data-i18n="demoBannerText">You are viewing sample data.</span>
-      <a href="/auth/github"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> <span data-i18n="demoBannerLogin">Sign in with GitHub</span></a>
-      <span data-i18n="demoBannerSuffix">to see your own usage.</span>
-    </div>
+    <!-- Demo showcase hero (multi-user, not logged in) -->
+    <section class="demo-hero" id="demo-banner" style="display:none;">
+      <div class="demo-hero-grid">
+        <div class="demo-hero-content">
+          <span class="demo-hero-badge" data-i18n="demoBadge">DEMO &middot; Beispieldaten</span>
+          <h1 class="demo-hero-title" data-i18n="demoHeroTitle">Sieh deine Claude Code Nutzung &mdash; Tokens, Kosten, Sessions, Tools.</h1>
+          <p class="demo-hero-sub" data-i18n="demoHeroSub">Diese Demo zeigt 15 Tage Beispieldaten. Alle Tabs sind durchklickbar &mdash; nach dem Login siehst du deine eigenen Zahlen, live aktualisiert via Sync-Agent.</p>
+          <div class="demo-hero-features">
+            <span class="demo-feature-pill" data-i18n="demoFeatTokens">Token &amp; Kosten</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatSessions">Sessions &amp; Projekte</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatTools">Tools &amp; MCP-Server</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatModels">Modell-Vergleich</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatProductivity">Produktivit&auml;t</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatAchievements">500 Achievements</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatGithub">GitHub Stats</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatClaudeApi">Claude API Dashboard</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatRateLimits">Rate-Limit Tracking</span>
+            <span class="demo-feature-pill" data-i18n="demoFeatI18n">DE/EN, Hell/Dunkel</span>
+          </div>
+          <div class="demo-hero-ctas">
+            <button class="demo-hero-cta primary" id="demo-explore-cta" type="button">
+              <span data-i18n="demoCtaExplore">Demo durchklicken</span>
+              <span class="demo-cta-arrow">&darr;</span>
+            </button>
+            <a class="demo-hero-cta secondary" href="/auth/github">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              <span data-i18n="demoCtaSignIn">Mit GitHub anmelden</span>
+            </a>
+          </div>
+          <p class="demo-hero-foot" data-i18n="demoHeroFoot">Open Source &middot; Single- &amp; Multi-User &middot; Self-Hostable</p>
+        </div>
+        <div class="demo-hero-visual" aria-hidden="true">
+          <div class="demo-stat-card demo-stat-card-1">
+            <div class="demo-stat-label" data-i18n="demoStatTokensLabel">Tokens (15 Tage)</div>
+            <div class="demo-stat-val">7.0M</div>
+            <div class="demo-stat-bar"><span style="width:72%"></span></div>
+            <div class="demo-stat-sub" data-i18n="demoStatTokensSub">Mit Cache-Aufschl&uuml;sselung</div>
+          </div>
+          <div class="demo-stat-card demo-stat-card-2">
+            <div class="demo-stat-label" data-i18n="demoStatCostLabel">Gesch&auml;tzte Kosten</div>
+            <div class="demo-stat-val">$22.71</div>
+            <div class="demo-stat-bar"><span style="width:45%"></span></div>
+            <div class="demo-stat-sub" data-i18n="demoStatCostSub">Modell-Mix &amp; Cache-Savings</div>
+          </div>
+          <div class="demo-stat-card demo-stat-card-3">
+            <div class="demo-stat-label" data-i18n="demoStatActiveLabel">Aktive Arbeitszeit</div>
+            <div class="demo-stat-val">14h 23m</div>
+            <div class="demo-stat-bar"><span style="width:58%"></span></div>
+            <div class="demo-stat-sub" data-i18n="demoStatActiveSub">&Oslash; 72 Min./Tag (12 aktive Tage)</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Tab 1: Overview -->
     <div id="tab-overview" class="tab-panel active">

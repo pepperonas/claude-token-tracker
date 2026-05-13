@@ -102,6 +102,14 @@ Key differences from single-user:
 - Login overlay shown until GitHub OAuth completes
 - Stats-cache endpoint disabled (no local `.claude/` directory)
 
+## Demo Showcase
+
+Non-authenticated visitors in multi-user mode see a fully clickable demo. The `public/js/demo-data.js` `DEMO_DATA` registry provides sample responses keyed by API endpoint path — the frontend `api()` helper intercepts requests in `state.demoMode` and serves from `DEMO_DATA` (deep-cloned). Function-typed entries (e.g. `project-detail`) receive parsed query params and synthesize a response dynamically. On a 401 for paths *not* in `DEMO_DATA`, `api()` returns `null` instead of forcing the login overlay — so partial failures gracefully no-op instead of breaking demo navigation. The Settings tab is hidden in demo mode (`showDemoBanner()` toggles `display: none` on the tab button + bounces `state.activeTab` to overview if it was settings).
+
+Demo data covers every dashboard endpoint: `overview` (with `totalActiveMin`, `avgActiveMinPerDay`, `activeDays`, `rateLimitHits`), `daily`, `sessions` (with `id`, `totalTokens`, `activeMin`), `projects`, `models`, `tools`, `tool-stats` (built-in + MCP), `mcp-servers`, `subagent-stats`, `tool-cost-daily`, `rate-limits`, `plan-usage`, `hourly`, `daily-by-model`, `hourly-by-model`, `daily-cost-breakdown`, `cumulative-cost`, `day-of-week`, `cache-efficiency`, `stop-reasons`, `session-efficiency`, `active-sessions`, `productivity`, `efficiency-trend`, `model-efficiency`, `session-depth`, `global-averages`, `achievements` (500 defs, ~35 unlocked), `github/stats` (365-day heatmap, 12 repos, PR stats), `github/billing`, `github/actions-usage`, `github/code-stats`, `github/code-frequency`, `anthropic/dashboard` (30 days, 2 API keys, model+key breakdown matching `lib/anthropic-api.js` schema with `byKey[keyId]` daily structure), `anthropic/budget`, `devices` (empty). `project-detail` is a function that filters `sessionsData` by project name and synthesizes daily/model/tools breakdowns on demand.
+
+The `.demo-hero` section (CSS at `public/css/style.css`) replaces the old one-line banner with a real showcase: gradient hero with two-column grid (content left, stat cards right), feature pills, primary "Explore demo" CTA (smooth-scrolls to `#tabs`) + secondary "Sign in with GitHub" CTA. Fully responsive (breakpoints 900/600px). i18n keys: `demoHeroTitle`, `demoHeroSub`, `demoFeat*`, `demoCta*`, `demoStat*`, `demoBadge`, `demoHeroFoot`.
+
 ## Local (MacBook)
 
 LaunchAgent `io.celox.token-tracker` runs the local dashboard on port 5010:
