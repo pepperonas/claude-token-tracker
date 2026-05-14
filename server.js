@@ -7,7 +7,8 @@ const { PORT, DB_PATH, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY }
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
-const { calculateCost } = require('./lib/pricing');
+const { calculateCost, getPricingMeta } = require('./lib/pricing');
+const pricingFetcher = require('./lib/pricing-fetcher');
 const {
   initDB, insertMessages, getAllMessages, getParseState, setParseState, closeDB,
   insertMessagesForUser, getMessagesForUser,
@@ -70,6 +71,10 @@ anthropicApi.initAnthropicApi(require('./lib/db'));
 
 // 1d. Initialize Plan Usage module with DB reference
 planUsage.initPlanUsage(require('./lib/db'));
+
+// 1e. Initialize Pricing module — loads cached overrides synchronously, then
+// fetches fresh prices from LiteLLM in the background and schedules a 24h refresh.
+pricingFetcher.initPricing(require('./lib/db'));
 
 // 2. Load existing messages and parse JSONL (single-user only; multi-user uses per-user cache)
 const aggregator = new Aggregator();
@@ -945,6 +950,14 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  // Public pricing meta — informational, no user data exposed.
+  // Refresh stays behind the auth gate further down.
+  if (pathname === '/api/pricing' && req.method === 'GET') {
+    const meta = getPricingMeta();
+    const lastError = pricingFetcher.getLastError();
+    return sendJSON(res, { ...meta, lastError });
+  }
+
   // --- All /api/* routes below require authentication in multi-user mode ---
   const user = authenticateRequest(req);
   if (MULTI_USER && !user) {
@@ -1379,6 +1392,13 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/anthropic/refresh' && req.method === 'POST') {
     anthropicApi.clearCache(user.id);
     return sendJSON(res, { cleared: true });
+  }
+
+  if (pathname === '/api/pricing/refresh' && req.method === 'POST') {
+    pricingFetcher.refreshPricing()
+      .then(result => sendJSON(res, { ok: true, ...result }))
+      .catch(err => sendJSON(res, { ok: false, error: err.message }, 502));
+    return;
   }
 
   if (pathname === '/api/anthropic/budget' && req.method === 'GET') {
