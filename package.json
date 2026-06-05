@@ -37,6 +37,6 @@
   "devDependencies": {
     "eslint": "^9.0.0",
     "supertest": "^7.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.8"
   }
 }

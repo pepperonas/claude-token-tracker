@@ -14,3 +14,7 @@ coverage/
 sync-agent/config.json
 sync-agent/.sync-state.json
 sync-agent/node_modules/
+
+# Runtime logs (LaunchAgent/PM2)
+stdout.log
+stderr.log
