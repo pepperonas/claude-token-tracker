@@ -441,9 +441,32 @@ function downloadInstallScript() {
 }
 
 // --- Tab switching ---
+// Tab order (DOM order) drives the directional panel transition.
+let _tabOrder = null;
+let _prevTabIndex = null;
+function _tabIndex(tab) {
+  if (!_tabOrder) _tabOrder = Array.from(document.querySelectorAll('.tab-btn')).map(b => b.dataset.tab);
+  return _tabOrder.indexOf(tab);
+}
+
 function switchTab(tab) {
   state.activeTab = tab;
   localStorage.setItem('activeTab', tab);
+
+  // Signature transition: swing the panel in from the direction of travel.
+  // Skipped on the very first activation (no previous tab) so the cards do
+  // their staggered "catch" entrance instead.
+  const newIndex = _tabIndex(tab);
+  const content = document.querySelector('.content');
+  if (content) {
+    if (_prevTabIndex !== null && newIndex !== _prevTabIndex) {
+      content.dataset.navDir = newIndex > _prevTabIndex ? 'fwd' : 'back';
+    } else if (_prevTabIndex === null) {
+      delete content.dataset.navDir; // first paint → staggered drop
+    }
+  }
+  _prevTabIndex = newIndex;
+
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
     if (b.dataset.tab === tab && window.innerWidth <= 600) {
@@ -2933,7 +2956,14 @@ function connectSSE() {
       chartAnimateNext = false;
       // Debounce rapid SSE updates to prevent duplicate renders
       clearTimeout(_sseReloadTimer);
-      _sseReloadTimer = setTimeout(() => loadTab(state.activeTab), 300);
+      _sseReloadTimer = setTimeout(() => {
+        // Keep live refreshes calm: suppress entrance animations while the
+        // DOM rebuilds in place, then re-arm them for real navigations.
+        document.body.classList.add('motion-quiet');
+        Promise.resolve(loadTab(state.activeTab)).finally(() => {
+          requestAnimationFrame(() => document.body.classList.remove('motion-quiet'));
+        });
+      }, 300);
     } else if (data.type === 'achievement-unlocked' && data.achievements) {
       showAchievementNotification(data.achievements);
     }
@@ -2974,10 +3004,66 @@ function applyTooltips() {
 }
 
 // --- Init ---
+// ── Material 3 Expressive: reactive motion island ──────────────────
+// The signature reactive moment (KPI cards tilt toward the cursor) plus a
+// quiet value-pop when a readout changes. Strictly progressive: gated to
+// fine pointers, and disabled entirely under prefers-reduced-motion.
+function initExpressiveMotion() {
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // 1) Cursor tilt — only where a real pointer exists and motion is welcome.
+  if (finePointer.matches && !reduced.matches) {
+    const cards = document.querySelectorAll('#tab-overview .kpi-card');
+    cards.forEach((card) => {
+      card.classList.add('tiltable');
+      let raf = 0, lastEvt = null;
+      const apply = () => {
+        raf = 0;
+        if (!lastEvt) return;
+        // Read the rect once per frame (no layout thrash in the move handler).
+        const r = card.getBoundingClientRect();
+        const mx = Math.min(1, Math.max(0, (lastEvt.clientX - r.left) / r.width));
+        const my = Math.min(1, Math.max(0, (lastEvt.clientY - r.top) / r.height));
+        card.style.setProperty('--mx', mx.toFixed(3));
+        card.style.setProperty('--my', my.toFixed(3));
+      };
+      card.addEventListener('pointermove', (e) => {
+        if (e.pointerType && e.pointerType !== 'mouse') return; // touch/pen opt out
+        lastEvt = e;
+        card.classList.add('tracking');
+        if (!raf) raf = requestAnimationFrame(apply);
+      });
+      card.addEventListener('pointerleave', () => {
+        lastEvt = null;
+        card.classList.remove('tracking'); // springs back via CSS transition
+      });
+    });
+  }
+
+  // 2) Value pop — when a KPI readout actually changes, give it a beat.
+  if (!reduced.matches) {
+    document.querySelectorAll('.kpi-value').forEach((el) => {
+      let last = el.textContent;
+      const obs = new MutationObserver(() => {
+        const now = el.textContent;
+        if (now === last || now === '-' || now === '') { last = now; return; }
+        last = now;
+        el.classList.remove('pop');
+        void el.offsetWidth;          // commit the from-state synchronously
+        el.classList.add('pop');
+      });
+      obs.observe(el, { childList: true, characterData: true, subtree: true });
+      el.addEventListener('animationend', () => el.classList.remove('pop'));
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   initChartDefaults();
   applyTranslations();
   applyTooltips();
+  initExpressiveMotion();
 
   // Check auth before loading data
   const authed = await checkAuth();

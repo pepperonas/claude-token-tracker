@@ -13,6 +13,28 @@
   --red: #f85149;
   --purple: #bc8cff;
   --cyan: #39d2c0;
+
+  /* ── Material 3 Expressive motion system ──────────────────────────
+     One timing system, reused everywhere. Spatial moves use spring /
+     emphasized easing (with overshoot); opacity & color stay flat. */
+  --ease-emphasized:        cubic-bezier(0.2, 0, 0, 1);      /* standard spatial */
+  --ease-emphasized-decel:  cubic-bezier(0.05, 0.7, 0.1, 1); /* entering  */
+  --ease-emphasized-accel:  cubic-bezier(0.3, 0, 0.8, 0.15); /* exiting   */
+  --ease-spring:            cubic-bezier(0.34, 1.56, 0.64, 1); /* overshoot/settle */
+  --ease-spring-soft:       cubic-bezier(0.4, 1.2, 0.5, 1);  /* gentle settle */
+  --ease-flat:              cubic-bezier(0.4, 0, 0.2, 1);    /* opacity/color only */
+
+  --dur-instant: 90ms;
+  --dur-quick:  140ms;   /* hovers / feedback — stays under 200ms */
+  --dur-short:  220ms;
+  --dur-med:    340ms;   /* spatial reveals */
+  --dur-long:   480ms;   /* signature transitions */
+
+  --stagger: 42ms;       /* per-item entrance offset */
+
+  /* state-layer tint (the MD3 hover/press wash) */
+  --state-hover: rgba(88, 166, 255, 0.10);
+  --state-press: rgba(88, 166, 255, 0.18);
 }
 
 body {
@@ -2433,4 +2455,301 @@ body {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 4px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MATERIAL 3 EXPRESSIVE — MOTION SYSTEM
+   Concept: a control room. Readouts settle into their slots with weight,
+   indicator lights track activity, switching views swings a panel into
+   focus. Every motion below obeys that one idea.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ──────────────────────────────────────────────────── */
+
+/* Card "drops" into its slot: tiny anticipation up, then settle with
+   a spring overshoot — like a gauge needle finding its rest. */
+@keyframes md-drop {
+  0%   { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Panel swings into focus from the direction of travel. */
+@keyframes md-panel-in-fwd {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes md-panel-in-back {
+  from { opacity: 0; transform: translateX(-22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* A value just changed — give it a quick confident pop. */
+@keyframes md-value-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+
+/* The live indicator: a breathing core + a ring that radiates out. */
+@keyframes md-core-breathe {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(0.82); opacity: 0.75; }
+}
+@keyframes md-ring-out {
+  0%   { transform: scale(0.6); opacity: 0.55; }
+  70%  { opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* Table rows reveal in sequence. */
+@keyframes md-row-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Staggered entrance for cards (the supporting cast) ───────────
+   Armed only when JS is confirmed (html.js) so a script failure can
+   never leave a card stuck at opacity 0. Toggling a panel's display
+   (tab switch) restarts these; SSE data refreshes don't, so live
+   updates stay calm. */
+html.js .tab-panel.active .kpi-card,
+html.js .tab-panel.active .chart-box,
+html.js .tab-panel.active > .plan-usage-section,
+html.js .tab-panel.active > .active-sessions,
+html.js .tab-panel.active > .table-wrapper,
+html.js .tab-panel.active .achievements-stats,
+html.js .tab-panel.active .anthropic-budget-card {
+  animation: md-drop var(--dur-med) var(--ease-spring-soft) backwards;
+}
+
+/* The stagger: each card lands a beat after the one before it. */
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(1) { animation-delay: 0ms; }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+html.js .tab-panel.active .kpi-grid .kpi-card:nth-child(8) { animation-delay: calc(var(--stagger) * 7); }
+
+html.js .tab-panel.active .chart-grid .chart-box:nth-child(1) { animation-delay: calc(var(--stagger) * 2); }
+html.js .tab-panel.active .chart-grid .chart-box:nth-child(2) { animation-delay: calc(var(--stagger) * 3); }
+html.js .tab-panel.active .chart-grid .chart-box:nth-child(3) { animation-delay: calc(var(--stagger) * 4); }
+html.js .tab-panel.active .chart-grid .chart-box:nth-child(4) { animation-delay: calc(var(--stagger) * 5); }
+
+/* Live (SSE) refreshes rebuild DOM in place — keep them calm by
+   suppressing entrance animations while a data refresh is in flight. */
+body.motion-quiet .tab-panel.active .kpi-card,
+body.motion-quiet .tab-panel.active .chart-box,
+body.motion-quiet .tab-panel.active .data-table tbody tr,
+body.motion-quiet .tab-panel.active > .table-wrapper,
+body.motion-quiet .tab-panel.active > .plan-usage-section,
+body.motion-quiet .tab-panel.active > .active-sessions { animation: none !important; }
+
+/* ── Signature transition: the panel swings into focus ───────────
+   Direction is set by JS (data-nav-dir on .content) so forward and back
+   don't look identical. */
+html.js .content[data-nav-dir="fwd"]  .tab-panel.active { animation: md-panel-in-fwd  var(--dur-med) var(--ease-emphasized-decel) backwards; }
+html.js .content[data-nav-dir="back"] .tab-panel.active { animation: md-panel-in-back var(--dur-med) var(--ease-emphasized-decel) backwards; }
+/* When the panel swings in, its cards ride along as quiet supporting cast —
+   they don't fire their own entrance. The staggered drop is reserved for
+   the first paint (the "catch"), before any nav direction is set. */
+html.js .content[data-nav-dir] .tab-panel.active .kpi-card,
+html.js .content[data-nav-dir] .tab-panel.active .chart-box,
+html.js .content[data-nav-dir] .tab-panel.active .data-table tbody tr,
+html.js .content[data-nav-dir] .tab-panel.active > .table-wrapper { animation: none; }
+
+/* ── KPI value pop on change (JS adds .pop, removes on animationend) */
+.kpi-value { display: inline-block; transition: color var(--dur-short) var(--ease-flat); }
+html.js .kpi-value.pop { animation: md-value-pop var(--dur-short) var(--ease-spring); }
+
+/* ── State layers + press + focus on every interactive surface ──── */
+.tab-btn, .period-btn, .btn-small, .rebuild-btn, .lang-btn,
+.modal-close, .btn-icon {
+  position: relative;
+  isolation: isolate;
+  transition:
+    color var(--dur-quick) var(--ease-flat),
+    background-color var(--dur-quick) var(--ease-flat),
+    border-color var(--dur-quick) var(--ease-flat),
+    transform var(--dur-quick) var(--ease-spring);
+}
+/* the wash */
+.tab-btn::after, .period-btn::after, .btn-small::after,
+.rebuild-btn::after, .lang-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--state-hover);
+  opacity: 0;
+  transition: opacity var(--dur-quick) var(--ease-flat);
+  pointer-events: none;
+  z-index: -1;
+}
+@media (hover: hover) {
+  .tab-btn:hover::after, .period-btn:hover:not(.active)::after,
+  .btn-small:hover::after, .rebuild-btn:hover::after,
+  .lang-btn:hover:not(.active)::after { opacity: 1; }
+}
+/* press response — physical */
+.tab-btn:active, .period-btn:active, .btn-small:active,
+.rebuild-btn:active, .lang-btn:active, .btn-icon:active,
+.modal-close:active { transform: scale(0.94); }
+.tab-btn:active::after, .period-btn:active::after, .btn-small:active::after,
+.rebuild-btn:active::after, .lang-btn:active::after { background: var(--state-press); opacity: 1; }
+
+/* focus-visible ring on everything operable */
+a:focus-visible, button:focus-visible, select:focus-visible,
+input:focus-visible, [tabindex]:focus-visible, .tab-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button:focus:not(:focus-visible) { outline: none; }
+
+/* ── Tab selector: a backlit, spring-settling indicator ─────────── */
+.tab-btn { will-change: transform; }
+.tab-btn.active {
+  /* the underline grows with a spring rather than snapping */
+  border-bottom-color: transparent;
+}
+.tab-btn.active::before {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px; bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 8px var(--accent);
+  animation: md-tab-underline var(--dur-med) var(--ease-spring) backwards;
+}
+@keyframes md-tab-underline {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ── Period segmented control: the thumb glides ─────────────────── */
+.period-btn { transition: color var(--dur-quick) var(--ease-flat), transform var(--dur-quick) var(--ease-spring); }
+.period-btn.active {
+  animation: md-pill-pop var(--dur-short) var(--ease-spring);
+}
+@keyframes md-pill-pop {
+  0%   { transform: scale(0.9); }
+  55%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* ── Card hover lift (real pointers only) ───────────────────────── */
+.kpi-card, .chart-box {
+  transition: transform var(--dur-short) var(--ease-spring),
+              border-color var(--dur-short) var(--ease-flat),
+              box-shadow var(--dur-short) var(--ease-flat);
+}
+@media (hover: hover) and (pointer: fine) {
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ── Signature reactive moment: KPI cards tilt toward the cursor ──
+   JS writes --mx/--my (0..1) and --tilt; gated to fine pointers below
+   via the media query and the (hover:hover) JS guard. Inertia/settle
+   comes from the spring transition above. */
+@media (hover: hover) and (pointer: fine) {
+  .kpi-card.tiltable {
+    position: relative;
+    isolation: isolate;        /* contain the cursor highlight (z-index:-1) */
+    transform-style: preserve-3d;
+    transition: transform var(--dur-short) var(--ease-spring-soft),
+                border-color var(--dur-short) var(--ease-flat),
+                box-shadow var(--dur-short) var(--ease-flat);
+  }
+  .kpi-card.tiltable.tracking {
+    transform:
+      perspective(640px)
+      rotateX(calc((0.5 - var(--my, 0.5)) * 6deg))
+      rotateY(calc((var(--mx, 0.5) - 0.5) * 6deg))
+      translateY(-3px);
+    transition: transform var(--dur-quick) var(--ease-flat),
+                border-color var(--dur-short) var(--ease-flat),
+                box-shadow var(--dur-short) var(--ease-flat);
+  }
+  /* a soft highlight that tracks the cursor across the card.
+     z-index:-1 + isolation keeps it above the card's own background but
+     below the readout text. */
+  .kpi-card.tiltable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      280px circle at calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%),
+      rgba(255, 255, 255, 0.07), transparent 60%);
+    opacity: 0;
+    transition: opacity var(--dur-short) var(--ease-flat);
+    pointer-events: none;
+  }
+  .kpi-card.tiltable.tracking::after { opacity: 1; }
+}
+
+/* ── Live indicator → breathing core + radiating ring ───────────── */
+.live-dot { position: relative; animation: md-core-breathe 2.4s var(--ease-flat) infinite; }
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green);
+  animation: md-ring-out 2.4s var(--ease-emphasized-decel) infinite;
+  pointer-events: none;
+}
+.live-dot.disconnected { animation: none; }
+.live-dot.disconnected::after { animation: none; opacity: 0; }
+
+/* ── Data-table rows reveal in sequence (first paint only) ──────── */
+html.js .tab-panel.active .data-table tbody tr {
+  animation: md-row-in var(--dur-short) var(--ease-emphasized-decel) backwards;
+}
+html.js .tab-panel.active .data-table tbody tr:nth-child(1)  { animation-delay: 20ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(2)  { animation-delay: 40ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(3)  { animation-delay: 60ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(4)  { animation-delay: 80ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(5)  { animation-delay: 100ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(6)  { animation-delay: 120ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(7)  { animation-delay: 140ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(8)  { animation-delay: 160ms; }
+html.js .tab-panel.active .data-table tbody tr:nth-child(n+9) { animation-delay: 180ms; }
+.data-table tr { transition: background-color var(--dur-quick) var(--ease-flat); }
+
+/* ── Modal: emphasized spring entrance ──────────────────────────── */
+.modal-card { animation: md-modal-in var(--dur-med) var(--ease-spring) !important; }
+@keyframes md-modal-in {
+  0%   { opacity: 0; transform: translateY(28px) scale(0.96); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-overlay { animation: md-overlay-in var(--dur-short) var(--ease-flat); }
+@keyframes md-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Reduced motion: honour the user. Disable transforms/parallax and
+   big reveals; keep instant, legible opacity only. ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .kpi-card.tiltable.tracking { transform: none !important; }
+  .kpi-card:hover { transform: none !important; }
+  .live-dot, .live-dot::after { animation: none !important; }
+  html.js .tab-panel.active .kpi-card,
+  html.js .tab-panel.active .chart-box,
+  html.js .tab-panel.active .data-table tbody tr,
+  html.js .content[data-nav-dir] .tab-panel.active { animation: none !important; opacity: 1 !important; transform: none !important; }
 }

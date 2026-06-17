@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Progressive enhancement flag: reveal animations only arm when JS is confirmed,
+       so nothing can get stuck invisible if scripts fail to load. -->
+  <script>document.documentElement.className += ' js';</script>
   <title>Claude Token Tracker — Dashboard for Claude Code Token Usage</title>
   <meta name="description" content="Real-time dashboard for tracking Claude Code token usage. Analyze API-equivalent costs, session statistics, model distribution, and tool usage across all your Claude Code projects.">
   <meta name="keywords" content="Claude Code, token tracker, Anthropic, API usage, token analytics, Claude dashboard, developer tools">
