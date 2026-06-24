@@ -19,7 +19,9 @@ const {
   getAllRateLimitEvents, getRateLimitEventsForUser,
   createDevice, getDevicesForUser, getDeviceById, findDeviceByApiKey, findUserById,
   renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync,
-  getProjectShare, listProjectShares, createProjectShare, deleteProjectShare
+  getProjectShare, listProjectShares, createProjectShare, deleteProjectShare,
+  createProjectAlias, deleteProjectAlias, getProjectAliasRows,
+  getProjectAliasMap, getAllProjectAliasMap
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
@@ -80,6 +82,8 @@ pricingFetcher.initPricing(require('./lib/db'));
 const aggregator = new Aggregator();
 let parseState = {};
 if (!MULTI_USER) {
+  // Load the project merge map before any messages so aliases fold during build.
+  aggregator.setProjectAliases(getProjectAliasMap(0));
   const existingMessages = getAllMessages();
   if (existingMessages.length > 0) {
     aggregator.addMessages(existingMessages);
@@ -157,7 +161,21 @@ if (!MULTI_USER) {
 }
 
 // Multi-user aggregator cache
-const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser, getRateLimitEventsForUser) : null;
+const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser, getRateLimitEventsForUser, getProjectAliasMap) : null;
+
+// Re-apply the project merge map after a merge/un-merge and refresh caches so
+// the change is visible immediately across dashboard + public shares.
+function applyProjectMergeChange(userId) {
+  global._shareAggCache = null; // force the global (admin) share aggregator to rebuild
+  if (MULTI_USER) {
+    if (aggregatorCache) aggregatorCache.invalidateUser(userId);
+  } else {
+    aggregator.setProjectAliases(getProjectAliasMap(0));
+    aggregator.reset();
+    aggregator.addMessages(getAllMessages());
+    aggregator.addRateLimitEvents(getAllRateLimitEvents());
+  }
+}
 
 // Clean expired sessions periodically (multi-user)
 let sessionCleanupTimer = null;
@@ -763,6 +781,7 @@ const server = http.createServer((req, res) => {
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
         const { getAllMessages } = require('./lib/db');
         const a = new Aggregator();
+        a.setProjectAliases(getAllProjectAliasMap());
         a.addMessages(getAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
@@ -904,6 +923,7 @@ const server = http.createServer((req, res) => {
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
         const { getAllMessages } = require('./lib/db');
         const a = new Aggregator();
+        a.setProjectAliases(getAllProjectAliasMap());
         a.addMessages(getAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
@@ -1189,6 +1209,60 @@ const server = http.createServer((req, res) => {
     setParseState(parseState);
     try { achievements.checkAchievements(aggregator, 0, achievementsDb); } catch (e) { console.error('Achievement check failed on rebuild:', e.message); }
     return sendJSON(res, { rebuilt: true, messages: messages.length, timeMs: Date.now() - _t0 });
+  }
+
+  // --- Project merge (aliases) ---------------------------------------------
+  // List active merges for the current user.
+  if (pathname === '/api/project-aliases' && req.method === 'GET') {
+    const aliasUserId = MULTI_USER ? user.id : 0;
+    return sendJSON(res, { aliases: getProjectAliasRows(aliasUserId) });
+  }
+
+  // Merge one or more source projects into a target (canonical) project.
+  // Body: { sources: string[]|string, target: string }
+  if (pathname === '/api/project-merge' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const aliasUserId = MULTI_USER ? user.id : 0;
+      const target = (body.target || '').trim();
+      let sources = body.sources ?? body.source;
+      if (typeof sources === 'string') sources = [sources];
+      if (!Array.isArray(sources)) sources = [];
+      sources = [...new Set(sources.map(s => (s || '').trim()).filter(Boolean))];
+
+      if (!target) return sendJSON(res, { error: 'target is required' }, 400);
+      if (sources.length === 0) return sendJSON(res, { error: 'at least one source project is required' }, 400);
+
+      // Resolve the target through existing merges so we never point at an alias
+      // (keeps the map flat: source -> terminal canonical).
+      const existing = getProjectAliasMap(aliasUserId);
+      const canonical = existing[target] || target;
+
+      const merged = [];
+      for (const src of sources) {
+        if (src === canonical) continue;       // can't merge a project into itself
+        createProjectAlias(aliasUserId, src, canonical);
+        merged.push(src);
+      }
+      if (merged.length === 0) return sendJSON(res, { error: 'nothing to merge' }, 400);
+
+      applyProjectMergeChange(aliasUserId);
+      return sendJSON(res, { merged, target: canonical, count: merged.length });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
+  }
+
+  // Un-merge: remove a single alias, restoring the original split (non-destructive).
+  // Body: { alias: string }
+  if (pathname === '/api/project-aliases' && req.method === 'DELETE') {
+    readBody(req).then(body => {
+      const aliasUserId = MULTI_USER ? user.id : 0;
+      const alias = (body.alias || '').trim();
+      if (!alias) return sendJSON(res, { error: 'alias is required' }, 400);
+      deleteProjectAlias(aliasUserId, alias);
+      applyProjectMergeChange(aliasUserId);
+      return sendJSON(res, { unmerged: alias });
+    }).catch(err => sendJSON(res, { error: err.message }, 400));
+    return;
   }
 
   // Sync key management

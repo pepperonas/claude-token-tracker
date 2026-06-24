@@ -109,7 +109,8 @@ function buildTableRows(tbody, rows, cellDefs) {
     for (const def of cellDefs) {
       const td = document.createElement('td');
       if (def.className) td.className = def.className;
-      td.textContent = def.value(row);
+      if (def.render) def.render(td, row);
+      else td.textContent = def.value(row);
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
@@ -863,10 +864,21 @@ async function loadSessions() {
 }
 
 let _projectsData = [];
+let _projectAliases = []; // active merges: [{ alias, canonical, created_at }]
 
 async function loadProjects() {
   const projects = await api('projects' + periodQuery());
   _projectsData = projects;
+
+  // Load active merges (canonical <- alias) so the table can badge merged projects.
+  _projectAliases = [];
+  if (!state.demoMode) {
+    try {
+      const r = await fetch('/api/project-aliases');
+      if (r.ok) _projectAliases = (await r.json()).aliases || [];
+    } catch { /* non-fatal */ }
+  }
+
   createProjectBarChart('chart-projects', projects, false);
 
   // Make chart bars clickable
@@ -928,6 +940,16 @@ async function loadProjects() {
     });
   }
 
+  // Wire up the merge button (hidden in demo mode / when nothing to merge)
+  const mergeBtn = document.getElementById('projects-merge-btn');
+  if (mergeBtn) {
+    mergeBtn.style.display = (!state.demoMode && _projectsData.length >= 2) ? '' : 'none';
+    if (!mergeBtn._wired) {
+      mergeBtn._wired = true;
+      mergeBtn.addEventListener('click', openProjectMerge);
+    }
+  }
+
   renderProjectsTable();
 }
 
@@ -954,8 +976,24 @@ function renderProjectsTable() {
     }
   }
 
+  // Count how many aliases fold into each canonical project (for the badge).
+  const mergedCounts = {};
+  for (const a of _projectAliases) {
+    mergedCounts[a.canonical] = (mergedCounts[a.canonical] || 0) + 1;
+  }
+
   const cellDefs = [
-    { value: p => p.name },
+    { value: p => p.name, render: (td, p) => {
+      td.textContent = p.name;
+      const n = mergedCounts[p.name];
+      if (n) {
+        const badge = document.createElement('span');
+        badge.className = 'merged-badge';
+        badge.textContent = `+${n} ${t('mergedBadge')}`;
+        badge.title = _projectAliases.filter(a => a.canonical === p.name).map(a => a.alias).join('\n');
+        td.appendChild(badge);
+      }
+    } },
     { value: p => formatTokens(getDisplayTokens(p)), className: 'num' },
     { value: p => formatTokens(p.inputTokens), className: 'num' },
     { value: p => formatTokens(p.outputTokens), className: 'num' },
@@ -1084,6 +1122,125 @@ function closeProjectDetail() {
   destroyChart('chart-project-detail-models');
 }
 
+// --- Project Merge dialog ---
+function openProjectMerge() {
+  const dialog = document.getElementById('project-merge-dialog');
+  const sourcesEl = document.getElementById('merge-sources');
+  sourcesEl.textContent = '';
+
+  // One checkbox per project (sorted by tokens, as loaded).
+  for (const p of _projectsData) {
+    const label = document.createElement('label');
+    label.className = 'merge-source-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = p.name;
+    cb.addEventListener('change', _updateMergeTargetOptions);
+    const name = document.createElement('span');
+    name.className = 'merge-source-name';
+    name.textContent = p.name;
+    const meta = document.createElement('span');
+    meta.className = 'merge-source-meta';
+    meta.textContent = formatTokens(getDisplayTokens(p));
+    label.append(cb, name, meta);
+    sourcesEl.appendChild(label);
+  }
+
+  _updateMergeTargetOptions();
+  _renderActiveMerges();
+
+  const confirmBtn = document.getElementById('merge-confirm');
+  confirmBtn.onclick = confirmProjectMerge;
+
+  dialog.style.display = 'flex';
+}
+
+function _updateMergeTargetOptions() {
+  const checked = [...document.querySelectorAll('#merge-sources input:checked')].map(c => c.value);
+  const select = document.getElementById('merge-target');
+  const prev = select.value;
+  select.textContent = '';
+  for (const name of checked) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  }
+  // Keep prior choice if still valid, else default to the first (highest-tokens) selected.
+  if (checked.includes(prev)) select.value = prev;
+}
+
+function _setMergeMsg(text) {
+  const el = document.getElementById('merge-msg');
+  if (el) el.textContent = text || '';
+}
+
+async function confirmProjectMerge() {
+  const checked = [...document.querySelectorAll('#merge-sources input:checked')].map(c => c.value);
+  const target = document.getElementById('merge-target').value;
+  if (checked.length < 2 || !target) {
+    _setMergeMsg(t('mergeNeedTwo'));
+    return;
+  }
+  _setMergeMsg('');
+  const sources = checked.filter(n => n !== target);
+  const res = await fetch('/api/project-merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sources, target })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    _setMergeMsg(err.error || 'Merge failed');
+    return;
+  }
+  closeProjectMerge();
+  await loadProjects();
+}
+
+function _renderActiveMerges() {
+  const section = document.getElementById('merge-active-section');
+  const list = document.getElementById('merge-active-list');
+  list.textContent = '';
+  if (!_projectAliases.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  for (const a of _projectAliases) {
+    const row = document.createElement('div');
+    row.className = 'merge-active-row';
+    const txt = document.createElement('span');
+    txt.className = 'merge-active-text';
+    txt.textContent = `${a.alias} → ${a.canonical}`;
+    const btn = document.createElement('button');
+    btn.className = 'btn-small';
+    btn.textContent = t('mergeUnmerge');
+    btn.onclick = () => unmergeProject(a.alias);
+    row.append(txt, btn);
+    list.appendChild(row);
+  }
+}
+
+async function unmergeProject(alias) {
+  const res = await fetch('/api/project-aliases', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alias })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    _setMergeMsg(err.error || 'Un-merge failed');
+    return;
+  }
+  await loadProjects();
+  _renderActiveMerges();
+}
+
+function closeProjectMerge() {
+  document.getElementById('project-merge-dialog').style.display = 'none';
+}
+
 function _formatDuration(min) {
   if (min < 60) return min + 'm';
   const h = Math.floor(min / 60);
@@ -1152,12 +1309,18 @@ function _renderProjectModelsChart(models) {
 
 // Close modal on overlay click or Escape
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('project-detail-dialog').style.display !== 'none') {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('project-merge-dialog')?.style.display === 'flex') {
+    closeProjectMerge();
+  } else if (document.getElementById('project-detail-dialog').style.display !== 'none') {
     closeProjectDetail();
   }
 });
 document.getElementById('project-detail-dialog')?.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) closeProjectDetail();
+});
+document.getElementById('project-merge-dialog')?.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeProjectMerge();
 });
 
 async function loadTools() {

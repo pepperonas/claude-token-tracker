@@ -672,6 +672,102 @@ body {
   white-space: nowrap;
 }
 
+.merge-btn { margin-left: auto; }
+
+/* Merged-project badge in the projects table */
+.merged-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--primary, #b3c5ff);
+  background: color-mix(in srgb, var(--primary, #b3c5ff) 16%, transparent);
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* Merge dialog */
+.merge-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.merge-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 16px;
+}
+
+.merge-source-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--dur-quick, 140ms) var(--ease-flat, ease);
+}
+
+.merge-source-row:hover { background: var(--state-hover, rgba(255, 255, 255, 0.06)); }
+.merge-source-row input { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+.merge-source-name { flex: 1; font-size: 13px; word-break: break-all; }
+.merge-source-meta { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.merge-target-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.merge-target-row select {
+  flex: 1;
+  min-width: 180px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.merge-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.merge-msg { font-size: 12px; color: var(--danger, #ffb4ab); }
+
+.merge-active { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+.merge-active-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.merge-active-text {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
 /* Token format */
 .token-breakdown {
   font-size: 11px;

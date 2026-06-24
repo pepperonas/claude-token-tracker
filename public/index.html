@@ -93,6 +93,32 @@
     </div>
   </div>
 
+  <!-- Project Merge dialog -->
+  <div id="project-merge-dialog" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 data-i18n="mergeTitle">Projekte zusammenführen</h2>
+        <button class="modal-close" onclick="closeProjectMerge()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="merge-hint" data-i18n="mergeHint">Wähle Projekte, die dieselbe Codebase sind (z. B. nach Umbenennen/Verschieben oder von einem anderen Gerät). Ihre Daten werden unter dem Zielnamen zusammengefasst. Nicht-destruktiv und jederzeit umkehrbar.</p>
+        <div class="merge-sources" id="merge-sources"></div>
+        <label class="merge-target-row">
+          <span data-i18n="mergeTarget">Zielprojekt (dieser Name bleibt)</span>
+          <select id="merge-target"></select>
+        </label>
+        <div class="merge-actions">
+          <button class="btn-small" id="merge-confirm" data-i18n="mergeConfirm">Zusammenführen</button>
+          <span id="merge-msg" class="merge-msg" role="alert"></span>
+        </div>
+        <div class="merge-active" id="merge-active-section" style="display:none;">
+          <h3 class="modal-section-title" data-i18n="mergeActive">Aktive Zusammenführungen</h3>
+          <div id="merge-active-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Login Overlay (multi-user mode only) -->
   <div id="login-overlay" class="login-overlay" style="display:none;">
     <div class="login-card">
@@ -486,6 +512,7 @@
           <button type="button" id="projects-search-clear" class="search-clear" aria-label="Suche löschen" hidden>&times;</button>
         </div>
         <span id="projects-count" class="filter-count" aria-live="polite"></span>
+        <button type="button" id="projects-merge-btn" class="btn-small merge-btn" data-i18n="mergeBtn">Zusammenführen</button>
       </div>
       <div class="table-wrapper">
         <table class="data-table">
