@@ -143,13 +143,15 @@ describe('project merge — db alias map', () => {
     expect(db.getProjectAliasMap(0)).toEqual({});
   });
 
-  it('scopes aliases per user', () => {
+  it('scopes aliases per user (no cross-user bleed)', () => {
     db.createProjectAlias(0, 'a/old', 'a/new');
     db.createProjectAlias(5, 'b/old', 'b/new');
+    // Each user only sees their own aliases — one user's merge can never rewrite
+    // another user's project-name resolution.
     expect(db.getProjectAliasMap(0)).toEqual({ 'a/old': 'a/new' });
     expect(db.getProjectAliasMap(5)).toEqual({ 'b/old': 'b/new' });
-    // The global (admin) map merges across users.
-    expect(db.getAllProjectAliasMap()).toEqual({ 'a/old': 'a/new', 'b/old': 'b/new' });
+    expect(db.getProjectAliasMap(0)['b/old']).toBeUndefined();
+    expect(db.getProjectAliasMap(5)['a/old']).toBeUndefined();
   });
 
   it('lists alias rows with metadata and supports deletion (un-merge)', () => {

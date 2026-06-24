@@ -21,7 +21,7 @@ const {
   renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync,
   getProjectShare, listProjectShares, createProjectShare, deleteProjectShare,
   createProjectAlias, deleteProjectAlias, getProjectAliasRows,
-  getProjectAliasMap, getAllProjectAliasMap
+  getProjectAliasMap
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
@@ -781,7 +781,12 @@ const server = http.createServer((req, res) => {
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
         const { getAllMessages } = require('./lib/db');
         const a = new Aggregator();
-        a.setProjectAliases(getAllProjectAliasMap());
+        // SECURITY: do NOT apply a cross-user alias union here. This aggregator
+        // spans every user's messages and backs the global/admin shares; folding
+        // it with another user's merge map would let any user rewrite project-name
+        // resolution for everyone's shares (cross-tenant poisoning). Shares resolve
+        // to the literal project name in multi-user mode. Per-user merges only
+        // affect each user's own (scoped) dashboard aggregator.
         a.addMessages(getAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
@@ -923,7 +928,12 @@ const server = http.createServer((req, res) => {
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
         const { getAllMessages } = require('./lib/db');
         const a = new Aggregator();
-        a.setProjectAliases(getAllProjectAliasMap());
+        // SECURITY: do NOT apply a cross-user alias union here. This aggregator
+        // spans every user's messages and backs the global/admin shares; folding
+        // it with another user's merge map would let any user rewrite project-name
+        // resolution for everyone's shares (cross-tenant poisoning). Shares resolve
+        // to the literal project name in multi-user mode. Per-user merges only
+        // affect each user's own (scoped) dashboard aggregator.
         a.addMessages(getAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
@@ -1236,6 +1246,16 @@ const server = http.createServer((req, res) => {
       // (keeps the map flat: source -> terminal canonical).
       const existing = getProjectAliasMap(aliasUserId);
       const canonical = existing[target] || target;
+
+      // SECURITY: only allow merging projects the requesting user actually owns.
+      // Validate against the user's own (scoped) aggregator so one user can never
+      // create an alias that references another user's project name.
+      const ownAgg = MULTI_USER ? aggregatorCache.get(user.id) : aggregator;
+      const owned = new Set((ownAgg.getProjects() || []).map(p => p.name));
+      const unknown = [...new Set([...sources, canonical])].filter(n => !owned.has(n));
+      if (unknown.length > 0) {
+        return sendJSON(res, { error: 'unknown project(s): ' + unknown.join(', ') }, 400);
+      }
 
       const merged = [];
       for (const src of sources) {
