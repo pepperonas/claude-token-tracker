@@ -598,6 +598,80 @@ body {
   font-size: 13px;
 }
 
+/* Projects search field */
+.projects-filter-bar {
+  align-items: center;
+}
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 260px;
+  max-width: 380px;
+  flex: 1 1 260px;
+}
+
+.search-field .search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 9px 36px 9px 38px;
+  border-radius: 999px;
+  font-size: 13px;
+  transition: border-color var(--dur-quick, 140ms) var(--ease-flat, ease),
+              box-shadow var(--dur-quick, 140ms) var(--ease-flat, ease);
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary, #b3c5ff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #b3c5ff) 28%, transparent);
+}
+
+/* Keep the pill shape even under the global focus-visible ring */
+.search-input:focus-visible { border-radius: 999px; outline: none; }
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-quick, 140ms) var(--ease-flat, ease),
+              color var(--dur-quick, 140ms) var(--ease-flat, ease);
+}
+
+.search-clear:hover {
+  background: var(--state-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text);
+}
+
+.filter-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* Token format */
 .token-breakdown {
   font-size: 11px;
@@ -643,6 +717,8 @@ body {
   .rebuild-btn, .btn-small { min-height: 44px; }
   .lang-btn { min-height: 44px; min-width: 44px; }
   .filter-bar select { min-height: 44px; }
+  .search-field { min-width: 0; max-width: none; }
+  .search-input { min-height: 44px; }
 }
 
 /* --- Large phones (480px) --- */

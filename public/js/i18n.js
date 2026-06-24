@@ -120,6 +120,9 @@ const LANG = {
     pctTotal: '% of Total',
     tool: 'Tool',
     allProjects: 'All Projects',
+    searchProjects: 'Search projects…',
+    projectsMatch: '{n} of {total} projects',
+    noProjectsMatch: 'No projects match',
     // Chart legends
     inputLabel: 'Input',
     outputLabel: 'Output',
@@ -2003,6 +2006,9 @@ const LANG = {
     pctTotal: '% gesamt',
     tool: 'Tool',
     allProjects: 'Alle Projekte',
+    searchProjects: 'Projekte suchen…',
+    projectsMatch: '{n} von {total} Projekten',
+    noProjectsMatch: 'Keine Projekte gefunden',
     // Chart legends
     inputLabel: 'Input',
     outputLabel: 'Output',
@@ -3783,6 +3789,10 @@ function applyTranslations() {
   // Update all elements with data-i18n attribute
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
+  });
+  // Update placeholders for elements with data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
   });
   // Update lang buttons
   document.querySelectorAll('.lang-btn').forEach(b => {

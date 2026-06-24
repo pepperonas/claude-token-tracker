@@ -862,8 +862,11 @@ async function loadSessions() {
   ], 100);
 }
 
+let _projectsData = [];
+
 async function loadProjects() {
   const projects = await api('projects' + periodQuery());
+  _projectsData = projects;
   createProjectBarChart('chart-projects', projects, false);
 
   // Make chart bars clickable
@@ -879,25 +882,6 @@ async function loadProjects() {
     chart.canvas.style.cursor = 'pointer';
     chart.update();
   }
-
-  const tbody = document.getElementById('projects-tbody');
-  const cellDefs = [
-    { value: p => p.name },
-    { value: p => formatTokens(getDisplayTokens(p)), className: 'num' },
-    { value: p => formatTokens(p.inputTokens), className: 'num' },
-    { value: p => formatTokens(p.outputTokens), className: 'num' },
-    { value: p => formatTokens(p.cacheReadTokens), className: 'num' },
-    { value: p => {
-      const a = p.linesAdded || 0;
-      const r = p.linesRemoved || 0;
-      const w = p.linesWritten || 0;
-      if (a + r + w === 0) return '-';
-      return `+${formatNumber(a)} -${formatNumber(r)} w${formatNumber(w)}`;
-    }, className: 'num' },
-    { value: p => formatNumber(p.sessions), className: 'num' },
-    { value: p => formatNumber(p.messages), className: 'num' },
-    { value: p => formatCost(p.cost), className: 'num' }
-  ];
 
   // Update table headers
   const thead = document.querySelector('#tab-projects thead tr');
@@ -922,7 +906,73 @@ async function loadProjects() {
     }
   }
 
-  storeTableData('projects-tbody', projects, cellDefs, 0, (p) => openProjectDetail(p.name));
+  // Wire up the project search box once
+  const search = document.getElementById('projects-search');
+  const clearBtn = document.getElementById('projects-search-clear');
+  if (search && !search._wired) {
+    search._wired = true;
+    search.addEventListener('input', renderProjectsTable);
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        search.value = '';
+        search.focus();
+        renderProjectsTable();
+      });
+    }
+    search.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && search.value) {
+        e.stopPropagation();
+        search.value = '';
+        renderProjectsTable();
+      }
+    });
+  }
+
+  renderProjectsTable();
+}
+
+function renderProjectsTable() {
+  const search = document.getElementById('projects-search');
+  const clearBtn = document.getElementById('projects-search-clear');
+  const q = (search ? search.value : '').trim().toLowerCase();
+
+  let rows = _projectsData;
+  if (q) rows = rows.filter(p => (p.name || '').toLowerCase().includes(q));
+
+  if (clearBtn) clearBtn.hidden = !q;
+
+  const countEl = document.getElementById('projects-count');
+  if (countEl) {
+    if (!q) {
+      countEl.textContent = '';
+    } else if (rows.length === 0) {
+      countEl.textContent = t('noProjectsMatch');
+    } else {
+      countEl.textContent = t('projectsMatch')
+        .replace('{n}', rows.length)
+        .replace('{total}', _projectsData.length);
+    }
+  }
+
+  const cellDefs = [
+    { value: p => p.name },
+    { value: p => formatTokens(getDisplayTokens(p)), className: 'num' },
+    { value: p => formatTokens(p.inputTokens), className: 'num' },
+    { value: p => formatTokens(p.outputTokens), className: 'num' },
+    { value: p => formatTokens(p.cacheReadTokens), className: 'num' },
+    { value: p => {
+      const a = p.linesAdded || 0;
+      const r = p.linesRemoved || 0;
+      const w = p.linesWritten || 0;
+      if (a + r + w === 0) return '-';
+      return `+${formatNumber(a)} -${formatNumber(r)} w${formatNumber(w)}`;
+    }, className: 'num' },
+    { value: p => formatNumber(p.sessions), className: 'num' },
+    { value: p => formatNumber(p.messages), className: 'num' },
+    { value: p => formatCost(p.cost), className: 'num' }
+  ];
+
+  storeTableData('projects-tbody', rows, cellDefs, 0, (p) => openProjectDetail(p.name));
 }
 
 
