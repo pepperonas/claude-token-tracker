@@ -768,6 +768,35 @@ body {
   word-break: break-all;
 }
 
+/* Merge suggestions */
+.merge-suggest-bar { margin-bottom: 12px; }
+
+.merge-suggestions:not(:empty) { margin-bottom: 16px; }
+
+.merge-suggest-hint,
+.merge-suggest-none {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.merge-suggest-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, var(--primary, #b3c5ff) 35%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary, #b3c5ff) 8%, transparent);
+}
+
+.merge-suggest-info { font-size: 13px; min-width: 0; word-break: break-all; }
+.merge-suggest-info strong { color: var(--primary, #b3c5ff); }
+.merge-suggest-members { color: var(--text-muted); }
+.merge-suggest-card .btn-small { flex-shrink: 0; }
+
 /* Token format */
 .token-breakdown {
   font-size: 11px;

@@ -102,6 +102,10 @@
       </div>
       <div class="modal-body">
         <p class="merge-hint" data-i18n="mergeHint">Wähle Projekte, die dieselbe Codebase sind (z. B. nach Umbenennen/Verschieben oder von einem anderen Gerät). Ihre Daten werden unter dem Zielnamen zusammengefasst. Nicht-destruktiv und jederzeit umkehrbar.</p>
+        <div class="merge-suggest-bar">
+          <button type="button" class="btn-small" id="merge-suggest-btn" data-i18n="mergeSuggestBtn">🪄 Vorschläge</button>
+        </div>
+        <div class="merge-suggestions" id="merge-suggestions"></div>
         <div class="merge-sources" id="merge-sources"></div>
         <label class="merge-target-row">
           <span data-i18n="mergeTarget">Zielprojekt (dieser Name bleibt)</span>

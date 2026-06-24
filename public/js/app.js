@@ -1152,7 +1152,134 @@ function openProjectMerge() {
   const confirmBtn = document.getElementById('merge-confirm');
   confirmBtn.onclick = confirmProjectMerge;
 
+  // Reset + wire the suggestions area
+  const suggestEl = document.getElementById('merge-suggestions');
+  if (suggestEl) suggestEl.textContent = '';
+  _setMergeMsg('');
+  const suggestBtn = document.getElementById('merge-suggest-btn');
+  if (suggestBtn) {
+    suggestBtn.onclick = renderMergeSuggestions;
+    // Auto-surface suggestions when there are obvious candidates.
+    if (computeMergeSuggestions(_projectsData).length > 0) renderMergeSuggestions();
+  }
+
   dialog.style.display = 'flex';
+}
+
+// --- Merge suggestions (name-based heuristics) ---
+const _MERGE_GENERIC_BASE = new Set([
+  'server', 'app', 'web', 'api', 'src', 'backend', 'frontend', 'client',
+  'test', 'tests', 'main', 'dist', 'build', 'www', 'site', 'core', 'lib',
+  'docs', 'data', 'public', 'temp', 'tmp', 'new', 'old'
+]);
+
+function _mergeNormName(n) {
+  // Collapse separators + case so "claude/token-tracker" ≡ "claude/token/tracker".
+  return n.toLowerCase().replace(/[\s\-_/.]+/g, '');
+}
+
+function _mergeBaseName(n) {
+  const parts = n.split('/').filter(Boolean);
+  return (parts[parts.length - 1] || n).toLowerCase().replace(/[-_.](old|new|copy|bak|backup|\d+)$/i, '');
+}
+
+// Cluster projects that are very likely the same codebase split across paths.
+function computeMergeSuggestions(projects) {
+  const names = projects.map(p => p.name);
+  const tokens = {};
+  projects.forEach(p => { tokens[p.name] = getDisplayTokens(p); });
+
+  const parent = {};
+  names.forEach(n => { parent[n] = n; });
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+
+  for (let i = 0; i < names.length; i++) {
+    for (let j = i + 1; j < names.length; j++) {
+      const a = names[i], b = names[j];
+      let match = false;
+      if (_mergeNormName(a) === _mergeNormName(b)) {
+        match = true;                                   // same name, different separators/case
+      } else if ((a + '/').startsWith(b + '/') || (b + '/').startsWith(a + '/')) {
+        match = true;                                   // one is a sub-path of the other
+      } else {
+        const ba = _mergeBaseName(a), bb = _mergeBaseName(b);
+        if (ba === bb && ba.length >= 4 && !_MERGE_GENERIC_BASE.has(ba)) {
+          match = true;                                 // same specific last segment (e.g. mac vs pi)
+        }
+      }
+      if (match) union(a, b);
+    }
+  }
+
+  const groups = {};
+  for (const n of names) { const r = find(n); (groups[r] = groups[r] || []).push(n); }
+  return Object.values(groups)
+    .filter(g => g.length >= 2)
+    .map(g => {
+      const members = g.slice().sort((x, y) => (tokens[y] || 0) - (tokens[x] || 0));
+      return { members, target: members[0], total: members.reduce((s, m) => s + (tokens[m] || 0), 0) };
+    })
+    .sort((a, b) => b.members.length - a.members.length || b.total - a.total);
+}
+
+function renderMergeSuggestions() {
+  const el = document.getElementById('merge-suggestions');
+  if (!el) return;
+  el.textContent = '';
+  const suggestions = computeMergeSuggestions(_projectsData);
+
+  if (suggestions.length === 0) {
+    const none = document.createElement('p');
+    none.className = 'merge-suggest-none';
+    none.textContent = t('mergeSuggestNone');
+    el.appendChild(none);
+    return;
+  }
+
+  const hint = document.createElement('p');
+  hint.className = 'merge-suggest-hint';
+  hint.textContent = t('mergeSuggestHint');
+  el.appendChild(hint);
+
+  for (const s of suggestions) {
+    const card = document.createElement('div');
+    card.className = 'merge-suggest-card';
+
+    const info = document.createElement('div');
+    info.className = 'merge-suggest-info';
+    const others = s.members.filter(m => m !== s.target);
+    const strong = document.createElement('strong');
+    strong.textContent = s.target;
+    info.appendChild(strong);
+    const rest = document.createElement('span');
+    rest.className = 'merge-suggest-members';
+    rest.textContent = ` ← ${others.join(', ')}`;
+    info.appendChild(rest);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-small';
+    btn.textContent = t('mergeSuggestApply');
+    btn.onclick = () => _applyMergeSuggestion(s.members, s.target);
+
+    card.append(info, btn);
+    el.appendChild(card);
+  }
+}
+
+// Pre-select a suggested group (user still confirms via the main Merge button).
+function _applyMergeSuggestion(members, target) {
+  const set = new Set(members);
+  for (const cb of document.querySelectorAll('#merge-sources input')) {
+    cb.checked = set.has(cb.value);
+  }
+  _updateMergeTargetOptions();
+  const select = document.getElementById('merge-target');
+  if ([...select.options].some(o => o.value === target)) select.value = target;
+  _setMergeMsg('');
+  // Nudge focus to the confirm button so Enter completes the merge.
+  document.getElementById('merge-confirm')?.focus();
 }
 
 function _updateMergeTargetOptions() {

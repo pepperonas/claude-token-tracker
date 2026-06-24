@@ -132,6 +132,11 @@ const LANG = {
     mergeNeedTwo: 'Select at least two projects to merge.',
     mergeUnmerge: 'Undo merge',
     mergedBadge: 'merged',
+    mergeSuggestBtn: '🪄 Suggestions',
+    mergeSuggestNone: 'No likely duplicates found — names look distinct.',
+    mergeSuggestHint: 'Likely the same project (different path/device or renamed). Click to select.',
+    mergeSuggestApply: 'Select',
+    mergeSuggestInto: 'into',
     // Chart legends
     inputLabel: 'Input',
     outputLabel: 'Output',
@@ -2027,6 +2032,11 @@ const LANG = {
     mergeNeedTwo: 'Wähle mindestens zwei Projekte zum Zusammenführen.',
     mergeUnmerge: 'Zusammenführung aufheben',
     mergedBadge: 'zusammengeführt',
+    mergeSuggestBtn: '🪄 Vorschläge',
+    mergeSuggestNone: 'Keine wahrscheinlichen Dubletten gefunden — die Namen wirken eindeutig.',
+    mergeSuggestHint: 'Wahrscheinlich dasselbe Projekt (anderer Pfad/Gerät oder umbenannt). Zum Auswählen klicken.',
+    mergeSuggestApply: 'Auswählen',
+    mergeSuggestInto: 'in',
     // Chart legends
     inputLabel: 'Input',
     outputLabel: 'Output',
