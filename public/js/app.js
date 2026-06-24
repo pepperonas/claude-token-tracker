@@ -943,7 +943,9 @@ async function loadProjects() {
   // Wire up the merge button (hidden in demo mode / when nothing to merge)
   const mergeBtn = document.getElementById('projects-merge-btn');
   if (mergeBtn) {
-    mergeBtn.style.display = (!state.demoMode && _projectsData.length >= 2) ? '' : 'none';
+    // Merge operates on all-time data, so show it regardless of the period
+    // filter (the dialog itself loads the full project list).
+    mergeBtn.style.display = state.demoMode ? 'none' : '';
     if (!mergeBtn._wired) {
       mergeBtn._wired = true;
       mergeBtn.addEventListener('click', openProjectMerge);
@@ -1123,13 +1125,25 @@ function closeProjectDetail() {
 }
 
 // --- Project Merge dialog ---
-function openProjectMerge() {
+let _mergeProjects = []; // all-time project list used by the merge dialog
+
+async function openProjectMerge() {
   const dialog = document.getElementById('project-merge-dialog');
   const sourcesEl = document.getElementById('merge-sources');
   sourcesEl.textContent = '';
+  _setMergeMsg('');
+  const suggestEl = document.getElementById('merge-suggestions');
+  if (suggestEl) suggestEl.textContent = '';
+
+  // Merge is a global/historical operation — always operate on ALL projects,
+  // not the period-filtered table list (`_projectsData`), or projects outside
+  // the selected period would be invisible/un-mergeable.
+  let projects;
+  try { projects = await api('projects'); } catch { projects = null; }
+  _mergeProjects = Array.isArray(projects) ? projects : _projectsData;
 
   // One checkbox per project (sorted by tokens, as loaded).
-  for (const p of _projectsData) {
+  for (const p of _mergeProjects) {
     const label = document.createElement('label');
     label.className = 'merge-source-row';
     const cb = document.createElement('input');
@@ -1152,82 +1166,76 @@ function openProjectMerge() {
   const confirmBtn = document.getElementById('merge-confirm');
   confirmBtn.onclick = confirmProjectMerge;
 
-  // Reset + wire the suggestions area
-  const suggestEl = document.getElementById('merge-suggestions');
-  if (suggestEl) suggestEl.textContent = '';
-  _setMergeMsg('');
   const suggestBtn = document.getElementById('merge-suggest-btn');
   if (suggestBtn) {
     suggestBtn.onclick = renderMergeSuggestions;
     // Auto-surface suggestions when there are obvious candidates.
-    if (computeMergeSuggestions(_projectsData).length > 0) renderMergeSuggestions();
+    if (computeMergeSuggestions(_mergeProjects).length > 0) renderMergeSuggestions();
   }
 
   dialog.style.display = 'flex';
 }
 
 // --- Merge suggestions (name-based heuristics) ---
+// Last-segment words too generic to imply "same project" on their own.
 const _MERGE_GENERIC_BASE = new Set([
   'server', 'app', 'web', 'api', 'src', 'backend', 'frontend', 'client',
   'test', 'tests', 'main', 'dist', 'build', 'www', 'site', 'core', 'lib',
-  'docs', 'data', 'public', 'temp', 'tmp', 'new', 'old'
+  'docs', 'data', 'public', 'temp', 'tmp', 'new', 'old', 'home', 'demo',
+  'win', 'android', 'ios', 'macos', 'agent', 'master', 'mobile', 'desktop',
+  'admin', 'dashboard', 'common', 'shared', 'utils', 'scripts', 'config',
+  'assets', 'analytics', 'logs', 'export', 'import', 'copy', 'extension',
+  'plugin', 'cli', 'platform', 'website', 'customers'
 ]);
 
-function _mergeNormName(n) {
-  // Collapse separators + case so "claude/token-tracker" ≡ "claude/token/tracker".
-  return n.toLowerCase().replace(/[\s\-_/.]+/g, '');
-}
-
-function _mergeBaseName(n) {
+// Project identity key = the path with its FIRST segment (the device/tool root
+// like claude / cursor / Downloads / WebstormProjects) removed, lowercased, with
+// a trailing variant suffix stripped on the last segment (foo-old/foo2 → foo).
+// So "claude/mrxdown" and "WebstormProjects/mrxdown" share key "mrxdown", while
+// "claude/dr/scraper" ("dr/scraper") and "Downloads/fuck/off/scraper"
+// ("fuck/off/scraper") stay apart — they only share the leaf word "scraper".
+function _mergeKey(n) {
   const parts = n.split('/').filter(Boolean);
-  return (parts[parts.length - 1] || n).toLowerCase().replace(/[-_.](old|new|copy|bak|backup|\d+)$/i, '');
+  const segs = (parts.length > 1 ? parts.slice(1) : parts).map(s => s.toLowerCase());
+  segs[segs.length - 1] = segs[segs.length - 1].replace(/[-_.](old|new|copy|bak|backup|\d+)$/i, '');
+  return segs.join('/');
 }
 
-// Cluster projects that are very likely the same codebase split across paths.
+// Suggest tight groups of projects very likely to be the same codebase split
+// across device/tool roots. Discrete buckets by identity key — no transitive
+// union-find and no path-ancestor signal, so a bare root like "claude" can never
+// absorb everything beneath it and a shared leaf word can never chain unrelated
+// projects into one giant blob.
 function computeMergeSuggestions(projects) {
-  const names = projects.map(p => p.name);
   const tokens = {};
   projects.forEach(p => { tokens[p.name] = getDisplayTokens(p); });
 
-  const parent = {};
-  names.forEach(n => { parent[n] = n; });
-  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
-  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
-
-  for (let i = 0; i < names.length; i++) {
-    for (let j = i + 1; j < names.length; j++) {
-      const a = names[i], b = names[j];
-      let match = false;
-      if (_mergeNormName(a) === _mergeNormName(b)) {
-        match = true;                                   // same name, different separators/case
-      } else if ((a + '/').startsWith(b + '/') || (b + '/').startsWith(a + '/')) {
-        match = true;                                   // one is a sub-path of the other
-      } else {
-        const ba = _mergeBaseName(a), bb = _mergeBaseName(b);
-        if (ba === bb && ba.length >= 4 && !_MERGE_GENERIC_BASE.has(ba)) {
-          match = true;                                 // same specific last segment (e.g. mac vs pi)
-        }
-      }
-      if (match) union(a, b);
-    }
+  const groups = {};
+  for (const p of projects) {
+    const key = _mergeKey(p.name);
+    // A single-segment key is only specific enough if it's a real name, not a
+    // short/generic word (guards against bare roots colliding).
+    if (!key) continue;
+    if (!key.includes('/') && (key.length < 4 || /^\d+$/.test(key) || _MERGE_GENERIC_BASE.has(key))) continue;
+    (groups[key] = groups[key] || []).push(p.name);
   }
 
-  const groups = {};
-  for (const n of names) { const r = find(n); (groups[r] = groups[r] || []).push(n); }
   return Object.values(groups)
-    .filter(g => g.length >= 2)
+    // Need ≥2 to be a merge; cap at 6 — a key shared by many projects is far
+    // more likely a coincidence than the same repo, so skip those.
+    .filter(g => g.length >= 2 && g.length <= 6)
     .map(g => {
       const members = g.slice().sort((x, y) => (tokens[y] || 0) - (tokens[x] || 0));
       return { members, target: members[0], total: members.reduce((s, m) => s + (tokens[m] || 0), 0) };
     })
-    .sort((a, b) => b.members.length - a.members.length || b.total - a.total);
+    .sort((a, b) => b.total - a.total);
 }
 
 function renderMergeSuggestions() {
   const el = document.getElementById('merge-suggestions');
   if (!el) return;
   el.textContent = '';
-  const suggestions = computeMergeSuggestions(_projectsData);
+  const suggestions = computeMergeSuggestions(_mergeProjects);
 
   if (suggestions.length === 0) {
     const none = document.createElement('p');
