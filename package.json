@@ -28,7 +28,7 @@
     "claude-code"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.12"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",
