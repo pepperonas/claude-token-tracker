@@ -99,6 +99,19 @@ describe('project merge — aggregator folding', () => {
     agg.reset();
     expect(agg.resolveProject('x/old')).toBe('x/new');
   });
+
+  it('folds without mutating the caller message object (keeps DB non-destructive)', () => {
+    const agg = new Aggregator();
+    agg.setProjectAliases({ 'a/old': 'a/new' });
+    const m = msg('m1', 'a/old', 's1');
+    agg.addMessages([m]);
+    // Aggregation folds into the canonical name in memory...
+    expect(agg.getProjects()[0].name).toBe('a/new');
+    // ...but the original object keeps its project, so the SAME array passed to
+    // insertMessages() persists the original name (watcher/rebuild add before
+    // they insert) and un-merge stays possible.
+    expect(m.project).toBe('a/old');
+  });
 });
 
 describe('project merge — db alias map', () => {

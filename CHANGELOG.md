@@ -14,8 +14,12 @@
 ### Changed
 - CI test matrix and `engines` floor bumped to **Node ≥ 20.12** (vitest 4 imports `util.styleText`, unavailable on Node 18)
 
+### Fixed
+- **Project merge was destructive after a re-parse** — the aggregator mutated the shared message object's `project` to the canonical name, and the watcher/`/api/rebuild` add to the aggregator *before* they insert into the DB, so every new/re-parsed message persisted the canonical name and un-merge could no longer restore the split. The aggregator now clones on fold instead of mutating, keeping the original name in the DB
+- Merge dialog: `_mergeKey` could throw on an empty/`/`-only project name (crashing suggestions); ownership validation now also accepts already-merged source names (so an existing alias can be redirected); merged-project badge reads the live alias list (count + tooltip no longer desync after a re-sort); merge/un-merge surface a refresh error instead of silently leaving a stale table
+
 ### Tests
-- Test suite expanded to **211** (added `project-merge`, `export-html`, `anthropic-api` crypto, and `config` coverage)
+- Test suite expanded to **212** (added `project-merge`, `export-html`, `anthropic-api` crypto, `config` coverage, and a non-destructive-fold regression test)
 
 ## [0.0.5] - 2026-02-26
 

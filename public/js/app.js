@@ -978,21 +978,17 @@ function renderProjectsTable() {
     }
   }
 
-  // Count how many aliases fold into each canonical project (for the badge).
-  const mergedCounts = {};
-  for (const a of _projectAliases) {
-    mergedCounts[a.canonical] = (mergedCounts[a.canonical] || 0) + 1;
-  }
-
   const cellDefs = [
     { value: p => p.name, render: (td, p) => {
       td.textContent = p.name;
-      const n = mergedCounts[p.name];
-      if (n) {
+      // Read _projectAliases live so the count and tooltip never desync on a
+      // re-sort (the cellDef closure outlives this render).
+      const aliases = _projectAliases.filter(a => a.canonical === p.name);
+      if (aliases.length) {
         const badge = document.createElement('span');
         badge.className = 'merged-badge';
-        badge.textContent = `+${n} ${t('mergedBadge')}`;
-        badge.title = _projectAliases.filter(a => a.canonical === p.name).map(a => a.alias).join('\n');
+        badge.textContent = `+${aliases.length} ${t('mergedBadge')}`;
+        badge.title = aliases.map(a => a.alias).join('\n');
         td.appendChild(badge);
       }
     } },
@@ -1195,7 +1191,8 @@ const _MERGE_GENERIC_BASE = new Set([
 // "claude/dr/scraper" ("dr/scraper") and "Downloads/fuck/off/scraper"
 // ("fuck/off/scraper") stay apart — they only share the leaf word "scraper".
 function _mergeKey(n) {
-  const parts = n.split('/').filter(Boolean);
+  const parts = (n || '').split('/').filter(Boolean);
+  if (parts.length === 0) return '';
   const segs = (parts.length > 1 ? parts.slice(1) : parts).map(s => s.toLowerCase());
   segs[segs.length - 1] = segs[segs.length - 1].replace(/[-_.](old|new|copy|bak|backup|\d+)$/i, '');
   return segs.join('/');
@@ -1329,8 +1326,15 @@ async function confirmProjectMerge() {
     _setMergeMsg(err.error || 'Merge failed');
     return;
   }
+  // Refresh the table before closing so a failed reload keeps the dialog open
+  // with an error rather than silently leaving a stale, un-refreshed table.
+  try {
+    await loadProjects();
+  } catch {
+    _setMergeMsg('Aktualisierung fehlgeschlagen — bitte Seite neu laden.');
+    return;
+  }
   closeProjectMerge();
-  await loadProjects();
 }
 
 function _renderActiveMerges() {
@@ -1368,7 +1372,12 @@ async function unmergeProject(alias) {
     _setMergeMsg(err.error || 'Un-merge failed');
     return;
   }
-  await loadProjects();
+  try {
+    await loadProjects();
+  } catch {
+    _setMergeMsg('Aktualisierung fehlgeschlagen — bitte Seite neu laden.');
+    return;
+  }
   _renderActiveMerges();
 }
 

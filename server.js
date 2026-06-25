@@ -1252,6 +1252,10 @@ const server = http.createServer((req, res) => {
       // create an alias that references another user's project name.
       const ownAgg = MULTI_USER ? aggregatorCache.get(user.id) : aggregator;
       const owned = new Set((ownAgg.getProjects() || []).map(p => p.name));
+      // Names already folded away by a previous merge no longer appear in
+      // getProjects(), but the user did own them — keep them mergeable (e.g. to
+      // redirect an existing alias to a different canonical).
+      for (const r of getProjectAliasRows(aliasUserId)) owned.add(r.alias);
       const unknown = [...new Set([...sources, canonical])].filter(n => !owned.has(n));
       if (unknown.length > 0) {
         return sendJSON(res, { error: 'unknown project(s): ' + unknown.join(', ') }, 400);
