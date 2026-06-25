@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.0] - 2026-06-25
+
+### Added
+- **Project search** — pill-shaped live substring filter above the Projects table with an `aria-live` result count, clear button, and Escape-to-reset; filters the table only (the top-15 chart stays a stable overview) and persists across period changes. New `data-i18n-placeholder` support in `applyTranslations()`
+- **Project merge** — fold projects that are the same codebase (renamed/moved, or synced from another device under a different path) into one canonical name. Non-destructive (originals untouched in the DB) and applied at the aggregator's single `_addMessage` choke-point, so the merge folds existing **and** future messages across all views and survives re-parses/syncs; un-merge restores the original split. New `project_aliases` table, `GET /api/project-aliases`, `POST /api/project-merge`, `DELETE /api/project-aliases`, a merge dialog with checkbox sources + target select + active-merges list, and a "+n merged" badge on combined projects
+- **Merge suggestions** — 🪄 button (auto-surfaced when candidates exist) that detects likely-duplicate projects by bucketing on an identity key = path minus its device/tool root segment (`claude/mrxdown` ≡ `WebstormProjects/mrxdown`); discrete buckets, capped at 2–6, no false-merging of names that only share a leaf word
+- **Material 3 Expressive motion system** for the dashboard frontend (spring/emphasized easings, staggered card entrance, directional tab transitions, cursor-reactive KPI tilt, value-pop, progressive-enhancement + reduced-motion guards)
+
+### Security
+- Project-merge aliases are strictly **per-user scoped**; the cross-user share aggregator applies no alias map, preventing cross-tenant project-name poisoning. The merge endpoint validates that every source/target is a project the requesting user actually owns
+
+### Changed
+- CI test matrix and `engines` floor bumped to **Node ≥ 20.12** (vitest 4 imports `util.styleText`, unavailable on Node 18)
+
+### Tests
+- Test suite expanded to **211** (added `project-merge`, `export-html`, `anthropic-api` crypto, and `config` coverage)
+
 ## [0.0.5] - 2026-02-26
 
 ### Added

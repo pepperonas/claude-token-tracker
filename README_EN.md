@@ -11,10 +11,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-151_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-211_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -87,6 +87,8 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
 - **Sortable tables** — all data tables sortable by clicking column headers
 - **Project Detail Dialog** — click any project in chart or table to open a detail modal with 6 KPIs (tokens, cost, sessions, messages, total time, net lines), daily token chart, model distribution doughnut, top tools, sessions list, and JSON export to clipboard
+- **Project search** — live substring filter above the Projects table with result count and clear button
+- **Project merge** — fold projects that are the same codebase (renamed/moved, or synced from another device under a different path) into one canonical name. Non-destructive (originals untouched, reversible un-merge) and applied at read time so it survives re-parses and future syncs. Includes a 🪄 **suggestions** button that auto-detects likely duplicates from path names, and a "+n merged" badge on combined projects
 - **CSS-only tooltips** with explanations on KPI labels and chart titles
 - **Chart legend persistence** — legend selections and period filter persist in localStorage
 - **Mobile-responsive** — optimized for phones (393px+) with touch targets, adaptive charts, and compact layout
@@ -147,7 +149,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **151 automated tests** (unit + integration + multi-user API + achievements)
+- **211 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -288,7 +290,7 @@ powershell -ExecutionPolicy Bypass -Command "irm 'https://your-domain.com/api/sy
 ```
 
 The script:
-- Checks Node.js >= 18 and npm
+- Checks Node.js >= 20.12 and npm
 - Installs the agent to `~/claude-sync-agent/` (macOS/Linux) or `%USERPROFILE%\claude-sync-agent\` (Windows)
 - Configures API key and server URL automatically
 - Verifies server connectivity
@@ -411,7 +413,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters. Ana
 ## Development
 
 ```bash
-npm test              # Run all 151 tests (vitest)
+npm test              # Run all 211 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

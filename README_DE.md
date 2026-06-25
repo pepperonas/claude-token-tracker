@@ -11,10 +11,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js >= 18">
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL--Modus-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-151_Tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-211_Tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -87,6 +87,8 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Datenbank-Download** — SQLite-Datenbank direkt aus den Einstellungen herunterladen für lokales Backup oder Analyse
 - **Sortierbare Tabellen** — Alle Datentabellen durch Klick auf Spaltenüberschriften sortierbar
 - **Projekt-Detail-Dialog** — Projekte in Chart oder Tabelle anklicken öffnet ein Detail-Modal mit 6 KPIs (Tokens, Kosten, Sessions, Nachrichten, Gesamtdauer, Netto-Zeilen), täglichem Token-Chart, Modellverteilungs-Doughnut, Top-Tools, Session-Liste und JSON-Export in die Zwischenablage
+- **Projekt-Suche** — Live-Teilstring-Filter über der Projekt-Tabelle mit Trefferanzahl und Löschen-Button
+- **Projekte zusammenführen** — Projekte, die dieselbe Codebase sind (umbenannt/verschoben oder von einem anderen Gerät unter anderem Pfad synchronisiert), unter einem kanonischen Namen zusammenfassen. Nicht-destruktiv (Originale bleiben, Zusammenführung jederzeit umkehrbar) und zur Lesezeit angewandt, übersteht also Re-Parses und künftige Syncs. Inklusive 🪄 **Vorschlägen**, die wahrscheinliche Dubletten aus den Pfadnamen automatisch erkennen, und einem „+n zusammengeführt"-Badge an kombinierten Projekten
 - **CSS-only Tooltips** mit Erklärungen auf KPI-Labels und Chart-Titeln
 - **Chart-Legenden-Persistenz** — Legenden-Auswahl und Zeitraumfilter werden im localStorage gespeichert
 - **Mobil-optimiert** — optimiert für Smartphones (ab 393px) mit Touch-Targets, adaptiven Charts und kompaktem Layout
@@ -147,7 +149,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **151 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **211 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -288,7 +290,7 @@ powershell -ExecutionPolicy Bypass -Command "irm 'https://deine-domain.de/api/sy
 ```
 
 Das Script:
-- Prüft Node.js >= 18 und npm
+- Prüft Node.js >= 20.12 und npm
 - Installiert den Agent nach `~/claude-sync-agent/` (macOS/Linux) bzw. `%USERPROFILE%\claude-sync-agent\` (Windows)
 - Konfiguriert API-Key und Server-URL automatisch
 - Verifiziert die Server-Verbindung
@@ -411,7 +413,7 @@ Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Paramete
 ## Entwicklung
 
 ```bash
-npm test              # Alle 151 Tests ausführen (vitest)
+npm test              # Alle 211 Tests ausführen (vitest)
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
 npm run lint          # ESLint (lib/ + server.js)
