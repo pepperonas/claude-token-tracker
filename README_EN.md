@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-211_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-216_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -31,7 +31,7 @@
   <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
   <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
   <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
-  <img src="https://img.shields.io/badge/LOC-17k+-informational" alt="Lines of Code">
+  <img src="https://img.shields.io/badge/LOC-25k+-informational" alt="Lines of Code">
 </p>
 
 <p align="center">
@@ -83,6 +83,8 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Active Work Time** — actual working time (wall-clock) computed from a unified message timeline within the period (gaps > 5 min counted as breaks). Additional "Avg Work Time/Day" KPI divides by days with actual activity (not by period length) — for a 30-day filter with only 15 active days, divisor is 15
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
+- **Usage heatmap** — weekday × hour grid in the overview visualizing token-usage intensity. Multi-day ranges render a 7×24 grid (rows Mon→Sun); a single day renders a 24-hour strip. Cache-toggle aware, with per-cell tooltips (tokens · messages · cost). Lightweight CSS grid (no extra dependency), served by `GET /api/hourly-weekday` / `Aggregator.getHourlyWeekday()`
+- **Weekday-aware dates** — chart axis labels carry the weekday (`Sat 06-27`) and a period-range header shows the full selected window with weekdays (`Thu 05/28/2026 – Sat 06/27/2026`)
 - **Global period filter** — Today / 7 Days / 30 Days / All Time with prev/next navigation arrows, applies to all tabs
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
 - **Sortable tables** — all data tables sortable by clicking column headers
@@ -149,7 +151,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **211 automated tests** (unit + integration + multi-user API + achievements)
+- **216 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -378,6 +380,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/subagent-stats` | GET | Sub-agent message/token/cost statistics |
 | `/api/tool-cost-daily` | GET | Daily tool cost breakdown (top tools over time) |
 | `/api/hourly` | GET | Hourly activity |
+| `/api/hourly-weekday` | GET | Weekday × hour usage grid (heatmap) |
 | `/api/daily-by-model` | GET | Daily tokens by model |
 | `/api/daily-cost-breakdown` | GET | Daily cost by token type |
 | `/api/cumulative-cost` | GET | Cumulative cost |
@@ -413,7 +416,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters. Ana
 ## Development
 
 ```bash
-npm test              # Run all 211 tests (vitest)
+npm test              # Run all 216 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

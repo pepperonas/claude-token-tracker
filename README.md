@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-211_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-216_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -37,7 +37,7 @@
   <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
   <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
   <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
-  <img src="https://img.shields.io/badge/LOC-17k+-informational" alt="Lines of Code">
+  <img src="https://img.shields.io/badge/LOC-25k+-informational" alt="Lines of Code">
 </p>
 
 <p align="center">
@@ -104,12 +104,14 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
 - **700 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
+- **Usage heatmap** — weekday × hour grid in the overview showing token-usage intensity (rows Mon→Sun for multi-day ranges, a single 24-hour strip for one day), cache-toggle aware with per-cell tooltips
+- **Weekday-aware dates** — chart axis labels and the period-range header show the weekday (e.g. `Sa 06-27`, `Thu 05/28/2026 – Sat 06/27/2026`)
 - **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view, click-to-rename devices, OS-selectable install commands
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **211 automated tests** — unit, integration, and multi-user API tests
+- **216 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
