@@ -14,6 +14,10 @@
   --purple: #bc8cff;
   --cyan: #39d2c0;
 
+  /* Usage heatmap */
+  --heat-rgb: 88, 166, 255;          /* matches --accent */
+  --heat-empty: rgba(255, 255, 255, 0.04);
+
   /* ── Material 3 Expressive motion system ──────────────────────────
      One timing system, reused everywhere. Spatial moves use spring /
      emphasized easing (with overshoot); opacity & color stay flat. */
@@ -263,15 +267,87 @@ body {
 /* Status bar */
 .status-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   padding: 6px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
+.period-range {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .status-bar-right {
   display: flex;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ── Usage heatmap (weekday × hour) ───────────────────────────── */
+/* NOTE: deliberately uses a `uheat-` prefix, NOT `.heatmap*`, which is
+   already owned by the GitHub contribution graph (grid-auto-flow: column). */
+.uheat {
+  overflow-x: auto;
+  padding: 4px 2px 2px;
+}
+.uheat-grid {
+  display: grid;
+  grid-auto-flow: row;
+  gap: 3px;
+  min-width: 540px;
+  align-items: center;
+}
+.uheat-corner { width: 32px; }
+.uheat-hour-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1;
+}
+.uheat-row-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+.uheat-cell {
+  aspect-ratio: 1 / 1;
+  min-height: 16px;
+  border-radius: 3px;
+  background: var(--heat-empty);
+  transition: transform var(--dur-instant, 90ms) var(--ease-flat, ease),
+              box-shadow var(--dur-instant, 90ms) var(--ease-flat, ease);
+}
+.uheat-cell:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: default;
+}
+.uheat-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.uheat-legend-label { font-size: 11px; color: var(--text-muted); }
+.uheat-legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uheat-cell { transition: none; }
+  .uheat-cell:hover { transform: none; }
 }
 
 .tab-btn {

@@ -3,12 +3,28 @@
 /** Date format for chart axis labels: 'us' = MM-DD, 'de' = DD.MM. */
 let chartDateFormat = localStorage.getItem('dateFormat') || 'us';
 
+const WEEKDAY_SHORT = {
+  de: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+};
+
+/** Short weekday for a YYYY-MM-DD string, computed in local time. */
+function weekdayShort(dateStr) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  if (!m) return '';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const lang = (typeof currentLang !== 'undefined' && currentLang === 'de') ? 'de' : 'en';
+  return WEEKDAY_SHORT[lang][d.getDay()];
+}
+
 function formatChartDate(dateStr) {
   // dateStr is YYYY-MM-DD or HH:00 (hourly mode)
   if (dateStr.includes(':')) return dateStr;
   const mm = dateStr.slice(5, 7);
   const dd = dateStr.slice(8, 10);
-  return chartDateFormat === 'de' ? `${dd}.${mm}.` : `${mm}-${dd}`;
+  const date = chartDateFormat === 'de' ? `${dd}.${mm}.` : `${mm}-${dd}`;
+  const wd = weekdayShort(dateStr);
+  return wd ? `${wd} ${date}` : date;
 }
 
 function setChartDateFormat(fmt) {

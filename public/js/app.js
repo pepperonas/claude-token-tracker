@@ -550,8 +550,146 @@ function navigatePeriod(direction) {
   loadTab(state.activeTab);
 }
 
+// --- Period range header (with weekdays) ---
+const _WEEKDAY_SHORT = {
+  de: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+};
+
+/** "Sa 01.07.2026" (withYear) / "Sa 01.07." — local-time weekday. */
+function formatDateWithWeekday(dateStr, withYear) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  if (!m) return dateStr || '';
+  const [, yyyy, mm, dd] = m;
+  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  const lang = currentLang === 'de' ? 'de' : 'en';
+  const wd = _WEEKDAY_SHORT[lang][d.getDay()];
+  const fmt = (localStorage.getItem('dateFormat') || 'us');
+  const date = fmt === 'de'
+    ? `${dd}.${mm}.${withYear ? yyyy : ''}`
+    : (withYear ? `${mm}/${dd}/${yyyy}` : `${mm}-${dd}`);
+  return `${wd} ${date}`;
+}
+
+function updatePeriodRange() {
+  const el = document.getElementById('period-range');
+  if (!el) return;
+  const { from, to } = getPeriodRange();
+  let text;
+  if (!from && !to) {
+    text = t('allTime');
+  } else if (from === to) {
+    text = formatDateWithWeekday(from, true);
+  } else {
+    text = formatDateWithWeekday(from, true) + ' – ' + formatDateWithWeekday(to, true);
+  }
+  el.textContent = text;
+}
+
+// --- Usage heatmap (weekday × hour) ---
+function _heatColor(ratio) {
+  if (ratio <= 0) return 'var(--heat-empty)';
+  // Perceptual easing so low-but-nonzero buckets stay visible.
+  const a = 0.14 + Math.pow(Math.min(ratio, 1), 0.6) * 0.86;
+  return `rgba(var(--heat-rgb), ${a.toFixed(3)})`;
+}
+
+/**
+ * rows: [{ label, cells: [{ hour, value, messages, cost }, …24] }]
+ * maxVal: global max for colour scaling.
+ */
+function _renderHeatmap(rows, maxVal) {
+  const el = document.getElementById('usage-heatmap');
+  if (!el) return;
+  el.textContent = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'uheat-grid';
+  grid.style.gridTemplateColumns = `auto repeat(24, 1fr)`;
+
+  // Header: corner + hour labels (every 3rd to avoid crowding)
+  grid.appendChild(_el('div', 'uheat-corner'));
+  for (let h = 0; h < 24; h++) {
+    const hc = _el('div', 'uheat-hour-label');
+    hc.textContent = (h % 3 === 0) ? String(h) : '';
+    grid.appendChild(hc);
+  }
+
+  for (const row of rows) {
+    grid.appendChild(_el('div', 'uheat-row-label', row.label));
+    for (const cell of row.cells) {
+      const c = _el('div', 'uheat-cell');
+      const ratio = maxVal > 0 ? cell.value / maxVal : 0;
+      c.style.background = _heatColor(ratio);
+      if (cell.value > 0) {
+        const hh = String(cell.hour).padStart(2, '0');
+        c.title = `${row.label} ${hh}:00 – ${hh}:59\n`
+          + `${formatTokens(cell.value)} ${t('heatmapTokensUnit')}`
+          + ` · ${formatNumber(cell.messages)} ${t('messagesLabel')}`
+          + ` · ${formatCost(cell.cost)}`;
+      }
+      grid.appendChild(c);
+    }
+  }
+  el.appendChild(grid);
+
+  // Legend
+  const legend = _el('div', 'uheat-legend');
+  legend.appendChild(_el('span', 'uheat-legend-label', t('heatmapLess')));
+  for (const r of [0, 0.25, 0.5, 0.75, 1]) {
+    const sw = _el('div', 'uheat-legend-swatch');
+    sw.style.background = _heatColor(r);
+    legend.appendChild(sw);
+  }
+  legend.appendChild(_el('span', 'uheat-legend-label', t('heatmapMore')));
+  el.appendChild(legend);
+}
+
+function _el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+/** Single-day: one weekday row from the hourly breakdown. */
+function renderHeatmapSingleDay(hourly, dateStr) {
+  const cells = hourly.map(h => ({
+    hour: h.hour,
+    value: state.includeCache ? h.tokens : (h.inputTokens + h.outputTokens),
+    messages: h.messages,
+    cost: state.includeCache ? h.cost : ((h.inputCost || 0) + (h.outputCost || 0))
+  }));
+  const max = cells.reduce((m, c) => Math.max(m, c.value), 0);
+  const label = formatDateWithWeekday(dateStr || toLocalDate(new Date()), false);
+  _renderHeatmap([{ label, cells }], max);
+}
+
+/** Multi-day: 7 weekday rows (Mon→Sun) from the hourly-weekday grid. */
+function renderHeatmapWeekday(hw) {
+  if (!hw || !hw.weekdays) { _renderHeatmap([], 0); return; }
+  const useCache = state.includeCache;
+  const max = useCache ? hw.maxTokens : hw.maxTokensNoCache;
+  const order = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun (data is 0=Sun)
+  const lang = currentLang === 'de' ? 'de' : 'en';
+  const rows = order.map(di => {
+    const wd = hw.weekdays.find(w => w.dayIndex === di) || { hours: [] };
+    return {
+      label: _WEEKDAY_SHORT[lang][di],
+      cells: wd.hours.map(h => ({
+        hour: h.hour,
+        value: useCache ? h.tokens : h.tokensNoCache,
+        messages: h.messages,
+        cost: h.cost
+      }))
+    };
+  });
+  _renderHeatmap(rows, max);
+}
+
 // --- Data loading ---
 async function loadTab(tab) {
+  updatePeriodRange();
   switch (tab) {
     case 'overview': return loadOverview();
     case 'sessions': return loadSessions();
@@ -692,11 +830,12 @@ function _formatActiveTime(minutes) {
 }
 
 async function loadOverview() {
-  const [overview, daily, models, hourly, statsCache] = await Promise.all([
+  const [overview, daily, models, hourly, hourlyWeekday, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
     api('daily' + periodQuery()),
     api('models' + periodQuery()),
     api('hourly' + periodQuery()),
+    isSingleDay() ? Promise.resolve(null) : api('hourly-weekday' + periodQuery()),
     (state.multiUser || state.demoMode) ? Promise.resolve(null) : api('stats-cache').catch(() => null)
   ]);
 
@@ -788,6 +927,12 @@ async function loadOverview() {
   }
   createModelDoughnut('chart-model-dist', models, false);
   createHourlyChart('chart-hourly', hourly);
+  if (isSingleDay()) {
+    const { from } = getPeriodRange();
+    renderHeatmapSingleDay(hourly, from);
+  } else {
+    renderHeatmapWeekday(hourlyWeekday);
+  }
   createOverviewLinesChart('chart-overview-lines', daily, hourly, isSingleDay() ? 'today' : state.period);
 
   loadGlobalComparison();
@@ -1985,8 +2130,8 @@ function getPeriodBRange() {
 
 function formatPeriodLabel(from, to) {
   if (!from && !to) return t('allTime');
-  if (from === to) return from;
-  return (from || '...') + ' \u2013 ' + (to || '...');
+  if (from === to) return formatDateWithWeekday(from, true);
+  return (from ? formatDateWithWeekday(from, true) : '...') + ' \u2013 ' + (to ? formatDateWithWeekday(to, true) : '...');
 }
 
 async function loadPeriodComparison() {

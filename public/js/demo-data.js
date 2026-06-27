@@ -250,6 +250,33 @@ const DEMO_DATA = (() => {
     };
   });
 
+  // --- Hourly × weekday heatmap ---
+  let hwMaxTokens = 0, hwMaxNoCache = 0;
+  const hourlyWeekdayData = {
+    weekdays: weekdayNames.map((name, di) => {
+      const dayBoost = (di >= 1 && di <= 5) ? 1 : 0.35;
+      return {
+        dayIndex: di,
+        hours: Array.from({ length: 24 }, (_, h) => {
+          let msgs = 0;
+          if (h >= 9 && h <= 18) msgs = 30 + Math.round(Math.sin((h - 9) / 9 * Math.PI) * 40);
+          else if (h >= 7 && h <= 22) msgs = 5 + Math.round(Math.random() * 10);
+          msgs = Math.round(msgs * dayBoost);
+          const input = msgs * 2200, output = msgs * 740;
+          const noCache = input + output;
+          const tokens = msgs * 8200;
+          if (tokens > hwMaxTokens) hwMaxTokens = tokens;
+          if (noCache > hwMaxNoCache) hwMaxNoCache = noCache;
+          const cost = Math.round((input * 3 / 1e6 + output * 15 / 1e6 + msgs * 5100 * 0.3 / 1e6 + msgs * 380 * 3.75 / 1e6) * 100) / 100;
+          return { hour: h, tokens, tokensNoCache: noCache, messages: msgs, cost };
+        })
+      };
+    }),
+    maxTokens: 0, maxTokensNoCache: 0
+  };
+  hourlyWeekdayData.maxTokens = hwMaxTokens;
+  hourlyWeekdayData.maxTokensNoCache = hwMaxNoCache;
+
   // --- Cache efficiency ---
   const cacheEfficiencyData = dailyData.map(d => {
     const total = d.inputTokens + d.cacheReadTokens + d.cacheCreateTokens;
@@ -895,6 +922,7 @@ const DEMO_DATA = (() => {
     'daily-cost-breakdown': dailyCostBreakdownData,
     'cumulative-cost': cumulativeCostData,
     'day-of-week': dayOfWeekData,
+    'hourly-weekday': hourlyWeekdayData,
     'cache-efficiency': cacheEfficiencyData,
     'stop-reasons': stopReasonsData,
     'session-efficiency': sessionEfficiencyData,

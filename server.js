@@ -1071,6 +1071,10 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getHourlyByModel(query.from, query.to));
   }
 
+  if (pathname === '/api/hourly-weekday') {
+    return sendJSON(res, agg.getHourlyWeekday(query.from, query.to));
+  }
+
   // Insights API endpoints
   if (pathname === '/api/stop-reasons') {
     return sendJSON(res, agg.getStopReasons(query.from, query.to));

@@ -153,6 +153,67 @@ describe('aggregator', () => {
     });
   });
 
+  describe('getHourlyWeekday', () => {
+    it('returns a 7×24 grid with maxima', () => {
+      const hw = agg.getHourlyWeekday();
+      expect(hw.weekdays.length).toBe(7);
+      expect(hw.weekdays[0].dayIndex).toBe(0);
+      expect(hw.weekdays[6].dayIndex).toBe(6);
+      for (const wd of hw.weekdays) {
+        expect(wd.hours.length).toBe(24);
+        expect(wd.hours[0].hour).toBe(0);
+        expect(wd.hours[23].hour).toBe(23);
+      }
+      expect(hw).toHaveProperty('maxTokens');
+      expect(hw).toHaveProperty('maxTokensNoCache');
+    });
+
+    it('totals across the grid match the message count and tokens', () => {
+      const hw = agg.getHourlyWeekday();
+      let msgs = 0, tokens = 0, noCache = 0;
+      for (const wd of hw.weekdays) {
+        for (const c of wd.hours) {
+          msgs += c.messages;
+          tokens += c.tokens;
+          noCache += c.tokensNoCache;
+          expect(c.tokens).toBeGreaterThanOrEqual(c.tokensNoCache);
+        }
+      }
+      expect(msgs).toBe(10);
+      expect(tokens).toBeGreaterThan(0);
+      expect(noCache).toBeGreaterThan(0);
+      expect(hw.maxTokens).toBeGreaterThanOrEqual(hw.maxTokensNoCache);
+    });
+
+    it('buckets a message into the right weekday and hour (local time)', () => {
+      const a = new Aggregator();
+      a.addMessages([{
+        id: 'x1', timestamp: '2026-03-04T14:30:00.000Z', // Wednesday
+        model: 'claude-opus-4-6', sessionId: 's', project: 'p',
+        inputTokens: 100, outputTokens: 50, cacheReadTokens: 200, cacheCreateTokens: 0,
+        tools: [], stopReason: 'end_turn'
+      }]);
+      const d = new Date('2026-03-04T14:30:00.000Z');
+      const hw = a.getHourlyWeekday();
+      const cell = hw.weekdays[d.getDay()].hours[d.getHours()];
+      expect(cell.messages).toBe(1);
+      expect(cell.tokensNoCache).toBe(150);
+      expect(cell.tokens).toBe(350);
+    });
+
+    it('honours the from/to filter', () => {
+      const a = new Aggregator();
+      a.addMessages([
+        { id: 'in', timestamp: '2026-03-04T10:00:00.000Z', model: 'claude-opus-4-6', sessionId: 's', project: 'p', inputTokens: 10, outputTokens: 10, cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn' },
+        { id: 'out', timestamp: '2026-01-01T10:00:00.000Z', model: 'claude-opus-4-6', sessionId: 's', project: 'p', inputTokens: 99, outputTokens: 99, cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn' }
+      ]);
+      const hw = a.getHourlyWeekday('2026-03-01', '2026-03-31');
+      let msgs = 0;
+      for (const wd of hw.weekdays) for (const c of wd.hours) msgs += c.messages;
+      expect(msgs).toBe(1);
+    });
+  });
+
   describe('getHourlyByModel', () => {
     it('returns 24 entries with model breakdowns', () => {
       const data = agg.getHourlyByModel();

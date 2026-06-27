@@ -209,6 +209,7 @@
     </nav>
 
     <div class="status-bar">
+      <div class="period-range" id="period-range"></div>
       <div class="status-bar-right">
         <button class="rebuild-btn" id="export-html-btn" data-i18n="exportHtml">Export HTML</button>
         <button class="rebuild-btn" id="rebuild-btn" data-i18n="rebuildCache">Cache neu aufbauen</button>
@@ -450,6 +451,13 @@
           <div class="chart-container small">
             <canvas id="chart-hourly"></canvas>
           </div>
+        </div>
+      </div>
+
+      <div class="chart-grid full">
+        <div class="chart-box">
+          <h3 data-i18n="usageHeatmap" data-tooltip-key="tooltipUsageHeatmap">Nutzungs-Heatmap</h3>
+          <div class="uheat" id="usage-heatmap"></div>
         </div>
       </div>
 
