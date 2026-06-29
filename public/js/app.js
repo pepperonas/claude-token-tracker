@@ -583,7 +583,15 @@ function updatePeriodRange() {
   } else {
     text = formatDateWithWeekday(from, true) + ' – ' + formatDateWithWeekday(to, true);
   }
+  if (el.textContent === text) return;
   el.textContent = text;
+  // Spring-swap the header when the range actually changes — but stay calm
+  // during live (SSE) refreshes.
+  if (!document.body.classList.contains('motion-quiet')) {
+    el.classList.remove('uheat-range-swap');
+    void el.offsetWidth; // force reflow so the animation restarts
+    el.classList.add('uheat-range-swap');
+  }
 }
 
 // --- Usage heatmap (weekday × hour) ---
@@ -603,6 +611,12 @@ function _renderHeatmap(rows, maxVal) {
   if (!el) return;
   el.textContent = '';
 
+  // Animate the MD3 spring wave only for real navigations — never live/SSE
+  // refreshes (motion-quiet is set around those). The class lives on the
+  // persistent container; cells are recreated each render, so each batch
+  // inherits the right state and live updates never re-wave.
+  el.classList.toggle('uheat-anim', !document.body.classList.contains('motion-quiet'));
+
   const grid = document.createElement('div');
   grid.className = 'uheat-grid';
   grid.style.gridTemplateColumns = `auto repeat(24, 1fr)`;
@@ -611,14 +625,18 @@ function _renderHeatmap(rows, maxVal) {
   grid.appendChild(_el('div', 'uheat-corner'));
   for (let h = 0; h < 24; h++) {
     const hc = _el('div', 'uheat-hour-label');
+    hc.style.setProperty('--c', h);
     hc.textContent = (h % 3 === 0) ? String(h) : '';
     grid.appendChild(hc);
   }
 
-  for (const row of rows) {
-    grid.appendChild(_el('div', 'uheat-row-label', row.label));
-    for (const cell of row.cells) {
+  rows.forEach((row, rowIdx) => {
+    const lbl = _el('div', 'uheat-row-label', row.label);
+    lbl.style.setProperty('--r', rowIdx);
+    grid.appendChild(lbl);
+    row.cells.forEach((cell, colIdx) => {
       const c = _el('div', 'uheat-cell');
+      c.style.setProperty('--d', rowIdx + colIdx); // diagonal sweep index
       const ratio = maxVal > 0 ? cell.value / maxVal : 0;
       c.style.background = _heatColor(ratio);
       if (cell.value > 0) {
@@ -629,8 +647,8 @@ function _renderHeatmap(rows, maxVal) {
           + ` · ${formatCost(cell.cost)}`;
       }
       grid.appendChild(c);
-    }
-  }
+    });
+  });
   el.appendChild(grid);
 
   // Legend

@@ -5,6 +5,7 @@
 ### Added
 - **Usage heatmap** — weekday × hour grid in the overview that visualizes token-usage intensity. Multi-day ranges render a 7×24 grid (rows Mon→Sun); a single day renders a 24-hour strip. Cache-toggle aware, with a per-cell tooltip (tokens · messages · cost) and a colour legend. Lightweight CSS grid (no extra dependency). New `Aggregator.getHourlyWeekday()` + `GET /api/hourly-weekday`, plus demo-data coverage
 - **Weekday labels on dates** — chart axis labels now carry the weekday (`Sat 06-27`), and a new period-range header in the status bar shows the selected window with weekdays (`Thu 05/28/2026 – Sat 06/27/2026`). `formatPeriodLabel` (comparison labels) updated too
+- **Material 3 Expressive motion** for the new UI — the heatmap reveals with a diagonal spring wave (per-cell `--d = row+col` stagger), cells spring on hover with an accent glow, and the period-range header spring-swaps when the range changes. Motion uses authentic MD3 motion-physics springs rendered as CSS `linear()` easings (`--ease-spatial-expressive`, `--ease-spatial-expressive-fast`, `--ease-effects-expressive`) derived from the official spring tokens. Gated to real navigations (calm on live/SSE refreshes) with a `prefers-reduced-motion` guard
 
 ### Fixed
 - Heatmap CSS classes use a dedicated `uheat-` prefix to avoid colliding with the GitHub contribution graph's `.heatmap-grid` (`grid-auto-flow: column`), which otherwise scrambled the weekday rows into a horizontal zigzag

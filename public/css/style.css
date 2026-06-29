@@ -28,6 +28,17 @@
   --ease-spring-soft:       cubic-bezier(0.4, 1.2, 0.5, 1);  /* gentle settle */
   --ease-flat:              cubic-bezier(0.4, 0, 0.2, 1);    /* opacity/color only */
 
+  /* ── Material 3 Expressive motion-physics springs ────────────────
+     Authentic spring curves rendered as linear() easings, derived from
+     the official M3 spring tokens (unit mass, sampled step response):
+       spatial-expressive       = k 380 / damping 0.8  (subtle overshoot)
+       spatial-expressive-fast  = k 800 / damping 0.6  (lively bounce, ~9%)
+       effects-expressive       = k 1600 / damping 1.0 (critically damped)
+     Spatial → position/size/scale (bounce welcome); Effects → opacity/color. */
+  --ease-spatial-expressive: linear(0.0000 0.0%, 0.0062 1.7%, 0.0234 3.3%, 0.0495 5.0%, 0.0826 6.7%, 0.1213 8.3%, 0.1641 10.0%, 0.2098 11.7%, 0.2573 13.3%, 0.3058 15.0%, 0.3545 16.7%, 0.4029 18.3%, 0.4503 20.0%, 0.4964 21.7%, 0.5408 23.3%, 0.5833 25.0%, 0.6237 26.7%, 0.6618 28.3%, 0.6976 30.0%, 0.7311 31.7%, 0.7621 33.3%, 0.7908 35.0%, 0.8173 36.7%, 0.8414 38.3%, 0.8635 40.0%, 0.8834 41.7%, 0.9015 43.3%, 0.9176 45.0%, 0.9321 46.7%, 0.9449 48.3%, 0.9563 50.0%, 0.9663 51.7%, 0.9750 53.3%, 0.9825 55.0%, 0.9890 56.7%, 0.9945 58.3%, 0.9992 60.0%, 1.0031 61.7%, 1.0063 63.3%, 1.0089 65.0%, 1.0109 66.7%, 1.0125 68.3%, 1.0136 70.0%, 1.0144 71.7%, 1.0149 73.3%, 1.0151 76.7%, 1.0146 80.0%, 1.0136 83.3%, 1.0123 86.7%, 1.0109 90.0%, 1.0094 93.3%, 1.0080 96.7%, 1.0000 100.0%);
+  --ease-spatial-expressive-fast: linear(0.0000 0.0%, 0.0111 1.7%, 0.0415 3.3%, 0.0873 5.0%, 0.1450 6.7%, 0.2113 8.3%, 0.2834 10.0%, 0.3588 11.7%, 0.4352 13.3%, 0.5109 15.0%, 0.5844 16.7%, 0.6544 18.3%, 0.7201 20.0%, 0.7807 21.7%, 0.8358 23.3%, 0.8852 25.0%, 0.9288 26.7%, 0.9665 28.3%, 0.9986 30.0%, 1.0254 31.7%, 1.0471 33.3%, 1.0642 35.0%, 1.0770 36.7%, 1.0860 38.3%, 1.0916 40.0%, 1.0944 41.7%, 1.0946 43.3%, 1.0928 45.0%, 1.0845 48.3%, 1.0721 51.7%, 1.0579 55.0%, 1.0436 58.3%, 1.0302 61.7%, 1.0187 65.0%, 1.0092 68.3%, 1.0019 71.7%, 0.9967 75.0%, 0.9934 78.3%, 0.9916 81.7%, 0.9910 85.0%, 0.9913 88.3%, 0.9922 91.7%, 0.9934 95.0%, 0.9948 98.3%, 1.0000 100.0%);
+  --ease-effects-expressive: linear(0.0000 0.0%, 0.0150 3.3%, 0.0532 6.7%, 0.1064 10.0%, 0.1685 13.3%, 0.2349 16.7%, 0.3025 20.0%, 0.3690 23.3%, 0.4329 26.7%, 0.4931 30.0%, 0.5491 33.3%, 0.6006 36.7%, 0.6475 40.0%, 0.6900 43.3%, 0.7281 46.7%, 0.7622 50.0%, 0.7925 53.3%, 0.8193 56.7%, 0.8430 60.0%, 0.8638 63.3%, 0.8820 66.7%, 0.8980 70.0%, 0.9120 73.3%, 0.9241 76.7%, 0.9346 80.0%, 0.9438 83.3%, 0.9517 86.7%, 0.9585 90.0%, 0.9644 93.3%, 0.9695 96.7%, 1.0000 100.0%);
+
   --dur-instant: 90ms;
   --dur-quick:  140ms;   /* hovers / feedback — stays under 200ms */
   --dur-short:  220ms;
@@ -295,7 +306,9 @@ body {
    already owned by the GitHub contribution graph (grid-auto-flow: column). */
 .uheat {
   overflow-x: auto;
-  padding: 4px 2px 2px;
+  /* overflow-x:auto forces overflow-y:auto — pad so the hover scale/glow
+     of the top & bottom rows isn't clipped. */
+  padding: 14px 2px 6px;
 }
 .uheat-grid {
   display: grid;
@@ -319,16 +332,20 @@ body {
   white-space: nowrap;
 }
 .uheat-cell {
+  position: relative;
   aspect-ratio: 1 / 1;
   min-height: 16px;
   border-radius: 3px;
   background: var(--heat-empty);
-  transition: transform var(--dur-instant, 90ms) var(--ease-flat, ease),
-              box-shadow var(--dur-instant, 90ms) var(--ease-flat, ease);
+  /* Spring on the scale (spatial) so the hover lift bounces; flat for the glow. */
+  transition: transform var(--dur-quick, 140ms) var(--ease-spatial-expressive-fast),
+              box-shadow var(--dur-short, 200ms) var(--ease-flat, ease);
 }
 .uheat-cell:hover {
-  transform: scale(1.18);
-  box-shadow: 0 0 0 1px var(--accent);
+  transform: scale(1.34);
+  z-index: 3;
+  box-shadow: 0 0 0 1.5px var(--accent),
+              0 6px 18px rgba(var(--heat-rgb), 0.5);
   cursor: default;
 }
 .uheat-legend {
@@ -345,9 +362,55 @@ body {
   border-radius: 3px;
 }
 
+/* ── Entrance: a diagonal spring wave (gated to html.js + .uheat-anim,
+   the class is added by JS only for real navigations — never live/SSE
+   refreshes — so live data never re-waves and a JS failure leaves the
+   grid fully visible). Per-cell --d = row+col drives the diagonal sweep. */
+@keyframes uheat-cell-in {
+  0%   { opacity: 0; transform: scale(0.18); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes uheat-label-in {
+  0%   { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes uheat-range-in {
+  0%   { opacity: 0; transform: translateY(7px); filter: blur(2px); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+html.js .uheat-anim .uheat-cell {
+  animation: uheat-cell-in 0.46s var(--ease-spatial-expressive-fast) backwards;
+  animation-delay: calc(var(--d, 0) * 15ms + 60ms);
+}
+html.js .uheat-anim .uheat-row-label {
+  animation: uheat-label-in 0.4s var(--ease-spatial-expressive) backwards;
+  animation-delay: calc(var(--r, 0) * 42ms + 60ms);
+}
+html.js .uheat-anim .uheat-hour-label {
+  animation: uheat-label-in 0.4s var(--ease-spatial-expressive) backwards;
+  animation-delay: calc(var(--c, 0) * 11ms);
+}
+html.js .uheat-anim .uheat-legend {
+  animation: uheat-label-in 0.45s var(--ease-spatial-expressive) backwards;
+  animation-delay: 0.46s;
+}
+.period-range.uheat-range-swap {
+  animation: uheat-range-in 0.5s var(--ease-spatial-expressive);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .uheat-cell { transition: none; }
-  .uheat-cell:hover { transform: none; }
+  .uheat-cell:hover { transform: none; box-shadow: 0 0 0 1px var(--accent); }
+  html.js .uheat-anim .uheat-cell,
+  html.js .uheat-anim .uheat-row-label,
+  html.js .uheat-anim .uheat-hour-label,
+  html.js .uheat-anim .uheat-legend,
+  .period-range.uheat-range-swap {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 .tab-btn {
