@@ -1,4 +1,4 @@
-const { calculateCost, getModelLabel, getPricing, PRICING, DEFAULT_PRICING } = require('../lib/pricing');
+const { calculateCost, getModelLabel, getPricing, getPricingMeta, PRICING, DEFAULT_PRICING, _setOverrides } = require('../lib/pricing');
 
 describe('pricing', () => {
   describe('calculateCost', () => {
@@ -112,9 +112,68 @@ describe('pricing', () => {
     });
   });
 
+  describe('calculateCost — current generation full formula', () => {
+    it('calculates cost for Opus 4.8 with cache tokens', () => {
+      const cost = calculateCost('claude-opus-4-8', {
+        inputTokens: 1_000_000,
+        outputTokens: 1_000_000,
+        cacheReadTokens: 1_000_000,
+        cacheCreateTokens: 1_000_000
+      });
+      // 5 + 25 + 0.50 + 6.25 = 36.75
+      expect(cost).toBeCloseTo(36.75, 2);
+    });
+
+    it('prices the bare (undated) IDs used in newer logs', () => {
+      // Claude Code now emits bare IDs like claude-opus-4-5 / claude-sonnet-4-5
+      expect(calculateCost('claude-opus-4-5', { inputTokens: 1_000_000 })).toBe(5);
+      expect(calculateCost('claude-sonnet-4-5', { inputTokens: 1_000_000 })).toBe(3);
+      expect(calculateCost('claude-haiku-4-5', { inputTokens: 1_000_000 })).toBe(1);
+    });
+  });
+
+  describe('override precedence', () => {
+    afterEach(() => {
+      _setOverrides({}, { source: 'fallback', fetchedAt: null });
+    });
+
+    it('getModelLabel prefers the curated hard-coded label over a LiteLLM-derived one', () => {
+      _setOverrides({
+        'claude-opus-4-8': { label: 'claude-opus-4-8', input: 5, output: 25, cacheRead: 0.5, cacheCreate: 6.25 }
+      }, { source: 'litellm', fetchedAt: '2026-07-01T00:00:00Z' });
+      // Hard-coded PRICING has the curated "Opus 4.8" — it must win.
+      expect(getModelLabel('claude-opus-4-8')).toBe('Opus 4.8');
+    });
+
+    it('getModelLabel falls back to the override label when no hard-coded entry exists', () => {
+      _setOverrides({
+        'claude-newmodel-9': { label: 'Newmodel 9', input: 1, output: 2, cacheRead: 0.1, cacheCreate: 1.25 }
+      }, { source: 'litellm', fetchedAt: '2026-07-01T00:00:00Z' });
+      expect(getModelLabel('claude-newmodel-9')).toBe('Newmodel 9');
+    });
+
+    it('getPricingMeta tags each model with its origin (litellm vs fallback)', () => {
+      _setOverrides({
+        'claude-opus-4-8': { label: 'Opus 4.8', input: 5, output: 25, cacheRead: 0.5, cacheCreate: 6.25 }
+      }, { source: 'litellm', fetchedAt: '2026-07-01T00:00:00Z' });
+      const meta = getPricingMeta();
+      const overridden = meta.models.find(m => m.model === 'claude-opus-4-8');
+      const fallbackOnly = meta.models.find(m => m.model === 'claude-3-7-sonnet-20250219');
+      expect(overridden.origin).toBe('litellm');
+      expect(fallbackOnly.origin).toBe('fallback');
+      expect(meta.overrideCount).toBe(1);
+    });
+  });
+
   describe('PRICING table', () => {
     it('has at least 4 models', () => {
       expect(Object.keys(PRICING).length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('covers the current generation offline (Opus 4.8, Sonnet 5, Fable 5)', () => {
+      expect(PRICING).toHaveProperty('claude-opus-4-8');
+      expect(PRICING).toHaveProperty('claude-sonnet-5');
+      expect(PRICING).toHaveProperty('claude-fable-5');
     });
 
     it('all entries have required fields', () => {

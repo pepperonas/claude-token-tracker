@@ -156,6 +156,25 @@ describe('pricing-fetcher', () => {
       });
     });
 
+    it('derives labels through trailing aliases and two-digit minors', () => {
+      const out = convertLiteLLMToOverrides({
+        // Non-date trailing alias must not defeat the match
+        'claude-3-5-sonnet-latest': { litellm_provider: 'anthropic', input_cost_per_token: 3e-6, output_cost_per_token: 15e-6 },
+        // Two-digit minor version stays intact (not confused with a date)
+        'claude-opus-4-10': { litellm_provider: 'anthropic', input_cost_per_token: 5e-6, output_cost_per_token: 25e-6 }
+      });
+      expect(out['claude-3-5-sonnet-latest'].label).toBe('Sonnet 3.5');
+      expect(out['claude-opus-4-10'].label).toBe('Opus 4.10');
+    });
+
+    it('leaves an unrecognized family as the raw model ID', () => {
+      const out = convertLiteLLMToOverrides({
+        'claude-neo-9': { litellm_provider: 'anthropic', input_cost_per_token: 5e-6, output_cost_per_token: 25e-6 }
+      });
+      // "neo" is not in the family set → no synthetic label, keep the ID
+      expect(out['claude-neo-9'].label).toBe('claude-neo-9');
+    });
+
     it('derives cache costs from input cost when LiteLLM omits them', () => {
       const out = convertLiteLLMToOverrides({
         'claude-mystery-1': {

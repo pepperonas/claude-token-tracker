@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL--Modus-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-221_Tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-229_Tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -55,6 +55,46 @@
   <img src="https://img.shields.io/badge/Nginx-Reverse_Proxy-009639?logo=nginx&logoColor=white" alt="Nginx">
   <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
   <img src="https://img.shields.io/badge/Mobil-responsiv_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobil responsiv">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Preise-auto--synchronisiert-brightgreen?logo=anthropic&logoColor=white" alt="Auto-synchronisierte Preise">
+  <img src="https://img.shields.io/badge/Quelle-LiteLLM-1A73E8" alt="LiteLLM">
+  <img src="https://img.shields.io/badge/Aktualisierung-24h_%2B_on--demand-informational" alt="Preis-Aktualisierung">
+  <img src="https://img.shields.io/badge/Kosten-API--äquivalent-blue" alt="API-äquivalente Kosten">
+  <img src="https://img.shields.io/badge/Fallback-offline--sicher-success" alt="Offline-sicherer Fallback">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Opus_4.8-unterstützt-D4A574?logo=anthropic&logoColor=white" alt="Opus 4.8">
+  <img src="https://img.shields.io/badge/Sonnet_5-unterstützt-D4A574?logo=anthropic&logoColor=white" alt="Sonnet 5">
+  <img src="https://img.shields.io/badge/Fable_5-unterstützt-D4A574?logo=anthropic&logoColor=white" alt="Fable 5">
+  <img src="https://img.shields.io/badge/Haiku_4.5-unterstützt-D4A574?logo=anthropic&logoColor=white" alt="Haiku 4.5">
+  <img src="https://img.shields.io/badge/Modelle-auto--erkannt-brightgreen" alt="Auto-erkannte Modelle">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Modus-Single_%7C_Multi--User-blueviolet" alt="Single & Multi-User">
+  <img src="https://img.shields.io/badge/Multi--Device-unterstützt-success" alt="Multi-Device">
+  <img src="https://img.shields.io/badge/Demo-Modus_enthalten-ff69b4" alt="Demo-Modus">
+  <img src="https://img.shields.io/badge/GitHub_OAuth-Login-181717?logo=github&logoColor=white" alt="GitHub OAuth Login">
+  <img src="https://img.shields.io/badge/Sessions-HttpOnly--Cookies-critical" alt="Session-Cookies">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Material_Design_3-Expressive-6750A4?logo=materialdesign&logoColor=white" alt="Material Design 3 Expressive">
+  <img src="https://img.shields.io/badge/Nutzungs-Heatmap-FF6384?logo=chartdotjs&logoColor=white" alt="Nutzungs-Heatmap">
+  <img src="https://img.shields.io/badge/Wochentag-in_Datumsanzeige-9cf" alt="Wochentags-Datum">
+  <img src="https://img.shields.io/badge/reduced--motion-Barrierefreiheit-success" alt="Reduced Motion">
+  <img src="https://img.shields.io/badge/Web-Manifest-5A0FC8?logo=pwa&logoColor=white" alt="Web-App-Manifest">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Backup-VACUUM_INTO-003B57?logo=sqlite&logoColor=white" alt="Backup">
+  <img src="https://img.shields.io/badge/CommonJS-Backend-F7DF1E?logo=javascript&logoColor=black" alt="CommonJS">
+  <img src="https://img.shields.io/badge/Zero--Config-Lokaler_Modus-brightgreen" alt="Zero Config">
+  <img src="https://img.shields.io/badge/HTTP--Server-ohne_Express-000000?logo=node.js&logoColor=white" alt="Ohne Express">
+  <img src="https://img.shields.io/badge/Coverage-vitest-6E9F18?logo=vitest&logoColor=white" alt="Coverage">
 </p>
 
 <p align="center">
@@ -416,7 +456,7 @@ Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Paramete
 ## Entwicklung
 
 ```bash
-npm test              # Alle 221 Tests ausführen (vitest)
+npm test              # Alle 229 Tests ausführen (vitest)
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
 npm run lint          # ESLint (lib/ + server.js)

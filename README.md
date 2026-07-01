@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-221_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-229_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -61,6 +61,46 @@
   <img src="https://img.shields.io/badge/Nginx-reverse_proxy-009639?logo=nginx&logoColor=white" alt="Nginx">
   <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
   <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/pricing-auto--synced-brightgreen?logo=anthropic&logoColor=white" alt="Auto-synced pricing">
+  <img src="https://img.shields.io/badge/source-LiteLLM-1A73E8" alt="LiteLLM">
+  <img src="https://img.shields.io/badge/refresh-24h_%2B_on--demand-informational" alt="Pricing refresh">
+  <img src="https://img.shields.io/badge/cost-API--equivalent-blue" alt="API-equivalent cost">
+  <img src="https://img.shields.io/badge/fallback-offline--safe-success" alt="Offline-safe fallback">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Opus_4.8-supported-D4A574?logo=anthropic&logoColor=white" alt="Opus 4.8">
+  <img src="https://img.shields.io/badge/Sonnet_5-supported-D4A574?logo=anthropic&logoColor=white" alt="Sonnet 5">
+  <img src="https://img.shields.io/badge/Fable_5-supported-D4A574?logo=anthropic&logoColor=white" alt="Fable 5">
+  <img src="https://img.shields.io/badge/Haiku_4.5-supported-D4A574?logo=anthropic&logoColor=white" alt="Haiku 4.5">
+  <img src="https://img.shields.io/badge/models-auto--detected-brightgreen" alt="Auto-detected models">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/mode-single_%7C_multi--user-blueviolet" alt="Single & Multi-user">
+  <img src="https://img.shields.io/badge/multi--device-supported-success" alt="Multi-device">
+  <img src="https://img.shields.io/badge/demo-mode_included-ff69b4" alt="Demo mode">
+  <img src="https://img.shields.io/badge/GitHub_OAuth-login-181717?logo=github&logoColor=white" alt="GitHub OAuth login">
+  <img src="https://img.shields.io/badge/sessions-HttpOnly_cookies-critical" alt="Session cookies">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Material_Design_3-Expressive-6750A4?logo=materialdesign&logoColor=white" alt="Material Design 3 Expressive">
+  <img src="https://img.shields.io/badge/usage-heatmap-FF6384?logo=chartdotjs&logoColor=white" alt="Usage heatmap">
+  <img src="https://img.shields.io/badge/weekday--aware-dates-9cf" alt="Weekday-aware dates">
+  <img src="https://img.shields.io/badge/reduced--motion-a11y_guard-success" alt="Reduced motion">
+  <img src="https://img.shields.io/badge/web-manifest-5A0FC8?logo=pwa&logoColor=white" alt="Web app manifest">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/backup-VACUUM_INTO-003B57?logo=sqlite&logoColor=white" alt="Backup">
+  <img src="https://img.shields.io/badge/CommonJS-backend-F7DF1E?logo=javascript&logoColor=black" alt="CommonJS">
+  <img src="https://img.shields.io/badge/zero--config-local_mode-brightgreen" alt="Zero config">
+  <img src="https://img.shields.io/badge/HTTP_server-no_Express-000000?logo=node.js&logoColor=white" alt="No Express">
+  <img src="https://img.shields.io/badge/coverage-vitest-6E9F18?logo=vitest&logoColor=white" alt="Coverage">
 </p>
 
 <p align="center">
