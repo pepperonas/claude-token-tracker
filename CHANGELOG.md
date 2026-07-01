@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased] - 2026-07-01
+
+### Fixed
+- **New-model label derivation** — `_deriveLabel` now handles the newest ID shapes: single-digit versions with no minor (`claude-sonnet-5` → "Sonnet 5"), a brand-new family (`claude-fable-5` → "Fable 5"), and dated base IDs whose release-date suffix was being misread as a minor version (`claude-opus-4-20250514` → "Opus 4", was "Opus 4.20250514"). Model **costs** were already auto-detected correctly from LiteLLM — this fixes only the display label. The family set is now open/extensible (`opus|sonnet|haiku|fable`)
+- **Stale offline pricing fallback** — the hard-coded `PRICING` safety net (used only when LiteLLM is unreachable at boot with an empty cache) is refreshed to the current generation (Opus 4.8/4.7, Sonnet 5, Fable 5, plus bare-ID variants). Previously a fresh offline boot would undercount e.g. Opus 4.8 as Sonnet pricing via `DEFAULT_PRICING`
+
+### Tests
+- Test suite expanded to **221** (5 new: new-generation label derivation, Fable pricing, and offline-fallback pricing for Opus 4.8 / Sonnet 5 / Fable 5)
+
 ## [Unreleased] - 2026-06-27
 
 ### Added

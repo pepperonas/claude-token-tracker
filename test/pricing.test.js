@@ -45,6 +45,25 @@ describe('pricing', () => {
       expect(cost).toBe(0);
     });
 
+    it('has an offline fallback for the current generation (Opus 4.8 not undercounted as Sonnet)', () => {
+      // If LiteLLM is unreachable at boot, Opus 4.8 must still price as Opus,
+      // not fall through to DEFAULT_PRICING (Sonnet 3/15).
+      const cost = calculateCost('claude-opus-4-8', { inputTokens: 1_000_000 });
+      expect(cost).toBe(5);
+      expect(cost).not.toBe(DEFAULT_PRICING.input);
+    });
+
+    it('has an offline fallback for Fable 5', () => {
+      const cost = calculateCost('claude-fable-5', { inputTokens: 1_000_000, outputTokens: 1_000_000 });
+      // 10 + 50 = 60
+      expect(cost).toBeCloseTo(60, 2);
+    });
+
+    it('has an offline fallback for Sonnet 5', () => {
+      const cost = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 });
+      expect(cost).toBe(3);
+    });
+
     it('uses default pricing for unknown models', () => {
       const cost = calculateCost('unknown-model-xyz', {
         inputTokens: 1_000_000,
@@ -66,6 +85,9 @@ describe('pricing', () => {
       expect(getModelLabel('claude-opus-4-6')).toBe('Opus 4.6');
       expect(getModelLabel('claude-sonnet-4-5-20250929')).toBe('Sonnet 4.5');
       expect(getModelLabel('claude-haiku-4-5-20251001')).toBe('Haiku 4.5');
+      expect(getModelLabel('claude-opus-4-8')).toBe('Opus 4.8');
+      expect(getModelLabel('claude-sonnet-5')).toBe('Sonnet 5');
+      expect(getModelLabel('claude-fable-5')).toBe('Fable 5');
     });
 
     it('returns System for synthetic', () => {

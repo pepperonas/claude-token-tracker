@@ -119,6 +119,43 @@ describe('pricing-fetcher', () => {
       expect(out['claude-4-opus-20250514'].label).toBe('Opus 4');
     });
 
+    it('derives labels for new-generation IDs (single-digit versions, new families, dated bases)', () => {
+      const out = convertLiteLLMToOverrides({
+        // Single-digit version with no minor → "{Family} {major}"
+        'claude-sonnet-5': { litellm_provider: 'anthropic', input_cost_per_token: 3e-6, output_cost_per_token: 15e-6 },
+        'claude-opus-4-8': { litellm_provider: 'anthropic', input_cost_per_token: 5e-6, output_cost_per_token: 25e-6 },
+        // Brand-new family name must still derive cleanly
+        'claude-fable-5': { litellm_provider: 'anthropic', input_cost_per_token: 10e-6, output_cost_per_token: 50e-6 },
+        // Trailing release date must NOT be read as a minor version ("Opus 4.20250514" bug)
+        'claude-opus-4-20250514': { litellm_provider: 'anthropic', input_cost_per_token: 15e-6, output_cost_per_token: 75e-6 },
+        'claude-sonnet-4-20250514': { litellm_provider: 'anthropic', input_cost_per_token: 3e-6, output_cost_per_token: 15e-6 }
+      });
+      expect(out['claude-sonnet-5'].label).toBe('Sonnet 5');
+      expect(out['claude-opus-4-8'].label).toBe('Opus 4.8');
+      expect(out['claude-fable-5'].label).toBe('Fable 5');
+      expect(out['claude-opus-4-20250514'].label).toBe('Opus 4');
+      expect(out['claude-sonnet-4-20250514'].label).toBe('Sonnet 4');
+    });
+
+    it('prices a brand-new family (Fable) from LiteLLM', () => {
+      const out = convertLiteLLMToOverrides({
+        'claude-fable-5': {
+          litellm_provider: 'anthropic',
+          input_cost_per_token: 10e-6,
+          output_cost_per_token: 50e-6,
+          cache_read_input_token_cost: 1e-6,
+          cache_creation_input_token_cost: 12.5e-6
+        }
+      });
+      expect(out['claude-fable-5']).toEqual({
+        label: 'Fable 5',
+        input: 10,
+        output: 50,
+        cacheRead: 1,
+        cacheCreate: 12.5
+      });
+    });
+
     it('derives cache costs from input cost when LiteLLM omits them', () => {
       const out = convertLiteLLMToOverrides({
         'claude-mystery-1': {
