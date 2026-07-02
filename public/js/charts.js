@@ -138,19 +138,21 @@ function destroyChart(id) {
   }
 }
 
-function createDailyTokenChart(canvasId, data, includeCache) {
+function createDailyTokenChart(canvasId, data, includeCache, mode) {
   destroyChart(canvasId);
+  const cost = mode === 'cost';
+  const fmt = cost ? formatCost : formatTokens;
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [
     {
       label: 'Input',
-      data: data.map(d => d.inputTokens),
+      data: data.map(d => cost ? (d.inputCost || 0) : d.inputTokens),
       backgroundColor: COLORS.input,
       stack: 'tokens'
     },
     {
       label: 'Output',
-      data: data.map(d => d.outputTokens),
+      data: data.map(d => cost ? (d.outputCost || 0) : d.outputTokens),
       backgroundColor: COLORS.output,
       stack: 'tokens'
     }
@@ -159,13 +161,13 @@ function createDailyTokenChart(canvasId, data, includeCache) {
     datasets.push(
       {
         label: 'Cache Read',
-        data: data.map(d => d.cacheReadTokens),
+        data: data.map(d => cost ? (d.cacheReadCost || 0) : d.cacheReadTokens),
         backgroundColor: COLORS.cacheRead,
         stack: 'tokens'
       },
       {
         label: 'Cache Create',
-        data: data.map(d => d.cacheCreateTokens),
+        data: data.map(d => cost ? (d.cacheCreateCost || 0) : d.cacheCreateTokens),
         backgroundColor: COLORS.cacheCreate,
         stack: 'tokens'
       }
@@ -181,7 +183,7 @@ function createDailyTokenChart(canvasId, data, includeCache) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${formatTokens(ctx.raw)}`
+            label: (ctx) => `${ctx.dataset.label}: ${fmt(ctx.raw)}`
           }
         }
       },
@@ -189,7 +191,7 @@ function createDailyTokenChart(canvasId, data, includeCache) {
         x: { stacked: true, grid: { display: false } },
         y: {
           stacked: true,
-          ticks: { callback: v => formatTokens(v) }
+          ticks: { callback: v => fmt(v) }
         }
       }
     }
@@ -237,10 +239,12 @@ function createDailyCostChart(canvasId, data) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
-function createModelDoughnut(canvasId, data, includeCache) {
+function createModelDoughnut(canvasId, data, includeCache, mode) {
   destroyChart(canvasId);
+  const cost = mode === 'cost';
   const ctx = document.getElementById(canvasId).getContext('2d');
-  const tokenValues = data.map(d => {
+  const values = data.map(d => {
+    if (cost) return d.cost || 0;
     if (includeCache) return d.totalTokens;
     return (d.inputTokens || 0) + (d.outputTokens || 0);
   });
@@ -249,7 +253,7 @@ function createModelDoughnut(canvasId, data, includeCache) {
     data: {
       labels: data.map(d => d.label),
       datasets: [{
-        data: tokenValues,
+        data: values,
         backgroundColor: COLORS.models.slice(0, data.length),
         borderWidth: 0
       }]
@@ -262,7 +266,9 @@ function createModelDoughnut(canvasId, data, includeCache) {
         legend: { position: 'bottom', display: !isNarrow() },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${formatTokens(ctx.raw)} (${formatCost(data[ctx.dataIndex].cost)})`
+            label: (ctx) => cost
+              ? `${ctx.label}: ${formatCost(ctx.raw)} (${formatTokens(data[ctx.dataIndex].totalTokens || 0)})`
+              : `${ctx.label}: ${formatTokens(ctx.raw)} (${formatCost(data[ctx.dataIndex].cost)})`
           }
         }
       },
@@ -272,18 +278,21 @@ function createModelDoughnut(canvasId, data, includeCache) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
-function createHourlyChart(canvasId, data) {
+function createHourlyChart(canvasId, data, includeCache, mode) {
   destroyChart(canvasId);
+  const cost = mode === 'cost';
   const ctx = document.getElementById(canvasId).getContext('2d');
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => d.hour + ':00'),
       datasets: [{
-        label: 'Messages',
-        data: data.map(d => d.messages),
-        backgroundColor: COLORS.input + '80',
-        borderColor: COLORS.input,
+        label: cost ? 'Cost' : 'Messages',
+        data: data.map(d => cost
+          ? (includeCache ? (d.cost || 0) : ((d.inputCost || 0) + (d.outputCost || 0)))
+          : d.messages),
+        backgroundColor: (cost ? COLORS.cost : COLORS.input) + '80',
+        borderColor: cost ? COLORS.cost : COLORS.input,
         borderWidth: 1
       }]
     },
@@ -292,11 +301,12 @@ function createHourlyChart(canvasId, data) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        tooltip: cost ? { callbacks: { label: (ctx) => formatCost(ctx.raw) } } : {}
       },
       scales: {
         x: { grid: { display: false } },
-        y: { beginAtZero: true }
+        y: { beginAtZero: true, ticks: cost ? { callback: v => formatCost(v) } : {} }
       }
     }
   });

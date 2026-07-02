@@ -5,6 +5,7 @@ let state = {
   activeTab: 'overview',
   sessionFilter: { project: '', model: '' },
   includeCache: true,
+  metricMode: (localStorage.getItem('metricMode') === 'cost') ? 'cost' : 'tokens',
   multiUser: false,
   user: null,
   demoMode: false,
@@ -490,6 +491,21 @@ function setPeriod(period) {
   loadTab(state.activeTab);
 }
 
+// --- Metric mode (tokens ↔ cost) for the overview charts ---
+function setMetricMode(mode) {
+  mode = mode === 'cost' ? 'cost' : 'tokens';
+  if (mode === state.metricMode) return;
+  state.metricMode = mode;
+  localStorage.setItem('metricMode', mode);
+  updateMetricToggleUi();
+  if (state.activeTab === 'overview') loadTab('overview');
+}
+
+function updateMetricToggleUi() {
+  document.querySelectorAll('.metric-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.metric === state.metricMode));
+}
+
 // --- Period navigation (prev/next) ---
 function navigatePeriod(direction) {
   // direction: -1 = prev, +1 = next
@@ -642,7 +658,7 @@ function _renderHeatmap(rows, maxVal) {
       if (cell.value > 0) {
         const hh = String(cell.hour).padStart(2, '0');
         c.title = `${row.label} ${hh}:00 – ${hh}:59\n`
-          + `${formatTokens(cell.value)} ${t('heatmapTokensUnit')}`
+          + `${formatTokens(cell.tokens != null ? cell.tokens : cell.value)} ${t('heatmapTokensUnit')}`
           + ` · ${formatNumber(cell.messages)} ${t('messagesLabel')}`
           + ` · ${formatCost(cell.cost)}`;
       }
@@ -672,12 +688,18 @@ function _el(tag, cls, text) {
 
 /** Single-day: one weekday row from the hourly breakdown. */
 function renderHeatmapSingleDay(hourly, dateStr) {
-  const cells = hourly.map(h => ({
-    hour: h.hour,
-    value: state.includeCache ? h.tokens : (h.inputTokens + h.outputTokens),
-    messages: h.messages,
-    cost: state.includeCache ? h.cost : ((h.inputCost || 0) + (h.outputCost || 0))
-  }));
+  const costMode = state.metricMode === 'cost';
+  const cells = hourly.map(h => {
+    const tokens = state.includeCache ? h.tokens : (h.inputTokens + h.outputTokens);
+    const cost = state.includeCache ? h.cost : ((h.inputCost || 0) + (h.outputCost || 0));
+    return {
+      hour: h.hour,
+      value: costMode ? cost : tokens,
+      tokens,
+      messages: h.messages,
+      cost
+    };
+  });
   const max = cells.reduce((m, c) => Math.max(m, c.value), 0);
   const label = formatDateWithWeekday(dateStr || toLocalDate(new Date()), false);
   _renderHeatmap([{ label, cells }], max);
@@ -687,19 +709,27 @@ function renderHeatmapSingleDay(hourly, dateStr) {
 function renderHeatmapWeekday(hw) {
   if (!hw || !hw.weekdays) { _renderHeatmap([], 0); return; }
   const useCache = state.includeCache;
-  const max = useCache ? hw.maxTokens : hw.maxTokensNoCache;
+  const costMode = state.metricMode === 'cost';
+  const max = costMode
+    ? (useCache ? (hw.maxCost || 0) : (hw.maxCostNoCache || 0))
+    : (useCache ? hw.maxTokens : hw.maxTokensNoCache);
   const order = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun (data is 0=Sun)
   const lang = currentLang === 'de' ? 'de' : 'en';
   const rows = order.map(di => {
     const wd = hw.weekdays.find(w => w.dayIndex === di) || { hours: [] };
     return {
       label: _WEEKDAY_SHORT[lang][di],
-      cells: wd.hours.map(h => ({
-        hour: h.hour,
-        value: useCache ? h.tokens : h.tokensNoCache,
-        messages: h.messages,
-        cost: h.cost
-      }))
+      cells: wd.hours.map(h => {
+        const tokens = useCache ? h.tokens : h.tokensNoCache;
+        const cost = useCache ? h.cost : (h.costNoCache != null ? h.costNoCache : h.cost);
+        return {
+          hour: h.hour,
+          value: costMode ? cost : tokens,
+          tokens,
+          messages: h.messages,
+          cost
+        };
+      })
     };
   });
   _renderHeatmap(rows, max);
@@ -934,17 +964,25 @@ async function loadOverview() {
     banner.style.display = 'none';
   }
 
-  // Charts — use hourly breakdown when viewing a single day
+  // Charts — use hourly breakdown when viewing a single day.
+  // metricMode ('tokens' | 'cost') switches the token charts to dollars.
+  const mode = state.metricMode;
+  const costMode = mode === 'cost';
+  updateMetricToggleUi();
+  const dailyTitle = document.querySelector('[data-i18n="dailyTokenUsage"]');
+  if (dailyTitle) dailyTitle.textContent = t(costMode ? 'dailyCostUsage' : 'dailyTokenUsage');
+  const hourlyTitle = document.querySelector('[data-i18n="activityByHour"]');
+  if (hourlyTitle) hourlyTitle.textContent = t(costMode ? 'costByHour' : 'activityByHour');
   if (isSingleDay()) {
     const hd = hourlyToChartData(hourly);
-    createDailyTokenChart('chart-daily-tokens', hd, false);
+    createDailyTokenChart('chart-daily-tokens', hd, costMode ? state.includeCache : false, mode);
     createDailyCostChart('chart-daily-cost', hd);
   } else {
-    createDailyTokenChart('chart-daily-tokens', daily, false);
+    createDailyTokenChart('chart-daily-tokens', daily, costMode ? state.includeCache : false, mode);
     createDailyCostChart('chart-daily-cost', daily);
   }
-  createModelDoughnut('chart-model-dist', models, false);
-  createHourlyChart('chart-hourly', hourly);
+  createModelDoughnut('chart-model-dist', models, false, mode);
+  createHourlyChart('chart-hourly', hourly, state.includeCache, mode);
   if (isSingleDay()) {
     const { from } = getPeriodRange();
     renderHeatmapSingleDay(hourly, from);
@@ -3595,6 +3633,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.period-btn').forEach(btn => {
     btn.addEventListener('click', () => setPeriod(btn.dataset.period));
   });
+
+  // Metric toggle (tokens ↔ cost) for the overview charts
+  document.querySelectorAll('.metric-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMetricMode(btn.dataset.metric));
+  });
+  updateMetricToggleUi();
 
   // Language switcher
   document.querySelectorAll('.lang-btn').forEach(btn => {

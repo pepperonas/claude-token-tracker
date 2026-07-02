@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased] - 2026-07-02
+
+### Added
+- **Token ↔ Cost toggle for the overview charts** — a pill toggle above the charts switches the daily chart (stacked by input/output/cache-read/cache-create), model doughnut, hourly chart, and usage heatmap between token counts and dollars. Persisted in `localStorage` (`metricMode`), survives reloads, works for single-day and multi-day ranges, respects the cache toggle, localized DE/EN, covered by demo data. New backend fields: per-day cost breakdown on `/api/daily`, `costNoCache` + `maxCost`/`maxCostNoCache` on `/api/hourly-weekday`
+- **Time-aware pricing (`PRICING_EPOCHS`)** — `calculateCost(model, usage, timestamp)` resolves time-windowed prices per model, so past messages permanently keep the price that was in effect when they were sent (the live LiteLLM feed only knows the *current* price). First real epoch: Sonnet 5 introductory pricing ($2/$10 per MTok through 2026-08-31, then $3/$15). Aggregator call sites pass the message object, whose own `timestamp` makes every cost calculation time-aware automatically. Epochs are exposed in `GET /api/pricing`
+
+### Fixed
+- Per-component cost breakdowns (hourly chart, insights, project detail) used the hard-coded `PRICING` table with a Sonnet-price fallback, ignoring live LiteLLM overrides — now resolved via `getPricing(model, timestamp)` everywhere
+
+### Tests
+- Test suite expanded to **238** (9 new: pricing-epoch resolution incl. override precedence and timestamp fallback, per-day cost-breakdown sum, heatmap cost cells/maxima, time-aware heatmap cost)
+
 ## [Unreleased] - 2026-07-01
 
 ### Fixed

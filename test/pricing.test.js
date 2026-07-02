@@ -165,6 +165,63 @@ describe('pricing', () => {
     });
   });
 
+  describe('time-aware pricing (PRICING_EPOCHS)', () => {
+    afterEach(() => {
+      _setOverrides({}, { source: 'fallback', fetchedAt: null });
+    });
+
+    it('prices Sonnet 5 at introductory rates inside the intro window', () => {
+      const cost = calculateCost('claude-sonnet-5', {
+        inputTokens: 1_000_000,
+        outputTokens: 1_000_000
+      }, '2026-07-02T10:00:00Z');
+      // Intro: 2 + 10 = 12 (standard would be 3 + 15 = 18)
+      expect(cost).toBeCloseTo(12, 2);
+    });
+
+    it('prices Sonnet 5 at standard rates after the intro window ends', () => {
+      const cost = calculateCost('claude-sonnet-5', {
+        inputTokens: 1_000_000,
+        outputTokens: 1_000_000
+      }, '2026-09-01T00:00:00Z');
+      expect(cost).toBeCloseTo(18, 2);
+    });
+
+    it('epoch prices win over live LiteLLM overrides — history stays stable', () => {
+      // LiteLLM only knows the CURRENT price; a message from inside the
+      // epoch window must keep its historical price even after a refresh.
+      _setOverrides({
+        'claude-sonnet-5': { label: 'Sonnet 5', input: 3, output: 15, cacheRead: 0.3, cacheCreate: 3.75 }
+      }, { source: 'litellm', fetchedAt: '2026-09-15T00:00:00Z' });
+      const intro = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 }, '2026-08-31T23:00:00Z');
+      const after = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 }, '2026-09-01T01:00:00Z');
+      expect(intro).toBe(2);
+      expect(after).toBe(3);
+    });
+
+    it('reads the timestamp from the usage object (message) when not passed explicitly', () => {
+      // Aggregator call sites pass the full message as usage — its own
+      // timestamp must make the cost time-aware without any extra argument.
+      const cost = calculateCost('claude-sonnet-5', {
+        inputTokens: 1_000_000,
+        timestamp: '2026-07-15T12:00:00Z'
+      });
+      expect(cost).toBe(2);
+    });
+
+    it('falls back to current pricing when no timestamp is available', () => {
+      const cost = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 });
+      expect(cost).toBe(3);
+    });
+
+    it('models without epochs are unaffected by timestamps', () => {
+      const a = calculateCost('claude-opus-4-8', { inputTokens: 1_000_000 }, '2025-01-01T00:00:00Z');
+      const b = calculateCost('claude-opus-4-8', { inputTokens: 1_000_000 }, '2026-12-01T00:00:00Z');
+      expect(a).toBe(5);
+      expect(b).toBe(5);
+    });
+  });
+
   describe('PRICING table', () => {
     it('has at least 4 models', () => {
       expect(Object.keys(PRICING).length).toBeGreaterThanOrEqual(4);

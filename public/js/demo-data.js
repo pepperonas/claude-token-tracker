@@ -251,7 +251,7 @@ const DEMO_DATA = (() => {
   });
 
   // --- Hourly × weekday heatmap ---
-  let hwMaxTokens = 0, hwMaxNoCache = 0;
+  let hwMaxTokens = 0, hwMaxNoCache = 0, hwMaxCost = 0, hwMaxCostNoCache = 0;
   const hourlyWeekdayData = {
     weekdays: weekdayNames.map((name, di) => {
       const dayBoost = (di >= 1 && di <= 5) ? 1 : 0.35;
@@ -267,15 +267,20 @@ const DEMO_DATA = (() => {
           const tokens = msgs * 8200;
           if (tokens > hwMaxTokens) hwMaxTokens = tokens;
           if (noCache > hwMaxNoCache) hwMaxNoCache = noCache;
+          const costNoCache = Math.round((input * 3 / 1e6 + output * 15 / 1e6) * 100) / 100;
           const cost = Math.round((input * 3 / 1e6 + output * 15 / 1e6 + msgs * 5100 * 0.3 / 1e6 + msgs * 380 * 3.75 / 1e6) * 100) / 100;
-          return { hour: h, tokens, tokensNoCache: noCache, messages: msgs, cost };
+          if (cost > hwMaxCost) hwMaxCost = cost;
+          if (costNoCache > hwMaxCostNoCache) hwMaxCostNoCache = costNoCache;
+          return { hour: h, tokens, tokensNoCache: noCache, messages: msgs, cost, costNoCache };
         })
       };
     }),
-    maxTokens: 0, maxTokensNoCache: 0
+    maxTokens: 0, maxTokensNoCache: 0, maxCost: 0, maxCostNoCache: 0
   };
   hourlyWeekdayData.maxTokens = hwMaxTokens;
   hourlyWeekdayData.maxTokensNoCache = hwMaxNoCache;
+  hourlyWeekdayData.maxCost = hwMaxCost;
+  hourlyWeekdayData.maxCostNoCache = hwMaxCostNoCache;
 
   // --- Cache efficiency ---
   const cacheEfficiencyData = dailyData.map(d => {

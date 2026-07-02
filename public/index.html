@@ -421,6 +421,14 @@
         <div class="stats-banner-items" id="stats-banner-items"></div>
       </div>
 
+      <!-- Token / cost metric toggle for the overview charts -->
+      <div class="metric-toggle-row">
+        <div class="metric-toggle" id="metric-toggle" role="group" aria-label="Chart metric">
+          <button class="metric-btn" data-metric="tokens" data-i18n="metricTokens" type="button">Tokens</button>
+          <button class="metric-btn" data-metric="cost" data-i18n="metricCost" type="button">Kosten ($)</button>
+        </div>
+      </div>
+
       <div class="chart-grid full">
         <div class="chart-box">
           <h3 data-i18n="dailyTokenUsage" data-tooltip-key="tooltipDailyTokens">Täglicher Token-Verbrauch</h3>

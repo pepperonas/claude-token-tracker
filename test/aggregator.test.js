@@ -51,6 +51,18 @@ describe('aggregator', () => {
         expect(d).toHaveProperty('messages');
       }
     });
+
+    it('provides a per-day cost breakdown that sums to the total cost', () => {
+      const daily = agg.getDaily();
+      for (const d of daily) {
+        expect(d).toHaveProperty('inputCost');
+        expect(d).toHaveProperty('outputCost');
+        expect(d).toHaveProperty('cacheReadCost');
+        expect(d).toHaveProperty('cacheCreateCost');
+        const sum = d.inputCost + d.outputCost + d.cacheReadCost + d.cacheCreateCost;
+        expect(sum).toBeCloseTo(d.cost, 1);
+      }
+    });
   });
 
   describe('getSessions', () => {
@@ -211,6 +223,38 @@ describe('aggregator', () => {
       let msgs = 0;
       for (const wd of hw.weekdays) for (const c of wd.hours) msgs += c.messages;
       expect(msgs).toBe(1);
+    });
+
+    it('provides cost and costNoCache per cell with cost maxima (for the cost view)', () => {
+      const a = new Aggregator();
+      a.addMessages([{
+        id: 'c1', timestamp: '2026-03-04T14:30:00.000Z',
+        model: 'claude-opus-4-6', sessionId: 's', project: 'p',
+        inputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 1_000_000, cacheCreateTokens: 0,
+        tools: [], stopReason: 'end_turn'
+      }]);
+      const d = new Date('2026-03-04T14:30:00.000Z');
+      const hw = a.getHourlyWeekday();
+      const cell = hw.weekdays[d.getDay()].hours[d.getHours()];
+      // Opus 4.6: input $5 + cacheRead $0.50 = $5.50; no-cache = $5
+      expect(cell.cost).toBeCloseTo(5.5, 2);
+      expect(cell.costNoCache).toBeCloseTo(5, 2);
+      expect(hw.maxCost).toBeCloseTo(5.5, 2);
+      expect(hw.maxCostNoCache).toBeCloseTo(5, 2);
+    });
+
+    it('cell costs are time-aware (Sonnet 5 intro pricing applies to past messages)', () => {
+      const a = new Aggregator();
+      a.addMessages([{
+        id: 't1', timestamp: '2026-07-15T10:00:00.000Z', // inside intro window
+        model: 'claude-sonnet-5', sessionId: 's', project: 'p',
+        inputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 0,
+        tools: [], stopReason: 'end_turn'
+      }]);
+      const d = new Date('2026-07-15T10:00:00.000Z');
+      const hw = a.getHourlyWeekday();
+      const cell = hw.weekdays[d.getDay()].hours[d.getHours()];
+      expect(cell.cost).toBeCloseTo(2, 2); // intro $2/MTok, not standard $3
     });
   });
 
