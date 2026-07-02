@@ -3833,4 +3833,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchTab(savedTab);
     if (!state.demoMode) connectSSE();
   }
+
+  // Permanently disarm entrance animations once the first-paint choreography
+  // has finished (longest stagger+duration ≈ 1.2s). Re-applying an animation
+  // property restarts it, so the transient motion-quiet toggle made every
+  // card replay its entrance after each live refresh — a permanent class is
+  // never re-applied and therefore never restarts anything.
+  setTimeout(() => document.body.classList.add('motion-settled'), 1600);
 });

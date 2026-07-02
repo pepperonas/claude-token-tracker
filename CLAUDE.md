@@ -97,7 +97,7 @@ Standalone CLI tool in `sync-agent/` directory (v0.1.0). Watches `~/.claude/proj
   - **Value pop**: a `MutationObserver` per `.kpi-value` adds `.pop` (`md-value-pop`) when the text actually changes (ignores unchanged values and the `-` placeholder); `.kpi-value` is `display: inline-block` so the scale pops around the number.
   - **Live indicator**: `.live-dot` is a breathing core (`md-core-breathe`) + a radiating ring (`md-ring-out` via `::after`); `.disconnected` stops both.
   - **State layers / press / focus**: `.tab-btn`/`.period-btn`/`.btn-small`/`.rebuild-btn`/`.lang-btn` get a `::after` hover/press wash (`--state-hover`/`--state-press`), a `:active { scale }` press response, and a `:focus-visible` ring. The active tab is a backlit, spring-settling underline (`.tab-btn.active::before`).
-  - **Calm live updates**: the SSE handler in `app.js` adds `body.motion-quiet` around the debounced `loadTab()` (removed on the next `requestAnimationFrame`); CSS suppresses entrance animations on in-place DOM rebuilds so live data doesn't re-fly.
+  - **Calm live updates**: the SSE handler in `app.js` adds `body.motion-quiet` around the debounced `loadTab()` (removed on the next `requestAnimationFrame`); CSS suppresses entrance animations on in-place DOM rebuilds so live data doesn't re-fly. **`body.motion-settled` (load-bearing)**: added once 1.6s after load (first-paint choreography done) and NEVER removed — it permanently disarms all entrance animations (`md-drop` on cards/chart-boxes/rows/sections). This exists because **re-applying an animation property restarts it**: the transient motion-quiet toggle alone made all 22 entrance elements replay `md-drop` the moment each quiet window ended (= the "cards flicker on every refresh" bug). Never build a suppress-then-unsuppress animation gate for persistent elements — gate permanently (motion-settled) or via a class toggled at render time on recreated elements (`uheat-anim` pattern). The tab-panel swing (`md-panel-in-*`) and KPI value pop are deliberately exempt — the only recurring motion.
   - **Reduced motion**: a `@media (prefers-reduced-motion: reduce)` block neutralizes animations/transitions/transforms (incl. tilt and hover lift) and forces entrance elements to `opacity: 1`.
 
 ## Multi-User Mode
@@ -133,6 +133,8 @@ LaunchAgent `io.celox.token-tracker` runs the local dashboard on port 5010:
 - Plist: `~/Library/LaunchAgents/io.celox.token-tracker.plist`
 - Logs: `stdout.log` / `stderr.log` in project directory
 - Dashboard: http://localhost:5010
+- **The LaunchAgent is the ONLY local process manager** — never register `token-tracker` in the local PM2 daemon. A leftover local PM2 entry crash-looped against the LaunchAgent for port 5010 (EADDRINUSE loop, dozens of restarts, SSE/API requests dying mid-flight); removed 2026-07-03 via `pm2 delete token-tracker && pm2 save`. PM2 runs the tracker only on the VPS.
+- Startup takes ~15–30s (loads ~145k messages before binding the port) — after a restart, wait for `curl localhost:5010` to return 200 before diagnosing.
 
 ## Deployment
 

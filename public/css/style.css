@@ -2887,6 +2887,24 @@ body.motion-quiet .tab-panel.active > .table-wrapper,
 body.motion-quiet .tab-panel.active > .plan-usage-section,
 body.motion-quiet .tab-panel.active > .active-sessions { animation: none !important; }
 
+/* Once the first-paint choreography has played, entrances are PERMANENTLY
+   disarmed (body.motion-settled is added once and never removed). This is
+   load-bearing, not cosmetic: re-applying an animation property restarts it —
+   so the transient motion-quiet toggle alone made every card replay md-drop
+   the moment the quiet window ended after each live refresh (cards visibly
+   blanked during their stagger delay and dropped in again). With a permanent
+   class there is no re-application and therefore no restart. The tab-panel
+   swing (md-panel-in-*) and the KPI value pop are deliberately NOT in this
+   list — they are the only recurring motion. */
+body.motion-settled .tab-panel .kpi-card,
+body.motion-settled .tab-panel .chart-box,
+body.motion-settled .tab-panel .data-table tbody tr,
+body.motion-settled .tab-panel > .table-wrapper,
+body.motion-settled .tab-panel > .plan-usage-section,
+body.motion-settled .tab-panel > .active-sessions,
+body.motion-settled .tab-panel .achievements-stats,
+body.motion-settled .tab-panel .anthropic-budget-card { animation: none !important; }
+
 /* ── Signature transition: the panel swings into focus ───────────
    Direction is set by JS (data-nav-dir on .content) so forward and back
    don't look identical. */
