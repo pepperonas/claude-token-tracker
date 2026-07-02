@@ -2,6 +2,12 @@
 
 ## [Unreleased] - 2026-07-02
 
+### Performance
+- **4–10× faster API endpoints** (measured with 144k messages): per-message derived values (`_date`, `_ms`, `_hour`, `_day`, `_cost`, `_pricing`) are now computed once in `_applyDelta` (the single choke point) and cached on the message object — period-filtered queries no longer allocate a `Date` and re-resolve pricing per message per request. Overview all-time 140ms → 15ms, productivity 186ms → 32ms (30d), chart endpoints 45–66ms → 5–17ms
+- `computeActiveMinutes` works on numeric epoch-ms timestamps (sessions store `_timestamps` as numbers) — eliminates two `Date` allocations per gap (~288k per overview request before)
+- `getOverview` derives the per-type cost breakdown from the precomputed per-day sums instead of its own full message scan
+- **ETag + `Cache-Control: must-revalidate` for static assets** — browser reloads revalidate (304, 0 bytes) instead of re-downloading ~640KB of JS/CSS
+
 ### Added
 - **Token ↔ Cost toggle for the overview charts** — a pill toggle above the charts switches the daily chart (stacked by input/output/cache-read/cache-create), model doughnut, hourly chart, and usage heatmap between token counts and dollars. Persisted in `localStorage` (`metricMode`), survives reloads, works for single-day and multi-day ranges, respects the cache toggle, localized DE/EN, covered by demo data. New backend fields: per-day cost breakdown on `/api/daily`, `costNoCache` + `maxCost`/`maxCostNoCache` on `/api/hourly-weekday`
 - **Time-aware pricing (`PRICING_EPOCHS`)** — `calculateCost(model, usage, timestamp)` resolves time-windowed prices per model, so past messages permanently keep the price that was in effect when they were sent (the live LiteLLM feed only knows the *current* price). First real epoch: Sonnet 5 introductory pricing ($2/$10 per MTok through 2026-08-31, then $3/$15). Aggregator call sites pass the message object, whose own `timestamp` makes every cost calculation time-aware automatically. Epochs are exposed in `GET /api/pricing`

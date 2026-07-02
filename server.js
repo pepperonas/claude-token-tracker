@@ -203,18 +203,37 @@ function sendJSON(res, data, status = 200) {
   res.end(body);
 }
 
-function serveStatic(res, filePath) {
+function serveStatic(res, filePath, req) {
   const ext = path.extname(filePath);
   const mime = MIME[ext] || 'application/octet-stream';
 
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
+  fs.stat(filePath, (statErr, stat) => {
+    if (statErr || !stat.isFile()) {
       res.writeHead(404);
       res.end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': mime, 'Content-Length': data.length });
-    res.end(data);
+    // Cheap ETag from mtime + size; browsers revalidate (must-revalidate) and
+    // get a 304 instead of re-downloading ~640KB of JS/CSS on every reload.
+    const etag = `"${stat.mtimeMs.toString(36)}-${stat.size.toString(36)}"`;
+    const cacheHeaders = {
+      'ETag': etag,
+      'Cache-Control': 'public, max-age=0, must-revalidate'
+    };
+    if (req && req.headers['if-none-match'] === etag) {
+      res.writeHead(304, cacheHeaders);
+      res.end();
+      return;
+    }
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': mime, 'Content-Length': data.length, ...cacheHeaders });
+      res.end(data);
+    });
   });
 }
 
@@ -741,7 +760,7 @@ const server = http.createServer((req, res) => {
       return res.end('Forbidden');
     }
 
-    return serveStatic(res, filePath);
+    return serveStatic(res, filePath, req);
   }
 
   // --- Public share endpoint (no auth required) ---
