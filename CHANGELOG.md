@@ -2,6 +2,9 @@
 
 ## [Unreleased] - 2026-07-02
 
+### Fixed
+- **Live refreshes no longer re-render/flicker the whole GUI** — only the KPI numbers animate now. Three sources eliminated: (1) charts were destroyed + recreated on every refresh (blank-canvas flash) — `renderChart()` now updates existing instances in place (`chart.data`/`chart.options` swap + `update('none')`, all 40 chart creators converted; legend-visibility restore made idempotent for doughnuts so in-place updates don't un-hide slices); (2) the usage heatmap rebuilt all its DOM cells per refresh — same-shape renders now update cell colours/titles in place (the entrance wave still plays on first paint and single-day ↔ multi-day shape changes); (3) `loadActiveSessions`/`loadPlanUsage`/`loadGlobalComparison` were fire-and-forget, so their DOM updates landed *after* the SSE handler removed `motion-quiet` and replayed entrance animations — `loadOverview` now awaits them (still parallel)
+
 ### Performance
 - **4–10× faster API endpoints** (measured with 144k messages): per-message derived values (`_date`, `_ms`, `_hour`, `_day`, `_cost`, `_pricing`) are now computed once in `_applyDelta` (the single choke point) and cached on the message object — period-filtered queries no longer allocate a `Date` and re-resolve pricing per message per request. Overview all-time 140ms → 15ms, productivity 186ms → 32ms (30d), chart endpoints 45–66ms → 5–17ms
 - `computeActiveMinutes` works on numeric epoch-ms timestamps (sessions store `_timestamps` as numbers) — eliminates two `Date` allocations per gap (~288k per overview request before)

@@ -625,6 +625,38 @@ function _heatColor(ratio) {
 function _renderHeatmap(rows, maxVal) {
   const el = document.getElementById('usage-heatmap');
   if (!el) return;
+
+  // In-place fast path: same grid shape → only update cell colours, titles
+  // and row labels. No DOM rebuild, no entrance wave — data refreshes must
+  // not flicker or re-animate (only the KPI numbers animate). The wave plays
+  // on first paint and whenever the shape changes (single-day ↔ multi-day).
+  const shape = rows.length + ':' + (rows[0] ? rows[0].cells.length : 0);
+  if (el._uheatShape === shape && rows.length > 0) {
+    const cellEls = el.querySelectorAll('.uheat-cell');
+    const labelEls = el.querySelectorAll('.uheat-row-label');
+    let i = 0;
+    rows.forEach((row, rowIdx) => {
+      const lbl = labelEls[rowIdx];
+      if (lbl && lbl.textContent !== row.label) lbl.textContent = row.label;
+      for (const cell of row.cells) {
+        const c = cellEls[i++];
+        if (!c) continue;
+        const ratio = maxVal > 0 ? cell.value / maxVal : 0;
+        c.style.background = _heatColor(ratio);
+        if (cell.value > 0) {
+          const hh = String(cell.hour).padStart(2, '0');
+          c.title = `${row.label} ${hh}:00 – ${hh}:59\n`
+            + `${formatTokens(cell.tokens != null ? cell.tokens : cell.value)} ${t('heatmapTokensUnit')}`
+            + ` · ${formatNumber(cell.messages)} ${t('messagesLabel')}`
+            + ` · ${formatCost(cell.cost)}`;
+        } else {
+          c.removeAttribute('title');
+        }
+      }
+    });
+    return;
+  }
+  el._uheatShape = shape;
   el.textContent = '';
 
   // Animate the MD3 spring wave only for real navigations — never live/SSE
@@ -887,8 +919,10 @@ async function loadOverview() {
     (state.multiUser || state.demoMode) ? Promise.resolve(null) : api('stats-cache').catch(() => null)
   ]);
 
-  loadActiveSessions();
-  loadPlanUsage();
+  // Kick off side sections in parallel, but await them before returning so
+  // the SSE handler's motion-quiet window covers their DOM updates too —
+  // otherwise their entrance animations replay on every live refresh.
+  const sideLoads = Promise.allSettled([loadActiveSessions(), loadPlanUsage()]);
 
   // KPI Cards — respect cache toggle
   const displayTokens = getDisplayTokens(overview);
@@ -991,7 +1025,7 @@ async function loadOverview() {
   }
   createOverviewLinesChart('chart-overview-lines', daily, hourly, isSingleDay() ? 'today' : state.period);
 
-  loadGlobalComparison();
+  await Promise.allSettled([sideLoads, loadGlobalComparison()]);
 }
 
 async function loadSessions() {

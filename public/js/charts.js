@@ -68,7 +68,9 @@ function restoreChartLegendState(chartId, chart) {
   const isDoughnut = chart.config.type === 'doughnut' || chart.config.type === 'pie';
   if (isDoughnut) {
     hidden.forEach(i => {
-      if (i < chart.data.datasets[0].data.length) {
+      // Only toggle when currently visible — idempotent, so re-applying after
+      // an in-place chart update doesn't un-hide previously hidden slices.
+      if (i < chart.data.datasets[0].data.length && chart.getDataVisibility(i)) {
         chart.toggleDataVisibility(i);
       }
     });
@@ -138,8 +140,27 @@ function destroyChart(id) {
   }
 }
 
-function createDailyTokenChart(canvasId, data, includeCache, mode) {
+/**
+ * Create or update a chart in place. If an instance of the same type already
+ * exists on the canvas, only its data/options are swapped (update('none')) —
+ * no destroy/recreate, so refreshes don't blank the canvas for a frame or
+ * replay draw animations. Only the KPI numbers are meant to animate on data
+ * refreshes; charts swap silently.
+ */
+function renderChart(canvasId, ctx, config) {
+  const existing = chartInstances[canvasId];
+  if (existing && existing.config.type === config.type && existing.canvas.isConnected) {
+    existing.data = config.data;
+    existing.options = config.options;
+    existing.update('none');
+    return existing;
+  }
   destroyChart(canvasId);
+  chartInstances[canvasId] = new Chart(ctx, config);
+  return chartInstances[canvasId];
+}
+
+function createDailyTokenChart(canvasId, data, includeCache, mode) {
   const cost = mode === 'cost';
   const fmt = cost ? formatCost : formatTokens;
   const ctx = document.getElementById(canvasId).getContext('2d');
@@ -173,7 +194,7 @@ function createDailyTokenChart(canvasId, data, includeCache, mode) {
       }
     );
   }
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: { labels: data.map(d => formatChartDate(d.date)), datasets },
     options: {
@@ -200,9 +221,8 @@ function createDailyTokenChart(canvasId, data, includeCache, mode) {
 }
 
 function createDailyCostChart(canvasId, data) {
-  destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -240,7 +260,6 @@ function createDailyCostChart(canvasId, data) {
 }
 
 function createModelDoughnut(canvasId, data, includeCache, mode) {
-  destroyChart(canvasId);
   const cost = mode === 'cost';
   const ctx = document.getElementById(canvasId).getContext('2d');
   const values = data.map(d => {
@@ -248,7 +267,7 @@ function createModelDoughnut(canvasId, data, includeCache, mode) {
     if (includeCache) return d.totalTokens;
     return (d.inputTokens || 0) + (d.outputTokens || 0);
   });
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: data.map(d => d.label),
@@ -279,10 +298,9 @@ function createModelDoughnut(canvasId, data, includeCache, mode) {
 }
 
 function createHourlyChart(canvasId, data, includeCache, mode) {
-  destroyChart(canvasId);
   const cost = mode === 'cost';
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => d.hour + ':00'),
@@ -314,14 +332,13 @@ function createHourlyChart(canvasId, data, includeCache, mode) {
 }
 
 function createProjectBarChart(canvasId, data, includeCache) {
-  destroyChart(canvasId);
   const top = data.slice(0, 15);
   const ctx = document.getElementById(canvasId).getContext('2d');
   const tokenValues = top.map(d => {
     if (includeCache) return d.totalTokens;
     return (d.inputTokens || 0) + (d.outputTokens || 0);
   });
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
@@ -356,10 +373,9 @@ function createProjectBarChart(canvasId, data, includeCache) {
 }
 
 function createToolBarChart(canvasId, data) {
-  destroyChart(canvasId);
   const top = data.slice(0, 15);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
@@ -394,11 +410,10 @@ function createToolBarChart(canvasId, data) {
 }
 
 function createToolCostBarChart(canvasId, data) {
-  destroyChart(canvasId);
   const top = data.slice(0, 15);
   if (top.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: top.map(d => { const max = isMobile() ? 15 : 25; const n = d.displayName || d.name; return n.length > max ? n.slice(0, max) + '...' : n; }),
@@ -433,7 +448,6 @@ function createToolCostBarChart(canvasId, data) {
 }
 
 function createToolCostDailyChart(canvasId, dailyData) {
-  destroyChart(canvasId);
   if (!dailyData || dailyData.length === 0) return;
 
   // Find top 8 tools by total cost
@@ -453,7 +467,7 @@ function createToolCostDailyChart(canvasId, dailyData) {
 
   const palette = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149', '#39d2c0', '#f0883e', '#8b949e'];
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: dailyData.map(d => formatChartDate(d.date)),
@@ -496,7 +510,6 @@ function createToolCostDailyChart(canvasId, dailyData) {
 }
 
 function createModelAreaChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
 
   const allModels = new Set();
@@ -506,7 +519,7 @@ function createModelAreaChart(canvasId, data) {
   const models = [...allModels];
 
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -546,13 +559,12 @@ function createModelAreaChart(canvasId, data) {
 // --- Overview: adaptive lines + messages chart ---
 
 function createOverviewLinesChart(canvasId, daily, hourly, period) {
-  destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
 
   if (period === 'today') {
     // Hourly: stacked bar for lines by hour
     const totalLines = hourly.map(h => (h.linesWritten || 0) + (h.linesAdded || 0) + (h.linesRemoved || 0));
-    chartInstances[canvasId] = new Chart(ctx, {
+    renderChart(canvasId, ctx, {
       type: 'bar',
       data: {
         labels: hourly.map(h => h.hour + ':00'),
@@ -611,7 +623,7 @@ function createOverviewLinesChart(canvasId, daily, hourly, period) {
   } else {
     // Daily: stacked bar for lines per day + messages line
     if (!daily || daily.length === 0) return;
-    chartInstances[canvasId] = new Chart(ctx, {
+    renderChart(canvasId, ctx, {
       type: 'bar',
       data: {
         labels: daily.map(d => formatChartDate(d.date)),
@@ -671,7 +683,6 @@ function createOverviewLinesChart(canvasId, daily, hourly, period) {
 // --- Insights chart creators ---
 
 function createCostBreakdownChart(canvasId, data, includeCache) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [
@@ -716,7 +727,7 @@ function createCostBreakdownChart(canvasId, data, includeCache) {
       }
     );
   }
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -746,10 +757,9 @@ function createCostBreakdownChart(canvasId, data, includeCache) {
 }
 
 function createCumulativeCostChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -785,10 +795,9 @@ function createCumulativeCostChart(canvasId, data) {
 }
 
 function createWeekdayChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => d.day),
@@ -843,10 +852,9 @@ function createWeekdayChart(canvasId, data) {
 }
 
 function createCacheEfficiencyChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -886,10 +894,9 @@ function createCacheEfficiencyChart(canvasId, data) {
 }
 
 function createDailyLinesChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -938,10 +945,9 @@ function createDailyLinesChart(canvasId, data) {
 }
 
 function createStopReasonsChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: data.map(d => d.reason),
@@ -972,10 +978,9 @@ function createStopReasonsChart(canvasId, data) {
 // --- Productivity chart creators ---
 
 function createProductivityDailyChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -1009,10 +1014,9 @@ function createProductivityDailyChart(canvasId, data) {
 }
 
 function createCostEfficiencyChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -1048,10 +1052,9 @@ function createCostEfficiencyChart(canvasId, data) {
 }
 
 function createCodeRatioChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: data.map(d => d.reason),
@@ -1080,12 +1083,11 @@ function createCodeRatioChart(canvasId, data) {
 }
 
 function createSessionEfficiencyChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   // Take top 50 sessions for readability
   const top = data.slice(0, 50);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'scatter',
     data: {
       datasets: [{
@@ -1128,10 +1130,9 @@ function createSessionEfficiencyChart(canvasId, data) {
 
 /** Efficiency trend: tokensPerLine + linesPerTurn with 7-day rolling averages */
 function createEfficiencyTrendChart(canvasId, daily, rolling) {
-  destroyChart(canvasId);
   if (!daily || daily.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: daily.map(d => formatChartDate(d.date)),
@@ -1218,10 +1219,9 @@ function createEfficiencyTrendChart(canvasId, daily, rolling) {
 
 /** Model efficiency comparison — horizontal grouped bar chart */
 function createModelComparisonChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => d.label),
@@ -1278,11 +1278,10 @@ function createModelComparisonChart(canvasId, data) {
 
 /** Session depth analysis — bubble: messages (x) vs lines/turn (y), size = total lines */
 function createSessionDepthChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const maxLines = Math.max(...data.map(d => d.totalLines), 1);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bubble',
     data: {
       datasets: [{
@@ -1337,7 +1336,6 @@ function createSessionDepthChart(canvasId, data) {
 
 /** Tool usage evolution — stacked area chart showing tool proportions over time */
 function createToolEvolutionChart(canvasId, daily) {
-  destroyChart(canvasId);
   if (!daily || daily.length === 0) return;
 
   // Aggregate tool counts per day from the daily data
@@ -1360,7 +1358,7 @@ function createToolEvolutionChart(canvasId, daily) {
 
   const palette = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149', '#39d2c0', '#f0883e', '#8b949e'];
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: daily.map(d => formatChartDate(d.date)),
@@ -1403,9 +1401,8 @@ function createToolEvolutionChart(canvasId, daily) {
 }
 
 function createAchievementsTimelineChart(canvasId, data) {
-  destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -1491,11 +1488,10 @@ function aggregateWeekly(data, dateKey, valueKey) {
 }
 
 function createGithubCommitChart(canvasId, dailyData) {
-  destroyChart(canvasId);
   if (!dailyData || dailyData.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
   const data = aggregateWeekly(dailyData, 'date', 'commits');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => formatChartDate(d.date)),
@@ -1530,11 +1526,10 @@ function createGithubCommitChart(canvasId, dailyData) {
 }
 
 function createGithubLanguageChart(canvasId, languages) {
-  destroyChart(canvasId);
   if (!languages || languages.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
   const top = languages.slice(0, 10);
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: top.map(l => l.name),
@@ -1563,10 +1558,9 @@ function createGithubLanguageChart(canvasId, languages) {
 }
 
 function createGithubPrChart(canvasId, prStats) {
-  destroyChart(canvasId);
   if (!prStats || prStats.total === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: [t('ghOpen'), t('ghMerged'), t('ghClosed')],
@@ -1595,13 +1589,12 @@ function createGithubPrChart(canvasId, prStats) {
 }
 
 function createGithubActionsOsChart(canvasId, breakdown) {
-  destroyChart(canvasId);
   if (!breakdown || Object.keys(breakdown).length === 0) return;
   const labels = Object.keys(breakdown);
   const values = labels.map(k => Math.round((breakdown[k] || 0) * 10) / 10);
   const osColors = { UBUNTU: '#3fb950', MACOS: '#58a6ff', WINDOWS: '#bc8cff' };
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: labels.map(l => l.charAt(0) + l.slice(1).toLowerCase()),
@@ -1630,11 +1623,10 @@ function createGithubActionsOsChart(canvasId, breakdown) {
 }
 
 function createGithubActionsRepoChart(canvasId, repoData) {
-  destroyChart(canvasId);
   if (!repoData || repoData.length === 0) return;
   const top = repoData.slice(0, 15);
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
@@ -1669,13 +1661,12 @@ function createGithubActionsRepoChart(canvasId, repoData) {
 }
 
 function createGithubPrCodeImpactChart(canvasId, codeByState) {
-  destroyChart(canvasId);
   if (!codeByState || Object.keys(codeByState).length === 0) return;
   const states = ['merged', 'open', 'closed'].filter(s => codeByState[s]);
   if (states.length === 0) return;
   const stateLabels = { merged: t('ghMerged'), open: t('ghOpen'), closed: t('ghClosed') };
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: states.map(s => stateLabels[s] || s),
@@ -1718,10 +1709,9 @@ function createGithubPrCodeImpactChart(canvasId, codeByState) {
 }
 
 function createGithubCodeFrequencyChart(canvasId, data) {
-  destroyChart(canvasId);
   if (!data || data.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => formatChartDate(d.week)),
@@ -1775,7 +1765,6 @@ const ANTHROPIC_COLORS = [
 ];
 
 function createAnthropicDailyCostChart(canvasId, dailyCosts) {
-  destroyChart(canvasId);
   if (!dailyCosts || dailyCosts.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
 
@@ -1793,7 +1782,7 @@ function createAnthropicDailyCostChart(canvasId, dailyCosts) {
     borderWidth: 0
   }));
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: dailyCosts.map(d => formatChartDate(d.date)),
@@ -1830,11 +1819,10 @@ function createAnthropicDailyCostChart(canvasId, dailyCosts) {
 }
 
 function createAnthropicDailyTokensChart(canvasId, dailyTokens) {
-  destroyChart(canvasId);
   if (!dailyTokens || dailyTokens.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: dailyTokens.map(d => formatChartDate(d.date)),
@@ -1901,13 +1889,12 @@ function createAnthropicDailyTokensChart(canvasId, dailyTokens) {
 }
 
 function createAnthropicModelChart(canvasId, modelBreakdown) {
-  destroyChart(canvasId);
   if (!modelBreakdown || modelBreakdown.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
   const top = modelBreakdown.filter(m => m.cost > 0).slice(0, 10);
   if (top.length === 0) return;
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'doughnut',
     data: {
       labels: top.map(m => m.model),
@@ -1936,7 +1923,6 @@ function createAnthropicModelChart(canvasId, modelBreakdown) {
 }
 
 function createAnthropicCostTrendChart(canvasId, dailyCosts) {
-  destroyChart(canvasId);
   if (!dailyCosts || dailyCosts.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
 
@@ -1947,7 +1933,7 @@ function createAnthropicCostTrendChart(canvasId, dailyCosts) {
     return Math.round(cumulative * 100) / 100;
   });
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: dailyCosts.map(d => formatChartDate(d.date)),
@@ -1997,7 +1983,6 @@ const ANTHROPIC_KEY_COLORS = [
 ];
 
 function createAnthropicKeyChart(canvasId, keyTotals, keyBreakdown) {
-  destroyChart(canvasId);
   if (!keyTotals || keyTotals.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
 
@@ -2019,7 +2004,7 @@ function createAnthropicKeyChart(canvasId, keyTotals, keyBreakdown) {
     borderWidth: 0
   }));
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: sortedKeys.map(k => k.keyName),
@@ -2058,7 +2043,6 @@ function createAnthropicKeyChart(canvasId, keyTotals, keyBreakdown) {
 }
 
 function createAnthropicKeyCostTimelineChart(canvasId, dailyTokensByKey, keyTotals) {
-  destroyChart(canvasId);
   if (!dailyTokensByKey || dailyTokensByKey.length === 0) return;
   if (!keyTotals || keyTotals.length === 0) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
@@ -2075,7 +2059,7 @@ function createAnthropicKeyCostTimelineChart(canvasId, dailyTokensByKey, keyTota
     borderWidth: 0
   }));
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'bar',
     data: {
       labels: dailyTokensByKey.map(d => formatChartDate(d.date)),
@@ -2112,7 +2096,6 @@ function createAnthropicKeyCostTimelineChart(canvasId, dailyTokensByKey, keyTota
 }
 
 function createAnthropicKeyTimelineChart(canvasId, dailyTokensByKey, keyTotals) {
-  destroyChart(canvasId);
   if (!dailyTokensByKey || dailyTokensByKey.length === 0) return;
   if (!keyTotals || keyTotals.length <= 1) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
@@ -2135,7 +2118,7 @@ function createAnthropicKeyTimelineChart(canvasId, dailyTokensByKey, keyTotals) 
     pointHoverRadius: 3
   }));
 
-  chartInstances[canvasId] = new Chart(ctx, {
+  renderChart(canvasId, ctx, {
     type: 'line',
     data: {
       labels: dailyTokensByKey.map(d => formatChartDate(d.date)),
