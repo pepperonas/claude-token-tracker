@@ -956,6 +956,31 @@ html.js .uheat-anim .uheat-legend {
   padding-left: 16px;
 }
 
+/* Projects table: all 9 columns must fit without horizontal scrolling.
+   Compact cell padding + a hard cap on the name column (JS shortens the
+   path from the left, full name lives in the title tooltip). */
+#tab-projects .data-table th,
+#tab-projects .data-table td { padding: 10px 8px; }
+#tab-projects .data-table td.project-name-cell {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  #tab-projects .data-table td.project-name-cell { max-width: 160px; }
+}
+@media (max-width: 1000px) {
+  #tab-projects .data-table { font-size: 12px; }
+  #tab-projects .data-table th,
+  #tab-projects .data-table td { padding: 8px 6px; }
+  #tab-projects .data-table th { font-size: 10px; letter-spacing: 0.2px; }
+}
+@media (max-width: 800px) {
+  #tab-projects .data-table td.project-name-cell { max-width: 120px; }
+  #tab-projects .data-table th { white-space: normal; }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }

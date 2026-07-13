@@ -1101,6 +1101,20 @@ async function loadSessions() {
 let _projectsData = [];
 let _projectAliases = []; // active merges: [{ alias, canonical, created_at }]
 
+// Shorten a long project path for display by dropping leading segments —
+// the tail is the distinguishing part (many names share the same root).
+// Full name goes into the cell's title tooltip; sorting keeps the full name.
+function shortenProjectName(name, max = 34) {
+  if (!name || name.length <= max) return name;
+  const parts = name.split('/').filter(Boolean);
+  while (parts.length > 1 && ('…/' + parts.join('/')).length > max) {
+    parts.shift();
+  }
+  let short = (parts.join('/') === name ? name : '…/' + parts.join('/'));
+  if (short.length > max) short = short.slice(0, max - 1) + '…';
+  return short;
+}
+
 async function loadProjects() {
   const projects = await api('projects' + periodQuery());
   _projectsData = projects;
@@ -1215,7 +1229,9 @@ function renderProjectsTable() {
 
   const cellDefs = [
     { value: p => p.name, render: (td, p) => {
-      td.textContent = p.name;
+      td.textContent = shortenProjectName(p.name);
+      td.title = p.name;
+      td.classList.add('project-name-cell');
       // Read _projectAliases live so the count and tooltip never desync on a
       // re-sort (the cellDef closure outlives this render).
       const aliases = _projectAliases.filter(a => a.canonical === p.name);

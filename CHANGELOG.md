@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] - 2026-07-13
+
+### Changed
+- **Projects table fits without horizontal scrolling** — long project paths are shortened from the left (`…/customers/celox/portal` — the distinguishing tail is kept, the full name shows as a tooltip and remains the sort key), the name column is width-capped, and cell padding tightens in steps below 1100/1000/800px so all 9 columns stay visible at once (verified overflow-free at 768–1440px)
+
 ## [Unreleased] - 2026-07-02
 
 ### Fixed
