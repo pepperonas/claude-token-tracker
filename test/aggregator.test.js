@@ -522,6 +522,87 @@ describe('aggregator', () => {
     });
   });
 
+  describe('getTrends', () => {
+    // Fixed anchor: Wednesday 2026-06-17 12:00 local time
+    const NOW = new Date(2026, 5, 17, 12, 0, 0);
+    const mk = (id, y, mo, d, h) => ({
+      id,
+      timestamp: new Date(y, mo, d, h, 0, 0).toISOString(),
+      model: 'claude-sonnet-5', sessionId: 's-' + id, project: 'p',
+      inputTokens: 10, outputTokens: 10, cacheReadTokens: 0, cacheCreateTokens: 0,
+      tools: [], linesAdded: 0, linesRemoved: 0, linesWritten: 0
+    });
+    let tr;
+
+    beforeEach(() => {
+      const fresh = new Aggregator();
+      fresh.addMessages([
+        mk('t_a', 2026, 5, 17, 10),  // today 10:00
+        mk('t_b', 2026, 5, 16, 9),   // yesterday 09:00 (before same-point 12:00)
+        mk('t_c', 2026, 5, 16, 15),  // yesterday 15:00 (after same-point)
+        mk('t_d', 2026, 5, 10, 10),  // last week Wednesday 10:00
+        mk('t_e', 2026, 4, 10, 10),  // last month, before same-point (May 17 12:00)
+        mk('t_f', 2026, 4, 25, 10)   // last month, after same-point
+      ]);
+      tr = fresh.getTrends(NOW);
+    });
+
+    it('compares today against yesterday at the same time of day', () => {
+      expect(tr.today.current.tokens).toBe(20);       // A
+      expect(tr.today.prevSame.tokens).toBe(20);      // B only (C is after 12:00)
+      expect(tr.today.prevFull.tokens).toBe(40);      // B + C
+      expect(tr.today.current.messages).toBe(1);
+    });
+
+    it('compares the Monday-based week against last week at the same point', () => {
+      expect(tr.week.current.tokens).toBe(60);        // A + B + C (Mon-started week)
+      expect(tr.week.prevSame.tokens).toBe(20);       // D (Wed 10:00 < Wed 12:00 cutoff)
+      expect(tr.week.prevFull.tokens).toBe(20);
+    });
+
+    it('compares the month against last month at the same day+time', () => {
+      expect(tr.month.current.tokens).toBe(80);       // A + B + C + D
+      expect(tr.month.prevSame.tokens).toBe(20);      // E (May 10 < May 17 12:00)
+      expect(tr.month.prevFull.tokens).toBe(40);      // E + F
+      // Jun 17 12:00 of a 30-day month = 16.5/30
+      expect(tr.month.elapsedFraction).toBeCloseTo(16.5 / 30, 3);
+    });
+
+    it('uses fair full rolling-7d windows', () => {
+      // cur window [Jun 10 12:00, Jun 17 12:00): A, B, C — D (Jun 10 10:00) falls in prev
+      expect(tr.rolling7.current.tokens).toBe(60);
+      expect(tr.rolling7.prevSame.tokens).toBe(20);
+    });
+
+    it('builds sparkline series buckets', () => {
+      expect(tr.today.series.cur[10].tokens).toBe(20);      // A at 10:00
+      expect(tr.today.series.prev[9].tokens).toBe(20);      // B
+      expect(tr.today.series.prev[15].tokens).toBe(20);     // C
+      expect(tr.week.series.cur[1].tokens).toBe(40);        // Tue: B + C
+      expect(tr.week.series.cur[2].tokens).toBe(20);        // Wed: A
+      expect(tr.week.series.prev[2].tokens).toBe(20);       // last Wed: D
+      expect(tr.month.series.cur.length).toBe(30);          // June
+      expect(tr.month.series.prev.length).toBe(31);         // May
+      expect(tr.month.series.cur[16].tokens).toBe(20);      // Jun 17: A
+      expect(tr.month.series.prev[9].tokens).toBe(20);      // May 10: E
+      expect(tr.month.series.prev[24].tokens).toBe(20);     // May 25: F
+    });
+
+    it('carries cost/costNoCache/messages/activeMin on every sums object', () => {
+      for (const k of ['today', 'week', 'month', 'rolling7']) {
+        for (const side of ['current', 'prevSame', 'prevFull']) {
+          const s = tr[k][side];
+          expect(typeof s.cost).toBe('number');
+          expect(typeof s.costNoCache).toBe('number');
+          expect(typeof s.messages).toBe('number');
+          expect(typeof s.activeMin).toBe('number');
+        }
+      }
+      // Tiny token counts round to $0.00 — just assert non-negative
+      expect(tr.today.current.cost).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   describe('hasMessage / messageCount', () => {
     it('reports aggregated ids without allocating the messages array', () => {
       expect(agg.messageCount).toBeGreaterThan(0);

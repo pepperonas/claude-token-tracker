@@ -905,6 +905,58 @@ const DEMO_DATA = (() => {
   // --- Devices (empty for demo — no devices configured) ---
   const devicesData = [];
 
+  // --- Usage trends (now-anchored comparisons for the overview trend cards) ---
+  const trendsData = (() => {
+    const now = new Date();
+    const hourShape = (h) => (h >= 9 && h <= 19) ? 0.3 + Math.sin((h - 9) / 10 * Math.PI) : (h >= 7 && h <= 23 ? 0.15 : 0.02);
+    const mkBucket = (scale) => {
+      const tokens = Math.round(scale * (0.75 + Math.random() * 0.5));
+      const tokensNoCache = Math.round(tokens * 0.04);
+      const cost = Math.round(tokens / 1e6 * 0.9 * 100) / 100;
+      return { tokens, tokensNoCache, cost, costNoCache: Math.round(cost * 0.32 * 100) / 100 };
+    };
+    const mkHourly = (scale, upToHour) => Array.from({ length: 24 }, (_, h) =>
+      (upToHour !== undefined && h > upToHour) ? { tokens: 0, tokensNoCache: 0, cost: 0, costNoCache: 0 } : mkBucket(scale * hourShape(h)));
+    const mkDaily = (n, scale, upToDay) => Array.from({ length: n }, (_, i) =>
+      (upToDay !== undefined && i >= upToDay) ? { tokens: 0, tokensNoCache: 0, cost: 0, costNoCache: 0 } : mkBucket(scale * (i % 7 >= 5 ? 0.45 : 1)));
+    const sumOf = (arr, msgsPerM = 2.6, actPerM = 0.55) => {
+      const s = { tokens: 0, tokensNoCache: 0, cost: 0, costNoCache: 0, messages: 0, activeMin: 0 };
+      for (const b of arr) { s.tokens += b.tokens; s.tokensNoCache += b.tokensNoCache; s.cost += b.cost; s.costNoCache += b.costNoCache; }
+      s.cost = Math.round(s.cost * 100) / 100;
+      s.costNoCache = Math.round(s.costNoCache * 100) / 100;
+      s.messages = Math.round(s.tokens / 1e6 * msgsPerM);
+      s.activeMin = Math.round(s.tokens / 1e6 * actPerM);
+      return s;
+    };
+    const h = now.getHours();
+    const dow = (now.getDay() + 6) % 7;
+    const dom = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+
+    const todayCur = mkHourly(140e6, h);
+    const todayPrev = mkHourly(115e6);
+    const weekCur = mkDaily(7, 1.9e9, dow + 1);
+    const weekPrev = mkDaily(7, 1.55e9);
+    const monthCur = mkDaily(daysInMonth, 1.8e9, dom);
+    const monthPrev = mkDaily(daysInPrevMonth, 1.45e9);
+    const rollCur = mkDaily(7, 1.85e9);
+    const rollPrev = mkDaily(7, 1.5e9);
+
+    const cutSum = (arr, n) => sumOf(arr.slice(0, n));
+    return {
+      generatedAt: now.toISOString(),
+      today: { current: sumOf(todayCur), prevSame: cutSum(todayPrev, h + 1), prevFull: sumOf(todayPrev), series: { cur: todayCur, prev: todayPrev } },
+      week: { current: sumOf(weekCur), prevSame: cutSum(weekPrev, dow + 1), prevFull: sumOf(weekPrev), series: { cur: weekCur, prev: weekPrev } },
+      month: {
+        current: sumOf(monthCur), prevSame: cutSum(monthPrev, Math.min(dom, daysInPrevMonth)), prevFull: sumOf(monthPrev),
+        elapsedFraction: Math.min(1, Math.max(0.03, dom / daysInMonth)),
+        series: { cur: monthCur, prev: monthPrev }
+      },
+      rolling7: { current: sumOf(rollCur), prevSame: sumOf(rollPrev), prevFull: sumOf(rollPrev), series: { cur: rollCur, prev: rollPrev } }
+    };
+  })();
+
   // Build lookup table keyed by API endpoint path
   return {
     'overview': overview,
@@ -1014,6 +1066,7 @@ const DEMO_DATA = (() => {
     'tool-cost-daily': toolCostDailyData,
     'rate-limits': rateLimitsData,
     'plan-usage': planUsageData,
+    'trends': trendsData,
     'github/stats': githubStatsData,
     'github/billing': githubBillingData,
     'github/actions-usage': githubActionsUsageData,

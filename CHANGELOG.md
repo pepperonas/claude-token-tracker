@@ -2,6 +2,9 @@
 
 ## [Unreleased] - 2026-07-19
 
+### Added
+- **📈 Nutzungs-Trends im Overview** — vier live-Karten (Heute · Diese Woche · Dieser Monat · Letzte 7 Tage) zeigen, ob die Nutzung steigt oder fällt. **Faire Vergleiche zum gleichen Stand**: heute-bis-jetzt vs. gestern bis zur gleichen Uhrzeit, Kalenderwoche (Mo-Start) vs. letzte Woche bis zum gleichen Wochentag+Uhrzeit, Monat vs. Vormonat bis zum gleichen Tag+Uhrzeit (geclamped auf Monatsende, 31.→28.) — der Gesamtwert der Vorperiode steht als Kontext dabei; die rollierende 7-Tage-Karte vergleicht immer zwei volle Fenster. Jede Karte: ▲/▼-Delta-Badge (±3 % = „≈"), Overlay-Sparkline (aktuelle Periode farbig, Vorperiode gestrichelt; die laufende Periode endet sichtbar dort, wo sie steht), **Monatsend-Hochrechnung**, Tooltip mit Nachrichten + aktiver Arbeitszeit beider Perioden. Folgt den bestehenden Token↔Kosten- und Cache-Toggles, unabhängig vom Zeitraumfilter, i18n DE/EN, Demo-Daten. Backend: `aggregator.getTrends(now)` (ein Message-Scan, ~60 ms bei 176k Messages, `now` injizierbar für Tests) + `GET /api/trends`
+
 ### Performance
 - **~75% weniger RAM** (509 MB → ~130 MB nach Start, gemessen mit 176k Messages). Vier Ursachen behoben:
   - **SQLite mmap entfernt** (`mmap_size 256MB` → 0): die inzwischen 100+ MB große DB wurde komplett in den Prozess gemappt und zählte voll ins RSS (~160 MB scheinbarer Verbrauch), obwohl alle Analytics aus dem In-Memory-Aggregator kommen. Der 16-MB-Default-Page-Cache reicht für Bootstrap-Scan und inkrementelle Writes

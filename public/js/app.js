@@ -909,6 +909,133 @@ function _formatActiveTime(minutes) {
   return m > 0 ? h + ' Std. ' + m + ' Min.' : h + ' Std.';
 }
 
+// --- Usage trends (now-anchored comparisons, independent of period filter) ---
+
+let _trendsData = null;
+
+// Metric selection honours the token↔cost pill and the cache toggle.
+function _trendMetricOf(sums) {
+  if (!sums) return 0;
+  if (state.metricMode === 'cost') return state.includeCache ? sums.cost : sums.costNoCache;
+  return state.includeCache ? sums.tokens : sums.tokensNoCache;
+}
+
+function _trendFmt(v) {
+  return state.metricMode === 'cost' ? formatCost(v) : formatTokens(v);
+}
+
+function _trendSeriesKey() {
+  if (state.metricMode === 'cost') return state.includeCache ? 'cost' : 'costNoCache';
+  return state.includeCache ? 'tokens' : 'tokensNoCache';
+}
+
+// SVG path for a sparkline. `denom` fixes the x-scale to the period's total
+// slot count so a running period visually stops where it stands instead of
+// stretching to full width.
+function _sparkPath(series, key, max, denom) {
+  if (!series || series.length < 2 || max <= 0) return '';
+  const W = 100, H = 28;
+  const n = Math.max(denom || series.length, 2);
+  let d = '';
+  for (let i = 0; i < series.length; i++) {
+    const x = (i / (n - 1)) * W;
+    const yv = Math.max(0, series[i][key] || 0);
+    const y = H - 2 - (yv / max) * (H - 4);
+    d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }
+  return d;
+}
+
+function _renderTrendCard(key, data, opts) {
+  const valueEl = document.getElementById('trend-value-' + key);
+  if (!valueEl || !data || !data.current) return;
+  const cur = _trendMetricOf(data.current);
+  const prevSame = _trendMetricOf(data.prevSame);
+  const prevFull = _trendMetricOf(data.prevFull);
+
+  valueEl.textContent = _trendFmt(cur);
+
+  // Delta vs the SAME point of the previous period (fair comparison)
+  const deltaEl = document.getElementById('trend-delta-' + key);
+  let cls = 'flat', txt = '·';
+  if (prevSame > 0) {
+    const pct = ((cur - prevSame) / prevSame) * 100;
+    if (Math.abs(pct) < 3) { txt = '≈ ' + (pct >= 0 ? '+' : '−') + Math.abs(Math.round(pct)) + ' %'; }
+    else if (pct > 0) { cls = 'up'; txt = '▲ +' + Math.round(pct) + ' %'; }
+    else { cls = 'down'; txt = '▼ −' + Math.abs(Math.round(pct)) + ' %'; }
+  } else if (cur > 0) { cls = 'up'; txt = '▲ ' + t('trendNew'); }
+  deltaEl.className = 'trend-delta ' + cls;
+  deltaEl.textContent = txt;
+
+  document.getElementById('trend-compare-' + key).textContent = opts.compareLabel;
+  document.getElementById('trend-sub-' + key).textContent = opts.subLabel(prevFull, cur);
+
+  // Tooltip: messages + active time, both sides
+  const card = document.getElementById('trend-card-' + key);
+  if (card) {
+    card.title = t('messagesLabel') + ': ' + formatNumber(data.current.messages) +
+      ' (' + t('trendPrevShort') + ': ' + formatNumber(data.prevSame.messages) + ')\n' +
+      t('trendActiveTime') + ': ' + _formatActiveTime(data.current.activeMin) +
+      ' (' + t('trendPrevShort') + ': ' + _formatActiveTime(data.prevSame.activeMin) + ')';
+  }
+
+  // Sparkline: shared y-max over both periods, in-place d update (no rebuild)
+  const svg = document.getElementById('trend-spark-' + key);
+  if (svg && data.series) {
+    const mk = _trendSeriesKey();
+    const curSeries = opts.curSlice ? data.series.cur.slice(0, opts.curSlice) : data.series.cur;
+    const prevSeries = data.series.prev;
+    let max = 0;
+    for (const b of data.series.cur) { if ((b[mk] || 0) > max) max = b[mk]; }
+    for (const b of prevSeries) { if ((b[mk] || 0) > max) max = b[mk]; }
+    svg.querySelector('.trend-spark-cur').setAttribute('d', _sparkPath(curSeries, mk, max, data.series.cur.length));
+    svg.querySelector('.trend-spark-prev').setAttribute('d', _sparkPath(prevSeries, mk, max, prevSeries.length));
+  }
+}
+
+function renderTrends() {
+  const tr = _trendsData;
+  const section = document.getElementById('trend-section');
+  if (!tr || !section) return;
+  section.style.display = '';
+
+  const nowD = new Date(tr.generatedAt);
+  const hh = String(nowD.getHours()).padStart(2, '0') + ':' + String(nowD.getMinutes()).padStart(2, '0');
+
+  _renderTrendCard('today', tr.today, {
+    compareLabel: t('trendVsYesterday').replace('{time}', hh),
+    curSlice: nowD.getHours() + 1,
+    subLabel: (prevFull) => t('trendYesterdayTotal') + ': ' + _trendFmt(prevFull)
+  });
+  _renderTrendCard('week', tr.week, {
+    compareLabel: t('trendVsLastWeek'),
+    curSlice: ((nowD.getDay() + 6) % 7) + 1,
+    subLabel: (prevFull) => t('trendLastWeekTotal') + ': ' + _trendFmt(prevFull)
+  });
+  _renderTrendCard('month', tr.month, {
+    compareLabel: t('trendVsLastMonth'),
+    curSlice: nowD.getDate(),
+    subLabel: (prevFull, cur) => {
+      const proj = tr.month.elapsedFraction > 0 ? cur / tr.month.elapsedFraction : 0;
+      return t('trendProjection') + ': ' + _trendFmt(proj) + ' · ' + t('trendLastMonthTotal') + ': ' + _trendFmt(prevFull);
+    }
+  });
+  _renderTrendCard('rolling7', tr.rolling7, {
+    compareLabel: t('trendVsPrev7'),
+    subLabel: (prevFull) => t('trendPrev7Total') + ': ' + _trendFmt(prevFull)
+  });
+}
+
+async function loadTrends() {
+  try {
+    const data = await api('trends');
+    if (data && data.today) {
+      _trendsData = data;
+      renderTrends();
+    }
+  } catch (e) { /* section stays hidden */ }
+}
+
 async function loadOverview() {
   const [overview, daily, models, hourly, hourlyWeekday, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
@@ -922,7 +1049,7 @@ async function loadOverview() {
   // Kick off side sections in parallel, but await them before returning so
   // the SSE handler's motion-quiet window covers their DOM updates too —
   // otherwise their entrance animations replay on every live refresh.
-  const sideLoads = Promise.allSettled([loadActiveSessions(), loadPlanUsage()]);
+  const sideLoads = Promise.allSettled([loadActiveSessions(), loadPlanUsage(), loadTrends()]);
 
   // KPI Cards — respect cache toggle
   const displayTokens = getDisplayTokens(overview);

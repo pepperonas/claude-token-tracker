@@ -472,6 +472,51 @@ html.js .uheat-anim .uheat-legend {
   margin-top: 4px;
 }
 
+/* Usage trend cards (now-anchored comparisons in the overview) */
+.trend-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.trend-header h3 { margin: 0; font-size: 15px; }
+.trend-note { font-size: 11px; color: var(--text-muted); }
+.trend-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.trend-top .kpi-label { margin-bottom: 0; }
+.trend-card .kpi-value { margin-top: 8px; font-size: 24px; }
+.trend-delta {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.trend-delta.up { color: var(--green); background: rgba(63, 185, 80, 0.12); }
+.trend-delta.down { color: var(--red); background: rgba(248, 81, 73, 0.12); }
+.trend-delta.flat { color: var(--text-muted); background: rgba(139, 148, 158, 0.12); }
+.trend-compare { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.trend-spark { display: block; width: 100%; height: 34px; margin-top: 8px; }
+.trend-spark path { fill: none; vector-effect: non-scaling-stroke; }
+.trend-spark .trend-spark-cur { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.trend-spark .trend-spark-prev {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+}
+/* Current-period line matches the card's positional value colour */
+.trend-grid .kpi-card:nth-child(1) .trend-spark-cur { stroke: var(--accent); }
+.trend-grid .kpi-card:nth-child(2) .trend-spark-cur { stroke: var(--green); }
+.trend-grid .kpi-card:nth-child(3) .trend-spark-cur { stroke: var(--purple); }
+.trend-grid .kpi-card:nth-child(4) .trend-spark-cur { stroke: var(--orange); }
+.trend-sub { margin-top: 6px; }
+
 .kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
 .kpi-card:nth-child(2) .kpi-value { color: var(--green); }
 .kpi-card:nth-child(3) .kpi-value { color: var(--purple); }

@@ -43,7 +43,9 @@ function post(path) {
 describe('API endpoints', () => {
   beforeAll(async () => {
     // Use dynamic port to avoid conflicts
-    const port = 5010 + Math.floor(Math.random() * 1000);
+    // High range avoids well-known occupied ports (5900 = macOS Screen Sharing
+    // sat inside the old 5010–6009 range and made this hook time out flakily)
+    const port = 15010 + Math.floor(Math.random() * 1000);
     baseUrl = `http://localhost:${port}`;
 
     const { startServer } = require('../server');
@@ -73,6 +75,28 @@ describe('API endpoints', () => {
     const { status, body } = await get('/api/daily');
     expect(status).toBe(200);
     expect(Array.isArray(body)).toBe(true);
+  });
+
+  it('GET /api/trends returns now-anchored trend comparisons', async () => {
+    const { status, body } = await get('/api/trends');
+    expect(status).toBe(200);
+    expect(body).toHaveProperty('generatedAt');
+    for (const k of ['today', 'week', 'month', 'rolling7']) {
+      expect(body[k]).toHaveProperty('current');
+      expect(body[k]).toHaveProperty('prevSame');
+      expect(body[k]).toHaveProperty('prevFull');
+      expect(body[k].current).toHaveProperty('tokens');
+      expect(body[k].current).toHaveProperty('tokensNoCache');
+      expect(body[k].current).toHaveProperty('cost');
+      expect(body[k].current).toHaveProperty('costNoCache');
+      expect(body[k].current).toHaveProperty('messages');
+      expect(body[k].current).toHaveProperty('activeMin');
+      expect(body[k].series).toHaveProperty('cur');
+      expect(body[k].series).toHaveProperty('prev');
+    }
+    expect(body.today.series.cur.length).toBe(24);
+    expect(body.week.series.cur.length).toBe(7);
+    expect(typeof body.month.elapsedFraction).toBe('number');
   });
 
   it('GET /api/daily-by-model returns model breakdown', async () => {

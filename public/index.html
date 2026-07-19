@@ -331,6 +331,68 @@
         </div>
       </div>
 
+      <!-- Usage trends: now-anchored comparisons, independent of the period filter -->
+      <div class="trend-section" id="trend-section" style="display:none;">
+        <div class="trend-header">
+          <h3 data-i18n="trendsTitle">📈 Nutzungs-Trends</h3>
+          <span class="trend-note" data-i18n="trendsNote">live · unabhängig vom Zeitraumfilter</span>
+        </div>
+        <div class="kpi-grid trend-grid">
+          <div class="kpi-card trend-card" id="trend-card-today">
+            <div class="trend-top">
+              <div class="kpi-label" data-i18n="trendToday">Heute</div>
+              <div class="trend-delta" id="trend-delta-today">–</div>
+            </div>
+            <div class="kpi-value" id="trend-value-today">-</div>
+            <div class="trend-compare" id="trend-compare-today"></div>
+            <svg class="trend-spark" id="trend-spark-today" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+              <path class="trend-spark-prev" d=""></path>
+              <path class="trend-spark-cur" d=""></path>
+            </svg>
+            <div class="kpi-sub trend-sub" id="trend-sub-today"></div>
+          </div>
+          <div class="kpi-card trend-card" id="trend-card-week">
+            <div class="trend-top">
+              <div class="kpi-label" data-i18n="trendWeek">Diese Woche</div>
+              <div class="trend-delta" id="trend-delta-week">–</div>
+            </div>
+            <div class="kpi-value" id="trend-value-week">-</div>
+            <div class="trend-compare" id="trend-compare-week"></div>
+            <svg class="trend-spark" id="trend-spark-week" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+              <path class="trend-spark-prev" d=""></path>
+              <path class="trend-spark-cur" d=""></path>
+            </svg>
+            <div class="kpi-sub trend-sub" id="trend-sub-week"></div>
+          </div>
+          <div class="kpi-card trend-card" id="trend-card-month">
+            <div class="trend-top">
+              <div class="kpi-label" data-i18n="trendMonth">Dieser Monat</div>
+              <div class="trend-delta" id="trend-delta-month">–</div>
+            </div>
+            <div class="kpi-value" id="trend-value-month">-</div>
+            <div class="trend-compare" id="trend-compare-month"></div>
+            <svg class="trend-spark" id="trend-spark-month" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+              <path class="trend-spark-prev" d=""></path>
+              <path class="trend-spark-cur" d=""></path>
+            </svg>
+            <div class="kpi-sub trend-sub" id="trend-sub-month"></div>
+          </div>
+          <div class="kpi-card trend-card" id="trend-card-rolling7">
+            <div class="trend-top">
+              <div class="kpi-label" data-i18n="trendRolling">Letzte 7 Tage</div>
+              <div class="trend-delta" id="trend-delta-rolling7">–</div>
+            </div>
+            <div class="kpi-value" id="trend-value-rolling7">-</div>
+            <div class="trend-compare" id="trend-compare-rolling7"></div>
+            <svg class="trend-spark" id="trend-spark-rolling7" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+              <path class="trend-spark-prev" d=""></path>
+              <path class="trend-spark-cur" d=""></path>
+            </svg>
+            <div class="kpi-sub trend-sub" id="trend-sub-rolling7"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label" data-i18n="totalTokens" data-tooltip-key="tooltipTotalTokens">Tokens gesamt</div>

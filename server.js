@@ -1099,6 +1099,12 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getHourlyWeekday(query.from, query.to));
   }
 
+  // Usage-trend comparisons (today/week/month/rolling-7d vs previous period).
+  // Anchored at "now" — deliberately independent of the period filter.
+  if (pathname === '/api/trends') {
+    return sendJSON(res, agg.getTrends());
+  }
+
   // Insights API endpoints
   if (pathname === '/api/stop-reasons') {
     return sendJSON(res, agg.getStopReasons(query.from, query.to));
