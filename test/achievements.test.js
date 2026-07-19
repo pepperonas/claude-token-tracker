@@ -236,6 +236,57 @@ describe('Achievements', () => {
     });
   });
 
+  describe('backfillAchievements', () => {
+    const Aggregator = require('../lib/aggregator');
+    const { backfillAchievements } = require('../lib/achievements');
+
+    const mkMsg = (id, y, mo, d, h, min, tokens = 100) => ({
+      id,
+      timestamp: new Date(y, mo, d, h, min, 0).toISOString(),
+      model: 'claude-sonnet-5', sessionId: 's-' + d, project: 'proj',
+      inputTokens: tokens, outputTokens: tokens, cacheReadTokens: 0, cacheCreateTokens: 0,
+      tools: ['Read'], linesAdded: 0, linesRemoved: 0, linesWritten: 0
+    });
+
+    it('dates unlocks on the day they were historically earned, not today', () => {
+      const agg = new Aggregator();
+      const msgs = [];
+      // Day 1 (2026-01-05): 12 small messages → messages_10 etc. unlock here
+      for (let i = 0; i < 12; i++) msgs.push(mkMsg('d1_' + i, 2026, 0, 5, 10, i));
+      // Day 2 (2026-01-06): heavy day → tokens_1m unlocks here
+      msgs.push(mkMsg('d2_1', 2026, 0, 6, 12, 0, 600000));
+      // Day 3 (2026-01-07): small day
+      msgs.push(mkMsg('d3_1', 2026, 0, 7, 9, 0));
+      agg.addMessages(msgs);
+
+      const calls = { clearedUser: null, entries: null };
+      const db = {
+        clearAchievementsForUser: (uid) => { calls.clearedUser = uid; },
+        unlockAchievementsBatchAt: (_uid, entries) => { calls.entries = entries; }
+      };
+
+      const res = backfillAchievements(agg, 0, db);
+
+      expect(calls.clearedUser).toBe(0);
+      expect(res.days).toBe(3);
+      expect(res.from).toBe('2026-01-05');
+      expect(res.to).toBe('2026-01-07');
+      expect(res.unlocked).toBe(calls.entries.length);
+      expect(res.unlocked).toBeGreaterThan(0);
+
+      const byKey = Object.fromEntries(calls.entries.map(e => [e.key, e.at]));
+      // messages_10 was reached on day 1 — must carry day 1's date
+      expect(new Date(byKey['messages_10']).getDate()).toBe(5);
+      // tokens_1m only after day 2's heavy message
+      expect(new Date(byKey['tokens_1m']).getDate()).toBe(6);
+      // NOTHING may be stamped with today's date (the bug being fixed)
+      const today = new Date().toISOString().slice(0, 10);
+      for (const e of calls.entries) {
+        expect(e.at.slice(0, 10)).not.toBe(today);
+      }
+    });
+  });
+
   describe('getAchievementsResponse', () => {
     it('should have emoji field on all achievements', () => {
       for (const a of ACHIEVEMENTS) {

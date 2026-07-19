@@ -1832,11 +1832,16 @@ function _renderProjectModelsChart(models) {
 // Close modal on overlay click or Escape
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (document.getElementById('project-merge-dialog')?.style.display === 'flex') {
+  if (document.getElementById('ach-day-dialog')?.style.display === 'flex') {
+    closeAchievementsDay();
+  } else if (document.getElementById('project-merge-dialog')?.style.display === 'flex') {
     closeProjectMerge();
   } else if (document.getElementById('project-detail-dialog').style.display !== 'none') {
     closeProjectDetail();
   }
+});
+document.getElementById('ach-day-dialog')?.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeAchievementsDay();
 });
 document.getElementById('project-detail-dialog')?.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) closeProjectDetail();
@@ -2061,9 +2066,96 @@ function formatAchDate(isoStr) {
   return fmt === 'de' ? `${dd}.${mm}.${yy}` : `${mm}/${dd}/${yy}`;
 }
 
+// Day-detail dialog: exactly which achievements unlocked on a timeline day
+function openAchievementsDay(date) {
+  const dlg = document.getElementById('ach-day-dialog');
+  if (!dlg || !_achievementsData) return;
+  const items = _achievementsData
+    .filter(a => a.unlocked && a.unlockedAt && a.unlockedAt.slice(0, 10) === date)
+    .sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9));
+  if (!items.length) return;
+
+  document.getElementById('ach-day-title').textContent =
+    t('achDayTitle').replace('{date}', formatDateWithWeekday(date, true));
+  const points = items.reduce((s, a) => s + (a.points || 0), 0);
+  document.getElementById('ach-day-summary').textContent =
+    t('achDaySummary').replace('{count}', items.length).replace('{points}', formatNumber(points));
+
+  const list = document.getElementById('ach-day-list');
+  list.textContent = '';
+  for (const ach of items) {
+    const row = document.createElement('div');
+    row.className = 'ach-day-item tier-' + ach.tier;
+    const icon = document.createElement('span');
+    icon.className = 'ach-day-icon';
+    icon.textContent = ach.emoji || '🏆';
+    const info = document.createElement('div');
+    info.className = 'ach-day-info';
+    const name = document.createElement('div');
+    name.className = 'ach-day-name';
+    name.textContent = t('ach_' + ach.key) || ach.key;
+    const desc = document.createElement('div');
+    desc.className = 'ach-day-desc';
+    desc.textContent = t('ach_' + ach.key + '_desc') || '';
+    info.appendChild(name);
+    info.appendChild(desc);
+    const meta = document.createElement('div');
+    meta.className = 'ach-day-meta';
+    const tier = document.createElement('span');
+    tier.className = 'ach-day-tier tier-' + ach.tier;
+    tier.textContent = ach.tier;
+    const pts = document.createElement('span');
+    pts.className = 'ach-day-pts';
+    pts.textContent = (ach.points || 0) + ' pts';
+    meta.appendChild(tier);
+    meta.appendChild(pts);
+    row.appendChild(icon);
+    row.appendChild(info);
+    row.appendChild(meta);
+    list.appendChild(row);
+  }
+  dlg.style.display = 'flex';
+}
+
+function closeAchievementsDay() {
+  const dlg = document.getElementById('ach-day-dialog');
+  if (dlg) dlg.style.display = 'none';
+}
+
+// Recompute all achievements with historical (backdated) unlock dates
+async function recomputeAchievements() {
+  if (!confirm(t('achRecomputeConfirm'))) return;
+  const btn = document.getElementById('ach-recompute-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
+  try {
+    const res = await fetch('/api/achievements/recompute', { method: 'POST' });
+    const data = await res.json();
+    if (data && data.recomputed) {
+      alert(t('achRecomputeDone').replace('{count}', data.unlocked).replace('{days}', data.days));
+      await loadAchievements();
+    } else {
+      alert((data && data.error) || 'Error');
+    }
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = t('achRecompute'); }
+  }
+}
+
 async function loadAchievements() {
   const data = await api('achievements');
   _achievementsData = data;
+
+  // Recompute button: hidden in demo mode, bound once
+  const recomputeBtn = document.getElementById('ach-recompute-btn');
+  if (recomputeBtn) {
+    recomputeBtn.style.display = state.demoMode ? 'none' : '';
+    if (!recomputeBtn._bound) {
+      recomputeBtn._bound = true;
+      recomputeBtn.addEventListener('click', recomputeAchievements);
+    }
+  }
 
   const unlockedList = data.filter(a => a.unlocked);
   const unlocked = unlockedList.length;

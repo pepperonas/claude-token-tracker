@@ -1984,6 +1984,53 @@ html.js .uheat-anim .uheat-legend {
 .achievement-card.unlocked {
   opacity: 1;
 }
+/* Achievements day-detail dialog (click a timeline bar) */
+.ach-day-summary {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.ach-day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.ach-day-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  border-left-width: 3px;
+}
+.ach-day-item.tier-bronze { border-left-color: #cd7f32; }
+.ach-day-item.tier-silver { border-left-color: #c0c0c0; }
+.ach-day-item.tier-gold { border-left-color: #ffd700; }
+.ach-day-item.tier-platinum { border-left-color: var(--accent); }
+.ach-day-item.tier-diamond { border-left-color: var(--purple); }
+.ach-day-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+.ach-day-info { flex: 1; min-width: 0; }
+.ach-day-name { font-size: 13px; font-weight: 600; }
+.ach-day-desc { font-size: 11px; color: var(--text-muted); }
+.ach-day-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.ach-day-tier {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.ach-day-tier.tier-bronze { color: #cd7f32; }
+.ach-day-tier.tier-silver { color: #c0c0c0; }
+.ach-day-tier.tier-gold { color: #ffd700; }
+.ach-day-tier.tier-platinum { color: var(--accent); }
+.ach-day-tier.tier-diamond { color: var(--purple); }
+.ach-day-pts { font-size: 12px; font-weight: 700; }
+.ach-recompute-btn { margin-left: auto; }
+
 .achievement-card.unlocked.tier-bronze { border-left: 3px solid #cd7f32; }
 .achievement-card.unlocked.tier-silver { border-left: 3px solid #c0c0c0; }
 .achievement-card.unlocked.tier-gold { border-left: 3px solid #ffd700; }

@@ -13,7 +13,7 @@ const {
   initDB, insertMessages, streamAllMessages, getParseState, setParseState, closeDB,
   insertMessagesForUser, streamMessagesForUser,
   regenerateApiKey, cleanExpiredSessions, findUserByApiKey,
-  getUnlockedAchievements, unlockAchievementsBatch,
+  getUnlockedAchievements, unlockAchievementsBatch, unlockAchievementsBatchAt, clearAchievementsForUser, replaceAchievementsForUser,
   getMetadata, setMetadata,
   insertRateLimitEvents, insertRateLimitEventsForUser,
   getAllRateLimitEvents, getRateLimitEventsForUser,
@@ -137,13 +137,21 @@ if (!MULTI_USER) {
 }
 
 // DB helper for achievements module
-const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch };
+const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch, unlockAchievementsBatchAt, clearAchievementsForUser, replaceAchievementsForUser };
 
-// 5. Check achievements on startup (single-user)
+// 5. Check achievements on startup (single-user). A FRESH install with an
+// existing Claude history would bulk-unlock hundreds of achievements stamped
+// "now" — replay the history instead so unlock dates land on the day each
+// condition was actually first met (no distorted timeline).
 if (!MULTI_USER) {
   try {
-    const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
-    if (newAch.length > 0) console.log(`Unlocked ${newAch.length} new achievements`);
+    if (getUnlockedAchievements(0).length === 0 && aggregator.messageCount > 0) {
+      const res = achievements.backfillAchievements(aggregator, 0, achievementsDb);
+      console.log(`Backfilled ${res.unlocked} achievements with historical dates across ${res.days} days (${res.from} – ${res.to})`);
+    } else {
+      const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
+      if (newAch.length > 0) console.log(`Unlocked ${newAch.length} new achievements`);
+    }
   } catch (e) { console.error('Achievement check failed on startup:', e.message); }
 }
 
@@ -1236,6 +1244,21 @@ const server = http.createServer((req, res) => {
       sendJSON(res, { error: err.message }, 500);
     });
     return;
+  }
+
+  // Recompute all achievements with historical unlock dates (replays the
+  // message history day by day; rewrites the user's achievements table).
+  if (pathname === '/api/achievements/recompute' && req.method === 'POST') {
+    const achUserId = MULTI_USER ? user.id : 0;
+    // Always replay the FULL (all-device) history — a device-filtered replay
+    // would produce different unlock dates per device view.
+    const fullAgg = MULTI_USER ? aggregatorCache.get(user.id, null) : aggregator;
+    try {
+      const result = achievements.backfillAchievements(fullAgg, achUserId, achievementsDb);
+      return sendJSON(res, { recomputed: true, ...result });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
   }
 
   if (pathname === '/api/rebuild' && req.method === 'POST') {

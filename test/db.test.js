@@ -79,6 +79,20 @@ describe('db', () => {
       expect(retrieved.length).toBe(SAMPLE_MESSAGES.length);
     });
 
+    it('unlockAchievementsBatchAt stores explicit timestamps; clear removes them', () => {
+      const { unlockAchievementsBatchAt, clearAchievementsForUser, getUnlockedAchievements } = require('../lib/db');
+      unlockAchievementsBatchAt(0, [
+        { key: 'tokens_1k', at: '2026-01-05T10:11:00.000Z' },
+        { key: 'messages_10', at: '2026-01-06T12:00:00.000Z' }
+      ]);
+      const rows = getUnlockedAchievements(0);
+      const map = Object.fromEntries(rows.map(r => [r.achievement_key, r.unlocked_at]));
+      expect(map['tokens_1k']).toBe('2026-01-05T10:11:00.000Z');
+      expect(map['messages_10']).toBe('2026-01-06T12:00:00.000Z');
+      clearAchievementsForUser(0);
+      expect(getUnlockedAchievements(0).length).toBe(0);
+    });
+
     it('streamAllMessages yields the same messages as getAllMessages', () => {
       const { streamAllMessages } = require('../lib/db');
       insertMessages(SAMPLE_MESSAGES, () => 0);

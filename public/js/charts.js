@@ -1431,6 +1431,17 @@ function createAchievementsTimelineChart(canvasId, data) {
       animation: chartAnimateNext ? undefined : false,
       responsive: true,
       maintainAspectRatio: false,
+      // Click a bar → show exactly which achievements unlocked that day
+      onClick: (_evt, elements) => {
+        if (!elements.length || typeof openAchievementsDay !== 'function') return;
+        const d = data[elements[0].index];
+        if (d) openAchievementsDay(d.date);
+      },
+      onHover: (evt, elements) => {
+        if (evt.native && evt.native.target) {
+          evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        }
+      },
       plugins: {
         tooltip: {
           callbacks: {

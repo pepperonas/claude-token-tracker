@@ -77,6 +77,28 @@ describe('API endpoints', () => {
     expect(Array.isArray(body)).toBe(true);
   });
 
+  it('POST /api/achievements/recompute backdates unlocks to historical days', async () => {
+    const { status, body } = await post('/api/achievements/recompute');
+    expect(status).toBe(200);
+    expect(body.recomputed).toBe(true);
+    expect(body.unlocked).toBeGreaterThan(0);
+    expect(body.days).toBeGreaterThan(0);
+    // Unlocks must be SPREAD across the history (the bug was: everything
+    // stamped on one init day). Achievements genuinely earned today may
+    // legitimately carry today's date, so assert distribution instead.
+    const { status: s2, body: achs } = await get('/api/achievements');
+    expect(s2).toBe(200);
+    const unlockedDays = achs.filter(x => x.unlocked).map(a => a.unlockedAt.slice(0, 10));
+    const distinct = new Set(unlockedDays);
+    expect(distinct.size).toBeGreaterThan(1);
+    const today = new Date().toISOString().slice(0, 10);
+    expect([...distinct].sort()[0] < today).toBe(true);
+    // No single day may hold ALL unlocks
+    const counts = {};
+    for (const d of unlockedDays) counts[d] = (counts[d] || 0) + 1;
+    expect(Math.max(...Object.values(counts))).toBeLessThan(unlockedDays.length);
+  });
+
   it('GET /api/trends returns now-anchored trend comparisons', async () => {
     const { status, body } = await get('/api/trends');
     expect(status).toBe(200);
