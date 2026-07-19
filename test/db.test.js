@@ -78,6 +78,16 @@ describe('db', () => {
       const retrieved = getAllMessages();
       expect(retrieved.length).toBe(SAMPLE_MESSAGES.length);
     });
+
+    it('streamAllMessages yields the same messages as getAllMessages', () => {
+      const { streamAllMessages } = require('../lib/db');
+      insertMessages(SAMPLE_MESSAGES, () => 0);
+      const streamed = [...streamAllMessages()];
+      expect(streamed).toEqual(getAllMessages());
+      expect(streamed.length).toBe(SAMPLE_MESSAGES.length);
+      expect(streamed[0].tools).toContain('Read');
+      expect(streamed[0].toolCounts.Read).toBeGreaterThanOrEqual(1);
+    });
   });
 
   describe('parse state', () => {

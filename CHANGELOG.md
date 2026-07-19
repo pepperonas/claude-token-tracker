@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased] - 2026-07-19
+
+### Performance
+- **~75% weniger RAM** (509 MB → ~130 MB nach Start, gemessen mit 176k Messages). Vier Ursachen behoben:
+  - **SQLite mmap entfernt** (`mmap_size 256MB` → 0): die inzwischen 100+ MB große DB wurde komplett in den Prozess gemappt und zählte voll ins RSS (~160 MB scheinbarer Verbrauch), obwohl alle Analytics aus dem In-Memory-Aggregator kommen. Der 16-MB-Default-Page-Cache reicht für Bootstrap-Scan und inkrementelle Writes
+  - **Streaming-Bootstrap** (`streamAllMessages()`/`streamMessagesForUser()` via `stmt.iterate()`): der Start materialisierte zwei volle ~175k-Objekt-Arrays (Rows + gemappte Messages) gleichzeitig — dieser transiente Peak ließ den V8-Heap um hunderte MB wachsen, die nie ans OS zurückgingen. Messages fließen jetzt einzeln in den Aggregator; das Dedup-Set für neue JSONL-Messages nutzt die vorhandene Aggregator-ID-Map (`hasMessage()`) statt eines zweiten 175k-Sets
+  - **String-Interning im Aggregator** (`_addMessage`-Choke-Point): project/model/sessionId/stopReason/Tool-Namen/`_date` teilen sich eine Kopie pro Wert statt einer frischen Allokation pro Message (−17 MB Live-Heap)
+  - **Einmaliger Voll-GC 10s nach dem Listen** (via `v8.setFlagsFromString('--expose-gc')`): kompaktiert den Startup-Churn und gibt die Pages ans OS zurück — auf einem idle Server läuft die memory-reducing Major-GC sonst lange nicht
+- Interne Query-Loops iterieren `_messageById.values()` direkt — der `messages`-Getter allozierte pro API-Request ein frisches ~175k-Element-Array (~1,4 MB Garbage pro Request)
+- **WAL-Checkpoint (TRUNCATE) beim Start**: die WAL war unter den Dauer-Writes des Watchers auf 57 MB angewachsen (jeder Read konsultiert den WAL-Index); jetzt beim Start auf die Hauptdatei zurückgefaltet (57 MB → <3 MB)
+
+### Tests
+- Suite auf **242** erweitert (streamAllMessages ≡ getAllMessages, `hasMessage`/`messageCount`, Generator-Input für `addMessages`, Werterhaltung durchs Interning)
+
 ## [Unreleased] - 2026-07-13
 
 ### Changed

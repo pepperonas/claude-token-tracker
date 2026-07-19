@@ -10,8 +10,8 @@ const { AggregatorCache } = require('./lib/aggregator');
 const { calculateCost, getPricingMeta } = require('./lib/pricing');
 const pricingFetcher = require('./lib/pricing-fetcher');
 const {
-  initDB, insertMessages, getAllMessages, getParseState, setParseState, closeDB,
-  insertMessagesForUser, getMessagesForUser,
+  initDB, insertMessages, streamAllMessages, getParseState, setParseState, closeDB,
+  insertMessagesForUser, streamMessagesForUser,
   regenerateApiKey, cleanExpiredSessions, findUserByApiKey,
   getUnlockedAchievements, unlockAchievementsBatch,
   getMetadata, setMetadata,
@@ -84,10 +84,12 @@ let parseState = {};
 if (!MULTI_USER) {
   // Load the project merge map before any messages so aliases fold during build.
   aggregator.setProjectAliases(getProjectAliasMap(0));
-  const existingMessages = getAllMessages();
-  if (existingMessages.length > 0) {
-    aggregator.addMessages(existingMessages);
-    console.log(`Loaded ${existingMessages.length} messages from database`);
+  // Stream messages straight into the aggregator instead of materializing the
+  // full array — the old peak (two ~150k-object arrays alive at once) grew the
+  // V8 heap by hundreds of MB that were never returned to the OS.
+  aggregator.addMessages(streamAllMessages());
+  if (aggregator.messageCount > 0) {
+    console.log(`Loaded ${aggregator.messageCount} messages from database`);
   }
 
   const existingRateLimitEvents = getAllRateLimitEvents();
@@ -103,8 +105,9 @@ if (!MULTI_USER) {
   parseState = newParseState;
 
   if (newMessages.length > 0) {
-    const existingIds = new Set(existingMessages.map(m => m.id));
-    const trulyNew = newMessages.filter(m => !existingIds.has(m.id));
+    // The aggregator already contains every DB message at this point, so its
+    // ID map doubles as the dedup set (no extra 150k-entry Set needed).
+    const trulyNew = newMessages.filter(m => !aggregator.hasMessage(m.id));
     if (trulyNew.length > 0) {
       insertMessages(trulyNew, calculateCost);
       aggregator.addMessages(trulyNew);
@@ -161,7 +164,9 @@ if (!MULTI_USER) {
 }
 
 // Multi-user aggregator cache
-const aggregatorCache = MULTI_USER ? new AggregatorCache(getMessagesForUser, getRateLimitEventsForUser, getProjectAliasMap) : null;
+// Streaming loader keeps the per-user cache build from materializing the full
+// message array (same RSS-peak reasoning as the single-user bootstrap).
+const aggregatorCache = MULTI_USER ? new AggregatorCache(streamMessagesForUser, getRateLimitEventsForUser, getProjectAliasMap) : null;
 
 // Re-apply the project merge map after a merge/un-merge and refresh caches so
 // the change is visible immediately across dashboard + public shares.
@@ -172,7 +177,7 @@ function applyProjectMergeChange(userId) {
   } else {
     aggregator.setProjectAliases(getProjectAliasMap(0));
     aggregator.reset();
-    aggregator.addMessages(getAllMessages());
+    aggregator.addMessages(streamAllMessages());
     aggregator.addRateLimitEvents(getAllRateLimitEvents());
   }
 }
@@ -798,7 +803,7 @@ const server = http.createServer((req, res) => {
     const shareAgg = MULTI_USER ? (() => {
       const now = Date.now();
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
-        const { getAllMessages } = require('./lib/db');
+        const { streamAllMessages } = require('./lib/db');
         const a = new Aggregator();
         // SECURITY: do NOT apply a cross-user alias union here. This aggregator
         // spans every user's messages and backs the global/admin shares; folding
@@ -806,7 +811,7 @@ const server = http.createServer((req, res) => {
         // resolution for everyone's shares (cross-tenant poisoning). Shares resolve
         // to the literal project name in multi-user mode. Per-user merges only
         // affect each user's own (scoped) dashboard aggregator.
-        a.addMessages(getAllMessages());
+        a.addMessages(streamAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
       }
@@ -945,7 +950,7 @@ const server = http.createServer((req, res) => {
     const shareAgg = MULTI_USER ? (() => {
       const now = Date.now();
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
-        const { getAllMessages } = require('./lib/db');
+        const { streamAllMessages } = require('./lib/db');
         const a = new Aggregator();
         // SECURITY: do NOT apply a cross-user alias union here. This aggregator
         // spans every user's messages and backs the global/admin shares; folding
@@ -953,7 +958,7 @@ const server = http.createServer((req, res) => {
         // resolution for everyone's shares (cross-tenant poisoning). Shares resolve
         // to the literal project name in multi-user mode. Per-user merges only
         // affect each user's own (scoped) dashboard aggregator.
-        a.addMessages(getAllMessages());
+        a.addMessages(streamAllMessages());
         global._shareAggCache = a;
         global._shareAggCacheTime = now;
       }
@@ -1651,6 +1656,20 @@ function startServer(port) {
     server.listen(p, () => {
       console.log(`Dashboard: http://localhost:${p}`);
       console.log(`API: http://localhost:${p}/api/overview`);
+      // One-shot full GC shortly after bootstrap: the startup load/parse churns
+      // through hundreds of MB of short-lived objects and V8 only returns those
+      // pages to the OS after a memory-reducing major GC — which may otherwise
+      // not run for a long time on an idle server. Compacting once here drops
+      // the resident set to roughly the live-data size. No-op if it fails.
+      setTimeout(() => {
+        try {
+          const v8 = require('v8');
+          v8.setFlagsFromString('--expose-gc');
+          const gc = require('vm').runInNewContext('gc');
+          gc();
+          v8.setFlagsFromString('--no-expose-gc');
+        } catch { /* best effort */ }
+      }, 10_000).unref();
       resolve(server);
     });
   });

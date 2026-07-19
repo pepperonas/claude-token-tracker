@@ -522,6 +522,56 @@ describe('aggregator', () => {
     });
   });
 
+  describe('hasMessage / messageCount', () => {
+    it('reports aggregated ids without allocating the messages array', () => {
+      expect(agg.messageCount).toBeGreaterThan(0);
+      expect(agg.messageCount).toBe(agg.messages.length);
+      const anyId = agg.messages[0].id;
+      expect(agg.hasMessage(anyId)).toBe(true);
+      expect(agg.hasMessage('definitely-not-a-message-id')).toBe(false);
+    });
+  });
+
+  describe('addMessages accepts iterables', () => {
+    it('aggregates messages from a generator identically to an array', () => {
+      const msgs = [
+        { id: 'gen_1', timestamp: '2026-02-20T10:00:00Z', model: 'claude-sonnet-5', sessionId: 'gs1', project: 'genproj', inputTokens: 10, outputTokens: 20, cacheReadTokens: 0, cacheCreateTokens: 0, tools: ['Read'], linesAdded: 1, linesRemoved: 0, linesWritten: 0 },
+        { id: 'gen_2', timestamp: '2026-02-20T10:01:00Z', model: 'claude-sonnet-5', sessionId: 'gs1', project: 'genproj', inputTokens: 30, outputTokens: 40, cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], linesAdded: 0, linesRemoved: 0, linesWritten: 0 }
+      ];
+      const fromArray = new Aggregator();
+      fromArray.addMessages(msgs.map(m => ({ ...m, tools: [...m.tools] })));
+      const fromGen = new Aggregator();
+      fromGen.addMessages((function* () { for (const m of msgs) yield { ...m, tools: [...m.tools] }; })());
+      expect(fromGen.messageCount).toBe(2);
+      expect(fromGen.getOverview()).toEqual(fromArray.getOverview());
+    });
+  });
+
+  describe('string interning', () => {
+    it('preserves all string values unchanged through the interning pool', () => {
+      const fresh = new Aggregator();
+      // Fresh non-literal strings with equal values (as SQLite/JSONL produce them)
+      const mk = (i) => ({
+        id: 'int_' + i,
+        timestamp: '2026-02-20T10:0' + i + ':00Z',
+        model: ('claude-sonnet-5-x').slice(0, 15),
+        sessionId: ('sess-shared-x').slice(0, 11),
+        project: ('proj-shared-x').slice(0, 11),
+        inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheCreateTokens: 0,
+        tools: [('Read-x').slice(0, 4)], linesAdded: 0, linesRemoved: 0, linesWritten: 0
+      });
+      fresh.addMessages([mk(1), mk(2)]);
+      const [a, b] = fresh.messages;
+      expect(a.project).toBe('proj-shared');
+      expect(b.project).toBe('proj-shared');
+      expect(a.model).toBe('claude-sonnet-5');
+      expect(a.sessionId).toBe('sess-shared');
+      expect(a.tools[0]).toBe('Read');
+      expect(fresh.getOverview().messages).toBe(2);
+      expect(fresh.getProjects()[0].name).toBe('proj-shared');
+    });
+  });
+
   describe('streaming dedup', () => {
     it('deduplicates messages with the same id (last wins)', () => {
       const fresh = new Aggregator();
