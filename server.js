@@ -138,6 +138,8 @@ if (!MULTI_USER) {
 
 // DB helper for achievements module
 const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch, unlockAchievementsBatchAt, clearAchievementsForUser, replaceAchievementsForUser };
+// Metadata-flag prefix for the one-time historical achievements backfill (per user)
+const ACH_BACKFILL_FLAG = 'ach_backfill_v1_';
 
 // 5. Check achievements on startup (single-user). A FRESH install with an
 // existing Claude history would bulk-unlock hundreds of achievements stamped
@@ -145,8 +147,11 @@ const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch, unloc
 // condition was actually first met (no distorted timeline).
 if (!MULTI_USER) {
   try {
-    if (getUnlockedAchievements(0).length === 0 && aggregator.messageCount > 0) {
+    const needsBackfill = aggregator.messageCount > 0 &&
+      (getUnlockedAchievements(0).length === 0 || !getMetadata(ACH_BACKFILL_FLAG + 0));
+    if (needsBackfill) {
       const res = achievements.backfillAchievements(aggregator, 0, achievementsDb);
+      setMetadata(ACH_BACKFILL_FLAG + 0, new Date().toISOString());
       console.log(`Backfilled ${res.unlocked} achievements with historical dates across ${res.days} days (${res.from} – ${res.to})`);
     } else {
       const newAch = achievements.checkAchievements(aggregator, 0, achievementsDb);
@@ -1255,6 +1260,7 @@ const server = http.createServer((req, res) => {
     const fullAgg = MULTI_USER ? aggregatorCache.get(user.id, null) : aggregator;
     try {
       const result = achievements.backfillAchievements(fullAgg, achUserId, achievementsDb);
+      setMetadata(ACH_BACKFILL_FLAG + achUserId, new Date().toISOString());
       return sendJSON(res, { recomputed: true, ...result });
     } catch (e) {
       return sendJSON(res, { error: e.message }, 500);
@@ -1627,6 +1633,19 @@ const server = http.createServer((req, res) => {
   // Achievements endpoint
   if (pathname === '/api/achievements') {
     const userId = MULTI_USER ? user.id : 0;
+    // One-time migration: users whose unlocks predate the historical backfill
+    // carry hundreds of achievements stamped on their first init/sync day.
+    // Recompute once from history, then never again (metadata flag).
+    if (!getMetadata(ACH_BACKFILL_FLAG + userId)) {
+      try {
+        const fullAgg = MULTI_USER ? aggregatorCache.get(user.id, null) : aggregator;
+        if (fullAgg.messageCount > 0) {
+          const res2 = achievements.backfillAchievements(fullAgg, userId, achievementsDb);
+          setMetadata(ACH_BACKFILL_FLAG + userId, new Date().toISOString());
+          console.log(`Achievements backfill migration (user ${userId}): ${res2.unlocked} unlocks re-dated across ${res2.days} days`);
+        }
+      } catch (e) { console.error('Achievements backfill migration failed:', e.message); }
+    }
     return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb));
   }
 
