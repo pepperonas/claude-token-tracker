@@ -138,8 +138,10 @@ if (!MULTI_USER) {
 
 // DB helper for achievements module
 const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch, unlockAchievementsBatchAt, clearAchievementsForUser, replaceAchievementsForUser };
-// Metadata-flag prefix for the one-time historical achievements backfill (per user)
-const ACH_BACKFILL_FLAG = 'ach_backfill_v1_';
+// Metadata-flag prefix for the one-time historical achievements backfill (per
+// user). v2: ratio/average achievements gated on tier-scaled minimum active
+// days — bumping the version re-migrates existing data once.
+const ACH_BACKFILL_FLAG = 'ach_backfill_v2_';
 
 // 5. Check achievements on startup (single-user). A FRESH install with an
 // existing Claude history would bulk-unlock hundreds of achievements stamped

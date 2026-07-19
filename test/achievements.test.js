@@ -279,6 +279,15 @@ describe('Achievements', () => {
       expect(new Date(byKey['messages_10']).getDate()).toBe(5);
       // tokens_1m only after day 2's heavy message
       expect(new Date(byKey['tokens_1m']).getDate()).toBe(6);
+      // Ratio achievements are sample-gated: with only 3 active days no
+      // gold+ ratio badge may unlock, and bronze/silver ones not before day 3
+      for (const e of calls.entries) {
+        const def = ACHIEVEMENTS.find(a => a.key === e.key);
+        if (/^(avg_|cache_rate_|deletion_ratio_|output_ratio_|tokens_per_msg_|tokens_per_dollar_|msgs_per_session_|sessions_per_day_|model_loyal_|model_(opus|sonnet|haiku)_majority)/.test(e.key)) {
+          expect(['bronze', 'silver']).toContain(def.tier);
+          expect(new Date(e.at).getDate()).toBe(7); // 3rd active day
+        }
+      }
       // NOTHING may be stamped with today's date (the bug being fixed)
       const today = new Date().toISOString().slice(0, 10);
       for (const e of calls.entries) {
