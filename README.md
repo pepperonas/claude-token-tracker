@@ -264,6 +264,22 @@ SHARE_ADMIN_KEY=your-64-char-hex-key
 }
 ```
 
+## Data Continuity & Restore
+
+`~/.claude/projects` JSONL is only a **rolling window** — Claude Code prunes old
+session files, so the tracker's SQLite DB (`data/tracker.db`) is the long-term
+store of the full history. Continuity across devices and reinstalls:
+
+- **Hosted (multi-user)**: the sync agent pushes every message to the server;
+  after a machine reset, install the sync agent with a device key from
+  Settings and the same account keeps counting — old history stays intact.
+- **Local backups**: set `BACKUP_PATH` (+ optional `BACKUP_INTERVAL_HOURS`) —
+  atomic `VACUUM INTO` snapshots, auto-pruned to 10 copies.
+- **Full local restore after a reset**: `bash scripts/restore-from-server.sh`
+  pulls a consistent DB snapshot from the hosted server, swaps it in and
+  restarts. Local JSONL is re-parsed on top (deduplicated by message id) and
+  achievements recompute with historical dates automatically.
+
 ## Links
 
 - **Try it**: [tracker.celox.io](https://tracker.celox.io)

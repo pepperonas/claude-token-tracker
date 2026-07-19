@@ -1277,6 +1277,13 @@ const server = http.createServer((req, res) => {
     }
     aggregator.reset();
     const _t0 = Date.now();
+    // Reload the DB-persisted history FIRST. Claude Code prunes old JSONL
+    // session files (on this machine ~2,300 of ~4,000 are already gone), so a
+    // rebuild that only re-parses JSONL silently dropped everything older than
+    // the retention window from the live aggregator until the next restart.
+    // The DB is the long-term store; JSONL re-parse then updates/dedups by id.
+    aggregator.addMessages(streamAllMessages());
+    aggregator.addRateLimitEvents(getAllRateLimitEvents());
     const { messages, parseState: newState } = parseAll({});
     Object.assign(parseState, newState);
     aggregator.addMessages(messages);

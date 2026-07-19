@@ -93,6 +93,25 @@ describe('db', () => {
       expect(getUnlockedAchievements(0).length).toBe(0);
     });
 
+    it('rebuild semantics: DB-only messages survive reset + DB reload + JSONL re-parse', () => {
+      // Claude Code prunes old JSONL — the DB is the long-term store. The
+      // /api/rebuild sequence must therefore reload the DB before re-parsing
+      // JSONL, otherwise pruned history vanishes from the live aggregator.
+      const { streamAllMessages } = require('../lib/db');
+      const Aggregator = require('../lib/aggregator');
+      insertMessages([SAMPLE_MESSAGES[0]], () => 0); // in DB; its JSONL is "pruned"
+      const agg = new Aggregator();
+      agg.addMessages([SAMPLE_MESSAGES[0], SAMPLE_MESSAGES[1]]);
+      // rebuild: reset → reload from DB → re-parse the JSONL that still exists
+      agg.reset();
+      agg.addMessages(streamAllMessages());
+      agg.addMessages([SAMPLE_MESSAGES[1]]);
+      insertMessages([SAMPLE_MESSAGES[1]], () => 0);
+      expect(agg.messageCount).toBe(2);
+      expect(agg.hasMessage(SAMPLE_MESSAGES[0].id)).toBe(true);
+      expect(agg.hasMessage(SAMPLE_MESSAGES[1].id)).toBe(true);
+    });
+
     it('streamAllMessages yields the same messages as getAllMessages', () => {
       const { streamAllMessages } = require('../lib/db');
       insertMessages(SAMPLE_MESSAGES, () => 0);

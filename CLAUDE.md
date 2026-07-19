@@ -134,6 +134,8 @@ LaunchAgent `io.celox.token-tracker` runs the local dashboard on port 5010:
 - Plist: `~/Library/LaunchAgents/io.celox.token-tracker.plist`
 - Logs: `stdout.log` / `stderr.log` in project directory
 - Dashboard: http://localhost:5010
+- Local daily DB backups are enabled via the LaunchAgent plist `EnvironmentVariables` (`BACKUP_PATH=data/backups`, `BACKUP_INTERVAL_HOURS=24`) — the plist runs plain `node server.js` and does NOT load `.env`, so env config for the local instance belongs in the plist.
+- **Data continuity**: `~/.claude` JSONL is a rolling window (Claude Code prunes old session files) — the SQLite DB is the long-term store. After a machine reset, `bash scripts/restore-from-server.sh` pulls a consistent snapshot from the VPS (full synced history), swaps it in and restarts; local JSONL re-parses on top (dedup by message id), achievements recompute via the backfill migration. `/api/rebuild` reloads the DB history BEFORE re-parsing JSONL (+ rate-limit events) — an older version re-parsed only JSONL and silently dropped everything past the retention window until restart.
 - **The LaunchAgent is the ONLY local process manager** — never register `token-tracker` in the local PM2 daemon. A leftover local PM2 entry crash-looped against the LaunchAgent for port 5010 (EADDRINUSE loop, dozens of restarts, SSE/API requests dying mid-flight); removed 2026-07-03 via `pm2 delete token-tracker && pm2 save`. PM2 runs the tracker only on the VPS.
 - Startup takes a few seconds up to ~30s (streams ~175k messages into the aggregator before binding the port) — after a restart, wait for `curl localhost:5010` to return 200 before diagnosing. Expected resident memory: ~130MB after the post-boot GC (10s after listen), transiently ~200MB under heavy API churn.
 
