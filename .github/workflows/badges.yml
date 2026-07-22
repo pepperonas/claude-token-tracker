@@ -1,0 +1,43 @@
+name: Badges
+
+# Keeps the test-count and lines-of-code badges in the READMEs honest: they are
+# recomputed from the actual suite + tracked sources on every push to main and
+# committed back. Hand-maintained numbers always drifted (the badge claimed 238
+# tests while the suite had 255).
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: badges-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run the suite with a JSON report
+        run: npx vitest run --reporter=json --outputFile=.vitest-report.json
+      - name: Recompute badges
+        run: node scripts/update-badges.js --report .vitest-report.json
+      - name: Commit if the numbers moved
+        run: |
+          rm -f .vitest-report.json
+          if [ -z "$(git status --porcelain README.md README_EN.md README_DE.md)" ]; then
+            echo "Badges already up to date."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md README_EN.md README_DE.md
+          git commit -m 'chore: refresh test/LOC badges [skip ci]'
+          git push

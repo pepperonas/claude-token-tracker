@@ -2,6 +2,13 @@
   <a href="README_EN.md"><img src="https://img.shields.io/badge/%F0%9F%87%AC%F0%9F%87%A7_English-Switch_Language-blue?style=for-the-badge" alt="Switch to English"></a>
 </p>
 
+<!-- BADGES:START -->
+<p align="center">
+  <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
+  <img src="https://img.shields.io/badge/code-31.8k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31775 lines of code across 45 files">
+</p>
+<!-- BADGES:END -->
+
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-MIT-blue.svg" alt="Lizenz: MIT"></a>
@@ -14,7 +21,6 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL--Modus-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-255_Tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -31,7 +37,6 @@
   <img src="https://img.shields.io/badge/Deps-2_Runtime-success" alt="Abhängigkeiten">
   <img src="https://img.shields.io/badge/kein_Framework-Vanilla_JS-yellow" alt="Kein Framework">
   <img src="https://img.shields.io/badge/API-50+_Endpunkte-blue" alt="API Endpunkte">
-  <img src="https://img.shields.io/badge/LOC-25k+-informational" alt="Codezeilen">
 </p>
 
 <p align="center">
@@ -192,7 +197,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **255 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **296 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -457,7 +462,7 @@ Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Paramete
 ## Entwicklung
 
 ```bash
-npm test              # Alle 255 Tests ausführen (vitest)
+npm test              # Alle 296 Tests ausführen (vitest)
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
 npm run lint          # ESLint (lib/ + server.js)

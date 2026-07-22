@@ -147,6 +147,100 @@ describe('db', () => {
     });
   });
 
+  describe('devices', () => {
+    it('creates devices with unique API keys and finds them by key', () => {
+      const { createUser, createDevice, findDeviceByApiKey, getDevicesForUser } = require('../lib/db');
+      const user = createUser({ githubId: '42', username: 'dev' });
+      const a = createDevice(user.id, 'MacBook');
+      const b = createDevice(user.id, 'VPS');
+
+      expect(a.api_key).not.toBe(b.api_key);
+      expect(a.api_key).toHaveLength(64);
+      expect(findDeviceByApiKey(a.api_key).name).toBe('MacBook');
+      expect(findDeviceByApiKey('nope')).toBeNull();
+      expect(getDevicesForUser(user.id).map(d => d.name)).toEqual(['MacBook', 'VPS']);
+    });
+
+    it('renames, regenerates keys and invalidates the old key', () => {
+      const { createUser, createDevice, renameDevice, regenerateDeviceKey, findDeviceByApiKey, getDeviceById } = require('../lib/db');
+      const user = createUser({ githubId: '43', username: 'dev2' });
+      const dev = createDevice(user.id, 'Old name');
+
+      renameDevice(dev.id, 'New name');
+      expect(getDeviceById(dev.id).name).toBe('New name');
+
+      const newKey = regenerateDeviceKey(dev.id);
+      expect(newKey).not.toBe(dev.api_key);
+      expect(findDeviceByApiKey(dev.api_key)).toBeNull();
+      expect(findDeviceByApiKey(newKey).id).toBe(dev.id);
+    });
+
+    it('deleting a device orphans its messages instead of deleting them', () => {
+      // NOTE: `user_id` on messages only exists in multi-user mode, `device_id`
+      // always does — so this single-user case assigns the device directly.
+      const { createUser, createDevice, deleteDevice, getDeviceById, getDB } = require('../lib/db');
+      const user = createUser({ githubId: '44', username: 'dev3' });
+      const dev = createDevice(user.id, 'Retired');
+      insertMessages([SAMPLE_MESSAGES[0]], () => 1);
+      getDB().prepare('UPDATE messages SET device_id = ?').run(dev.id);
+
+      deleteDevice(dev.id);
+      expect(getDeviceById(dev.id)).toBeNull();
+      const rows = getDB().prepare('SELECT id, device_id FROM messages').all();
+      expect(rows).toHaveLength(1);            // history survives
+      expect(rows[0].device_id).toBeNull();    // …just unassigned
+    });
+  });
+
+  describe('rate-limit events', () => {
+    it('inserts events and ignores duplicate ids', () => {
+      const { insertRateLimitEvents, getAllRateLimitEvents } = require('../lib/db');
+      const evt = { id: 'rl1', timestamp: '2026-02-20T10:00:00.000Z', sessionId: 's1', project: 'p' };
+      insertRateLimitEvents([evt, { ...evt, id: 'rl2', timestamp: '2026-02-20T11:00:00.000Z' }]);
+      insertRateLimitEvents([evt]); // re-parse of the same file
+
+      const all = getAllRateLimitEvents();
+      expect(all.map(e => e.id)).toEqual(['rl1', 'rl2']);
+      expect(all[0].sessionId).toBe('s1');
+    });
+
+    it('tolerates an empty batch', () => {
+      const { insertRateLimitEvents, getAllRateLimitEvents } = require('../lib/db');
+      expect(() => insertRateLimitEvents([])).not.toThrow();
+      expect(() => insertRateLimitEvents(null)).not.toThrow();
+      expect(getAllRateLimitEvents()).toEqual([]);
+    });
+  });
+
+  describe('project shares', () => {
+    it('creates a share with a 48-char token and looks it up', () => {
+      const { createProjectShare, getProjectShare, listProjectShares } = require('../lib/db');
+      const share = createProjectShare('acme/web', 'Customer A', 30);
+      expect(share.id).toHaveLength(48);
+      expect(getProjectShare(share.id).project).toBe('acme/web');
+      expect(listProjectShares()).toHaveLength(1);
+    });
+
+    it('hides expired shares but keeps them listed for management', () => {
+      const { createProjectShare, getProjectShare, listProjectShares, getDB } = require('../lib/db');
+      const share = createProjectShare('acme/api', 'Expired', 1);
+      getDB().prepare('UPDATE project_shares SET expires_at = ? WHERE id = ?')
+        .run(new Date(Date.now() - 1000).toISOString(), share.id);
+
+      expect(getProjectShare(share.id)).toBeNull();       // public lookup fails
+      expect(listProjectShares().map(s => s.id)).toContain(share.id); // admin still sees it
+    });
+
+    it('shares without an expiry never expire, and delete removes them', () => {
+      const { createProjectShare, getProjectShare, deleteProjectShare } = require('../lib/db');
+      const share = createProjectShare('tools/cli', null, null);
+      expect(share.expires_at).toBeNull();
+      expect(getProjectShare(share.id)).not.toBeNull();
+      deleteProjectShare(share.id);
+      expect(getProjectShare(share.id)).toBeNull();
+    });
+  });
+
   describe('metadata', () => {
     it('sets and gets metadata', () => {
       setMetadata('version', '0.0.1');

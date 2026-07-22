@@ -8,6 +8,13 @@
   Real-time dashboard for Claude Code token usage, API-equivalent cost estimation, and coding activity tracking.
 </p>
 
+<!-- BADGES:START -->
+<p align="center">
+  <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
+  <img src="https://img.shields.io/badge/code-31.8k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31775 lines of code across 45 files">
+</p>
+<!-- BADGES:END -->
+
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
@@ -20,7 +27,6 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-255_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -37,7 +43,6 @@
   <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
   <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
   <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
-  <img src="https://img.shields.io/badge/LOC-25k+-informational" alt="Lines of Code">
 </p>
 
 <p align="center">
@@ -152,7 +157,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **255 automated tests** — unit, integration, and multi-user API tests
+- **296 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

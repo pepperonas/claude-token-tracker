@@ -294,6 +294,89 @@ describe('Achievements', () => {
         expect(e.at.slice(0, 10)).not.toBe(today);
       }
     });
+
+    it('is deterministic: two runs over the same history produce identical dates', () => {
+      const build = () => {
+        const agg = new Aggregator();
+        const msgs = [];
+        for (let d = 1; d <= 8; d++) {
+          for (let i = 0; i < 5; i++) msgs.push(mkMsg(`r${d}_${i}`, 2026, 0, d, 10, i, 5000 * d));
+        }
+        agg.addMessages(msgs);
+        const entries = [];
+        backfillAchievements(agg, 0, {
+          clearAchievementsForUser: () => {},
+          unlockAchievementsBatchAt: (_u, e) => entries.push(...e)
+        });
+        return entries.sort((a, b) => a.key.localeCompare(b.key));
+      };
+      expect(build()).toEqual(build());
+    });
+
+    it('prefers the atomic replace API when the db layer offers it', () => {
+      const agg = new Aggregator();
+      agg.addMessages([mkMsg('one', 2026, 0, 5, 10, 0)]);
+      const seen = { replaced: 0, cleared: 0, appended: 0 };
+      backfillAchievements(agg, 7, {
+        replaceAchievementsForUser: () => { seen.replaced++; },
+        clearAchievementsForUser: () => { seen.cleared++; },
+        unlockAchievementsBatchAt: () => { seen.appended++; }
+      });
+      // clear+insert as two statements can be observed half-done by a
+      // concurrent watcher check — the single transaction must win.
+      expect(seen.replaced).toBe(1);
+      expect(seen.cleared).toBe(0);
+      expect(seen.appended).toBe(0);
+    });
+
+    it('does nothing (and does not wipe) when there is no history', () => {
+      const seen = { replaced: null, cleared: 0 };
+      const res = backfillAchievements(new Aggregator(), 0, {
+        replaceAchievementsForUser: (_u, e) => { seen.replaced = e; },
+        clearAchievementsForUser: () => { seen.cleared++; }
+      });
+      expect(res.unlocked).toBe(0);
+      expect(res.days).toBe(0);
+      expect(seen.cleared).toBe(0);
+    });
+
+    it('gates ratio achievements by tier-scaled active days (3/5/7/14/30)', () => {
+      const RATIO = /^(avg_|cache_rate_|deletion_ratio_|output_ratio_|tokens_per_msg_|tokens_per_dollar_|msgs_per_session_|sessions_per_day_|model_loyal_|model_(opus|sonnet|haiku)_majority)/;
+      const tiersFor = (days) => {
+        const agg = new Aggregator();
+        const msgs = [];
+        for (let d = 1; d <= days; d++) {
+          for (let i = 0; i < 8; i++) {
+            msgs.push({
+              ...mkMsg(`gate${d}_${i}`, 2026, 0, d, 10, i, 200000),
+              cacheReadTokens: 1_000_000, cacheCreateTokens: 200000,
+              linesAdded: 5, linesRemoved: 1, linesWritten: 3
+            });
+          }
+        }
+        agg.addMessages(msgs);
+        const entries = [];
+        backfillAchievements(agg, 0, {
+          clearAchievementsForUser: () => {},
+          unlockAchievementsBatchAt: (_u, e) => entries.push(...e)
+        });
+        return new Set(entries.filter(e => RATIO.test(e.key))
+          .map(e => ACHIEVEMENTS.find(a => a.key === e.key).tier));
+      };
+
+      // Identical per-day behaviour — only the sample size grows.
+      const short = tiersFor(4);      // below the silver gate (5 days)
+      const mid = tiersFor(10);       // past gold (7), below platinum (14)
+      const long = tiersFor(31);      // past diamond (30)
+
+      expect(short.has('gold')).toBe(false);
+      expect(short.has('platinum')).toBe(false);
+      expect(mid.has('gold')).toBe(true);
+      expect(mid.has('platinum')).toBe(false);
+      expect(mid.has('diamond')).toBe(false);
+      expect(long.has('platinum')).toBe(true);
+      expect(long.has('diamond')).toBe(true);
+    });
   });
 
   describe('getAchievementsResponse', () => {

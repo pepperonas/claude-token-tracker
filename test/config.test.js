@@ -5,7 +5,8 @@ const path = require('path');
 const CONFIG_ENV_KEYS = [
   'HOME', 'CLAUDE_DIR', 'PORT', 'BACKUP_PATH', 'BACKUP_INTERVAL_HOURS',
   'MULTI_USER', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'SESSION_SECRET',
-  'BASE_URL', 'GITHUB_TOKEN', 'GITHUB_CACHE_TTL_MINUTES', 'SHARE_ADMIN_KEY'
+  'BASE_URL', 'GITHUB_TOKEN', 'GITHUB_CACHE_TTL_MINUTES', 'SHARE_ADMIN_KEY',
+  'DATA_DIR', 'DB_PATH'
 ];
 
 function loadConfig(overrides = {}) {
@@ -27,6 +28,31 @@ describe('config', () => {
       if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
     }
     delete require.cache[require.resolve('../lib/config')];
+  });
+
+  describe('database location', () => {
+    it('defaults the DB into the repo data/ directory', () => {
+      const cfg = loadConfig({});
+      expect(cfg.DATA_DIR).toBe(path.join(__dirname, '..', 'data'));
+      expect(cfg.DB_PATH).toBe(path.join(cfg.DATA_DIR, 'tracker.db'));
+    });
+
+    it('follows DATA_DIR for the default DB file', () => {
+      const cfg = loadConfig({ DATA_DIR: '/tmp/tracker-data' });
+      expect(cfg.DATA_DIR).toBe(path.resolve('/tmp/tracker-data'));
+      expect(cfg.DB_PATH).toBe(path.join(path.resolve('/tmp/tracker-data'), 'tracker.db'));
+    });
+
+    it('lets DB_PATH override the file outright (tests boot on a throwaway DB)', () => {
+      const cfg = loadConfig({ DATA_DIR: '/tmp/tracker-data', DB_PATH: '/tmp/other/x.db' });
+      expect(cfg.DB_PATH).toBe(path.resolve('/tmp/other/x.db'));
+    });
+
+    it('resolves relative paths against the working directory', () => {
+      const cfg = loadConfig({ DB_PATH: 'tmp/rel.db' });
+      expect(path.isAbsolute(cfg.DB_PATH)).toBe(true);
+      expect(cfg.DB_PATH).toBe(path.resolve('tmp/rel.db'));
+    });
   });
 
   describe('defaults', () => {

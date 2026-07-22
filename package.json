@@ -9,6 +9,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint lib/ server.js",
+    "badges": "vitest run --reporter=json --outputFile=.vitest-report.json && node scripts/update-badges.js --report .vitest-report.json && rm -f .vitest-report.json",
     "postinstall": "node scripts/setup.js"
   },
   "author": "Martin Pfeffer",

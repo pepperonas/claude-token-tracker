@@ -617,6 +617,20 @@ describe('aggregator', () => {
       expect(total).toBe(120);                         // all six messages
     });
 
+    it('yields 90 consecutive local days without gaps or duplicates', () => {
+      const dates = tr.daily90.map(d => d.date);
+      expect(new Set(dates).size).toBe(90);
+      for (let i = 1; i < dates.length; i++) {
+        const [py, pm, pd] = dates[i - 1].split('-').map(Number);
+        const prev = new Date(py, pm - 1, pd);
+        const expected = new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 1);
+        const exp = expected.getFullYear() + '-' +
+          String(expected.getMonth() + 1).padStart(2, '0') + '-' +
+          String(expected.getDate()).padStart(2, '0');
+        expect(dates[i]).toBe(exp);
+      }
+    });
+
     it('splits momentum into last 7 days vs the 7 days before, per project and model', () => {
       const p = tr.momentum.projects.find(x => x.name === 'p');
       expect(tr.momentum.windowDays).toBe(7);
@@ -627,6 +641,67 @@ describe('aggregator', () => {
       expect(m.name).toBe(getModelLabel('claude-sonnet-5'));
       expect(m.cur.tokens).toBe(60);
       expect(m.prev.tokens).toBe(20);
+    });
+  });
+
+  describe('getTrends — calendar edge cases', () => {
+    const mk = (id, y, mo, d, h) => ({
+      id,
+      timestamp: new Date(y, mo, d, h, 0, 0).toISOString(),
+      model: 'claude-sonnet-5', sessionId: 's-' + id, project: 'p',
+      inputTokens: 10, outputTokens: 10, cacheReadTokens: 0, cacheCreateTokens: 0,
+      tools: [], linesAdded: 0, linesRemoved: 0, linesWritten: 0
+    });
+
+    it('clamps the previous-month cutoff to a shorter month (Mar 31 -> Feb 28)', () => {
+      const agg2 = new Aggregator();
+      agg2.addMessages([
+        mk('feb27', 2026, 1, 27, 10),   // before the clamped cutoff
+        mk('feb28l', 2026, 1, 28, 20)   // Feb 28, 20:00 — AFTER the Feb 28 12:00 cutoff
+      ]);
+      const tr = agg2.getTrends(new Date(2026, 2, 31, 12, 0, 0)); // Mar 31, 12:00
+      expect(tr.month.prevSame.tokens).toBe(20);   // feb27 only
+      expect(tr.month.prevFull.tokens).toBe(40);   // whole February
+      expect(tr.month.series.prev.length).toBe(28);
+    });
+
+    it('starts the week on Monday, so Sunday belongs to the week that just ended', () => {
+      const agg2 = new Aggregator();
+      agg2.addMessages([
+        mk('sun', 2026, 5, 14, 10),   // Sunday
+        mk('mon', 2026, 5, 15, 10)    // Monday
+      ]);
+      const tr = agg2.getTrends(new Date(2026, 5, 17, 12, 0, 0)); // Wednesday
+      expect(tr.week.current.tokens).toBe(20);      // Monday only
+      expect(tr.week.prevFull.tokens).toBe(20);     // Sunday counts to last week
+      expect(tr.week.series.cur[0].tokens).toBe(20); // index 0 = Monday
+      expect(tr.week.series.prev[6].tokens).toBe(20); // index 6 = Sunday
+    });
+
+    it('ignores messages dated in the future', () => {
+      const agg2 = new Aggregator();
+      agg2.addMessages([mk('future', 2026, 5, 18, 10)]);
+      const tr = agg2.getTrends(new Date(2026, 5, 17, 12, 0, 0));
+      expect(tr.today.current.tokens).toBe(0);
+      expect(tr.daily90.reduce((s, d) => s + d.tokens, 0)).toBe(0);
+    });
+
+    it('returns an all-zero payload for an empty aggregator', () => {
+      const tr = new Aggregator().getTrends(new Date(2026, 5, 17, 12, 0, 0));
+      expect(tr.today.current.tokens).toBe(0);
+      expect(tr.momentum.projects).toEqual([]);
+      expect(tr.momentum.models).toEqual([]);
+      expect(tr.daily90).toHaveLength(90);
+    });
+
+    it('drops momentum entries with no volume on either side', () => {
+      const agg2 = new Aggregator();
+      const old = mk('old', 2026, 4, 1, 10);          // > 14 days before `now`
+      agg2.addMessages([old, mk('recent', 2026, 5, 16, 10)]);
+      const tr = agg2.getTrends(new Date(2026, 5, 17, 12, 0, 0));
+      // 'old' contributes to neither window, so it must not appear as a 0/0 row
+      expect(tr.momentum.projects).toHaveLength(1);
+      expect(tr.momentum.projects[0].cur.tokens).toBe(20);
     });
   });
 

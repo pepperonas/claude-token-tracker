@@ -1,10 +1,19 @@
 const http = require('http');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { buildHistory } = require('./fixtures/history');
 
-// We test the API by making HTTP requests to the server
-// The server needs to be running, so we import it
-
+// We test the API by making HTTP requests to the server.
+//
+// The server is booted against a THROWAWAY database and an empty CLAUDE_DIR
+// (both via env, resolved in lib/config at require time). Previously it booted
+// on the real `data/tracker.db`: the suite was slow, depended on the developer
+// having local data — CI, with an empty DB, failed on the achievement test —
+// and `POST /api/achievements/recompute` rewrote the real achievements table.
 let baseUrl;
 let serverInstance;
+let tmpDir;
 
 function get(path) {
   return new Promise((resolve, reject) => {
@@ -42,6 +51,26 @@ function post(path) {
 
 describe('API endpoints', () => {
   beforeAll(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-api-test-'));
+    fs.mkdirSync(path.join(tmpDir, 'claude', 'projects'), { recursive: true });
+    process.env.DB_PATH = path.join(tmpDir, 'tracker.db');
+    process.env.CLAUDE_DIR = path.join(tmpDir, 'claude');
+
+    // config/db/aggregator cache their env-derived state at require time
+    for (const m of ['../lib/config', '../lib/db', '../lib/aggregator', '../server']) {
+      delete require.cache[require.resolve(m)];
+    }
+
+    // Seed a 45-day history BEFORE booting: the server streams the DB into the
+    // aggregator on startup, so the endpoints (and the achievement backfill)
+    // see a real, multi-day dataset.
+    const { initDB, insertMessages, closeDB } = require('../lib/db');
+    const { calculateCost } = require('../lib/pricing');
+    initDB(process.env.DB_PATH);
+    insertMessages(buildHistory({ days: 45, perDay: 6 }), (model, msg) => calculateCost(model, msg, msg.timestamp));
+    closeDB();
+    delete require.cache[require.resolve('../lib/db')];
+
     // Use dynamic port to avoid conflicts
     // High range avoids well-known occupied ports (5900 = macOS Screen Sharing
     // sat inside the old 5010–6009 range and made this hook time out flakily)
@@ -54,6 +83,14 @@ describe('API endpoints', () => {
 
   afterAll(() => {
     if (serverInstance) serverInstance.close();
+    try { require('../lib/watcher').stop(); } catch { /* not started */ }
+    try { require('../lib/db').closeDB(); } catch { /* already closed */ }
+    delete process.env.DB_PATH;
+    delete process.env.CLAUDE_DIR;
+    for (const m of ['../lib/config', '../lib/db', '../lib/aggregator', '../server']) {
+      delete require.cache[require.resolve(m)];
+    }
+    if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('GET /api/overview returns overview data', async () => {
@@ -271,6 +308,152 @@ describe('API endpoints', () => {
     expect(res.headers['content-type']).toContain('text/html');
     expect(res.body).toContain('<!DOCTYPE html>');
     expect(res.body).toContain('Claude Token Tracker');
+  });
+
+  // --- Assertions against the seeded 45-day history (see fixtures/history.js) --
+  // These check actual numbers, not just response shapes: the endpoints are the
+  // contract the frontend renders, so a silent aggregation change must fail here.
+
+  it('GET /api/overview reports the full seeded history', async () => {
+    const { body } = await get('/api/overview');
+    expect(body.messages).toBe(45 * 6);
+    expect(body.sessions).toBe(45 * 2);            // 2 session ids per day
+    expect(body.totalTokens).toBeGreaterThan(0);
+    expect(body.estimatedCost).toBeGreaterThan(0);
+    expect(body.activeDays).toBe(45);
+    expect(body.totalActiveMin).toBeGreaterThan(0);
+    expect(body.avgActiveMinPerDay).toBe(Math.round(body.totalActiveMin / body.activeDays));
+  });
+
+  it('GET /api/projects returns the seeded projects, sorted by tokens', async () => {
+    const { body } = await get('/api/projects');
+    const names = body.map(p => p.name).sort();
+    expect(names).toEqual(['acme/api', 'acme/web', 'tools/cli']);
+    for (let i = 1; i < body.length; i++) {
+      expect(body[i - 1].totalTokens).toBeGreaterThanOrEqual(body[i].totalTokens);
+    }
+  });
+
+  it('GET /api/models splits the history across the three seeded models', async () => {
+    const { body } = await get('/api/models');
+    expect(body.length).toBe(3);
+    const msgs = body.reduce((s, m) => s + m.messages, 0);
+    expect(msgs).toBe(45 * 6);
+    for (const m of body) expect(m.label).toBeTruthy();
+  });
+
+  it('GET /api/daily covers every seeded day and sums to the overview', async () => {
+    const [{ body: daily }, { body: overview }] = await Promise.all([get('/api/daily'), get('/api/overview')]);
+    expect(daily.length).toBe(45);
+    expect(daily.reduce((s, d) => s + d.messages, 0)).toBe(overview.messages);
+    // sorted ascending, no duplicates
+    const dates = daily.map(d => d.date);
+    expect([...dates].sort()).toEqual(dates);
+    expect(new Set(dates).size).toBe(45);
+  });
+
+  it('GET /api/trends anchors daily90 on today and ends with the seeded data', async () => {
+    const { body } = await get('/api/trends');
+    const today = new Date();
+    const iso = today.getFullYear() + '-' +
+      String(today.getMonth() + 1).padStart(2, '0') + '-' +
+      String(today.getDate()).padStart(2, '0');
+    expect(body.daily90[89].date).toBe(iso);
+    expect(body.daily90[89].messages).toBe(6);              // today's seeded batch
+    // 45 days of history inside a 90-day window
+    expect(body.daily90.filter(d => d.messages > 0).length).toBe(45);
+    expect(body.momentum.projects.length).toBe(3);
+    expect(body.momentum.models.length).toBe(3);
+  });
+
+  it('GET /api/hourly-weekday returns a grid consistent with /api/overview', async () => {
+    const [{ body: grid }, { body: overview }] = await Promise.all([get('/api/hourly-weekday'), get('/api/overview')]);
+    expect(grid.weekdays.length).toBe(7);
+    let messages = 0, maxTokens = 0;
+    for (const row of grid.weekdays) {
+      expect(row.hours.length).toBe(24);
+      for (const cell of row.hours) {
+        messages += cell.messages;
+        maxTokens = Math.max(maxTokens, cell.tokens);
+      }
+    }
+    expect(messages).toBe(overview.messages);
+    expect(grid.maxTokens).toBe(maxTokens);
+  });
+
+  it('GET /api/project-detail returns one project\'s slice of the history', async () => {
+    const { status, body } = await get('/api/project-detail?name=' + encodeURIComponent('acme/web'));
+    expect(status).toBe(200);
+    expect(body.name).toBe('acme/web');
+    expect(body.messages).toBeGreaterThan(0);
+    expect(body.messages).toBeLessThan(45 * 6);
+    expect(Array.isArray(body.daily)).toBe(true);
+    expect(Array.isArray(body.sessionList)).toBe(true);
+    expect(body.sessions).toBeGreaterThan(0);          // count, not a list
+    expect(body.totalActiveMin).toBeGreaterThanOrEqual(0);
+    expect(Object.keys(body.models).length).toBeGreaterThan(0);
+  });
+
+  it('GET /api/tool-stats aggregates the seeded tool calls with cost attribution', async () => {
+    const { body } = await get('/api/tool-stats');
+    expect(Array.isArray(body)).toBe(true);
+    const byName = Object.fromEntries(body.map(t => [t.name, t]));
+    expect(Object.keys(byName)).toEqual(expect.arrayContaining(['Read', 'Bash', 'Edit', 'Write', 'Grep']));
+    expect(byName.Read.calls).toBeGreaterThan(0);
+    expect(byName.Read.type).toBe('built-in');
+    expect(byName.Read.cost).toBeGreaterThan(0);
+    // Percentages of a full listing add up to ~100
+    expect(body.reduce((s, t) => s + t.percentage, 0)).toBeCloseTo(100, 0);
+    // The MCP tool must be typed as such, not as built-in
+    const mcp = body.find(t => t.name.startsWith('mcp__'));
+    expect(mcp.type).toBe('mcp');
+    expect(mcp.server).toBeTruthy();
+  });
+
+  it('GET /api/mcp-servers groups the seeded mcp__ tool under its server', async () => {
+    const { status, body } = await get('/api/mcp-servers');
+    expect(status).toBe(200);
+    expect(body.length).toBe(1);
+    expect(body[0].name).toBe('playwright');
+    expect(body[0].totalCalls).toBeGreaterThan(0);
+    expect(body[0].tools.map(t => t.name)).toContain('browser_click');
+  });
+
+  it('GET /api/subagent-stats counts the seeded sub-agent messages', async () => {
+    const [{ status, body }, { body: overview }] = await Promise.all([get('/api/subagent-stats'), get('/api/overview')]);
+    expect(status).toBe(200);
+    expect(body.messages).toBeGreaterThan(0);
+    expect(body.messages).toBeLessThan(overview.messages);
+    expect(body.pctMessages).toBeCloseTo(body.messages / overview.messages * 100, 0);
+    expect(Array.isArray(body.daily)).toBe(true);
+  });
+
+  it('GET /api/pricing is public and reports the resolution source', async () => {
+    const { status, body } = await get('/api/pricing');
+    expect(status).toBe(200);
+    expect(body).toHaveProperty('source');
+    expect(Array.isArray(body.models)).toBe(true);
+    expect(body.models.length).toBeGreaterThan(0);
+    for (const m of body.models.slice(0, 5)) {
+      expect(['litellm', 'fallback']).toContain(m.origin);
+    }
+  });
+
+  it('period filtering narrows the result set', async () => {
+    const { body: all } = await get('/api/overview');
+    const today = new Date();
+    const iso = today.getFullYear() + '-' +
+      String(today.getMonth() + 1).padStart(2, '0') + '-' +
+      String(today.getDate()).padStart(2, '0');
+    const { body: oneDay } = await get(`/api/overview?from=${iso}&to=${iso}`);
+    expect(oneDay.messages).toBe(6);
+    expect(oneDay.messages).toBeLessThan(all.messages);
+    expect(oneDay.totalTokens).toBeLessThan(all.totalTokens);
+  });
+
+  it('unknown API routes 404 instead of falling through to the SPA', async () => {
+    const { status } = await get('/api/definitely-not-a-route');
+    expect(status).toBe(404);
   });
 
   it('prevents path traversal on static files', async () => {

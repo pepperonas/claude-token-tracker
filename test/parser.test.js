@@ -246,4 +246,116 @@ describe('parser', () => {
       expect(result.messages[0].id).toBe('msg_with_id');
     });
   });
+
+  describe('rate-limit events', () => {
+    const rlLine = (ts, sessionId) => JSON.stringify({
+      type: 'queue-operation', content: '/rate-limit-options', timestamp: ts, sessionId
+    });
+
+    it('extracts rate-limit events and keeps them out of the messages', () => {
+      const filePath = path.join(tmpDir, 'rl.jsonl');
+      fs.writeFileSync(filePath, [
+        rlLine('2026-02-20T10:00:00.000Z', 'sess-rl'),
+        messageToJsonl({
+          id: 'm1', timestamp: '2026-02-20T10:01:00.000Z', model: 'claude-opus-4-6',
+          sessionId: 'sess-rl', project: 'test', inputTokens: 10, outputTokens: 5,
+          cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn'
+        }),
+        rlLine('2026-02-20T11:00:00.000Z', 'sess-rl')
+      ].join('\n') + '\n');
+
+      const result = parseSessionFile(filePath);
+      expect(result.messages).toHaveLength(1);
+      expect(result.rateLimitEvents).toHaveLength(2);
+      expect(result.rateLimitEvents[0].sessionId).toBe('sess-rl');
+      expect(result.rateLimitEvents[0].timestamp).toBe('2026-02-20T10:00:00.000Z');
+    });
+
+    it('derives a stable id from session + timestamp (re-parse must not duplicate)', () => {
+      const write = (name) => {
+        const p = path.join(tmpDir, name);
+        fs.writeFileSync(p, rlLine('2026-02-20T10:00:00.000Z', 'sess-rl') + '\n');
+        return parseSessionFile(p).rateLimitEvents[0].id;
+      };
+      expect(write('a.jsonl')).toBe(write('b.jsonl'));
+      // …but a different timestamp is a different event
+      const p = path.join(tmpDir, 'c.jsonl');
+      fs.writeFileSync(p, rlLine('2026-02-20T12:00:00.000Z', 'sess-rl') + '\n');
+      expect(parseSessionFile(p).rateLimitEvents[0].id).not.toBe(write('a.jsonl'));
+    });
+  });
+
+  describe('sub-agent detection', () => {
+    const line = messageToJsonl({
+      id: 'sub_1', timestamp: '2026-02-20T10:00:00.000Z', model: 'claude-opus-4-6',
+      sessionId: 's', project: 'test', inputTokens: 1, outputTokens: 1,
+      cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn'
+    });
+
+    it('flags messages from a /subagents/ path', () => {
+      const dir = path.join(tmpDir, 'subagents');
+      fs.mkdirSync(dir);
+      const p = path.join(dir, 'x.jsonl');
+      fs.writeFileSync(p, line + '\n');
+      expect(parseSessionFile(p).messages[0].isSubagent).toBe(true);
+    });
+
+    it('does not flag regular session files', () => {
+      const p = path.join(tmpDir, 'x.jsonl');
+      fs.writeFileSync(p, line + '\n');
+      expect(parseSessionFile(p).messages[0].isSubagent).toBe(false);
+    });
+  });
+
+  describe('line counting from tool input', () => {
+    it('counts Edit old/new strings and Write content', () => {
+      const raw = JSON.stringify({
+        type: 'assistant',
+        timestamp: '2026-02-20T10:00:00.000Z',
+        sessionId: 'sess-lines',
+        message: {
+          id: 'lines_1',
+          model: 'claude-opus-4-6',
+          stop_reason: 'tool_use',
+          usage: { input_tokens: 10, output_tokens: 5 },
+          content: [
+            { type: 'tool_use', name: 'Edit', input: { old_string: 'a\nb', new_string: 'a\nb\nc\nd' } },
+            { type: 'tool_use', name: 'Write', input: { content: 'x\ny\nz' } }
+          ]
+        }
+      });
+      const p = path.join(tmpDir, 'lines.jsonl');
+      fs.writeFileSync(p, raw + '\n');
+
+      const [msg] = parseSessionFile(p).messages;
+      expect(msg.linesRemoved).toBe(2);
+      expect(msg.linesAdded).toBe(4);
+      expect(msg.linesWritten).toBe(3);
+      expect(msg.toolCounts).toEqual({ Edit: 1, Write: 1 });
+    });
+  });
+
+  describe('offsets', () => {
+    it('reports the file size as the new offset and skips already-read bytes', () => {
+      const p = path.join(tmpDir, 'off.jsonl');
+      const first = messageToJsonl({
+        id: 'o1', timestamp: '2026-02-20T10:00:00.000Z', model: 'claude-opus-4-6',
+        sessionId: 's', project: 'test', inputTokens: 1, outputTokens: 1,
+        cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn'
+      }) + '\n';
+      fs.writeFileSync(p, first);
+      const r1 = parseSessionFile(p);
+      expect(r1.newOffset).toBe(Buffer.byteLength(first));
+
+      const second = messageToJsonl({
+        id: 'o2', timestamp: '2026-02-20T10:05:00.000Z', model: 'claude-opus-4-6',
+        sessionId: 's', project: 'test', inputTokens: 2, outputTokens: 2,
+        cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], stopReason: 'end_turn'
+      }) + '\n';
+      fs.appendFileSync(p, second);
+      const r2 = parseSessionFile(p, r1.newOffset);
+      expect(r2.messages.map(m => m.id)).toEqual(['o2']);
+      expect(r2.newOffset).toBe(Buffer.byteLength(first) + Buffer.byteLength(second));
+    });
+  });
 });

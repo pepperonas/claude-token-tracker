@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased] - 2026-07-22 (Tests & Badges)
+
+### Fixed
+- **CI-Fehlschlag `POST /api/achievements/recompute` (`expected 0 to be greater than 0`)** — die API-Tests starteten den Server gegen die **echte** `data/tracker.db` und das echte `~/.claude`. Lokal lief das (zufällig) durch, in CI gibt es beides nicht → 0 Nachrichten → 0 Achievements. Nebenwirkungen: die Suite brauchte ~33 s und der Recompute-Test **überschrieb die reale Achievements-Tabelle des Entwicklers**. `DATA_DIR`/`DB_PATH` sind jetzt per Env überschreibbar; die API-Tests booten gegen eine Wegwerf-DB in `mkdtemp()` mit leerem `CLAUDE_DIR` und seeden vorher eine deterministische 45-Tage-History (`test/fixtures/history.js`). **Suite: 33 s → 0,6 s**, und sie ist reproduzierbar statt vom Rechner abhängig
+
+### Added
+- **41 neue Tests (255 → 296)**, überall dort, wo bisher nur die Response-*Form* geprüft wurde:
+  - **Parser**: Rate-Limit-Events (inkl. stabiler, aus Session+Timestamp abgeleiteter ID → Re-Parse dupliziert nicht), Sub-Agent-Erkennung über den `/subagents/`-Pfad, Zeilenzählung aus `Edit`/`Write`-Tool-Input, Offset-Fortschreibung beim inkrementellen Parsen
+  - **DB**: Geräte-CRUD (eindeutige API-Keys, Key-Regenerierung invalidiert den alten Key, Löschen eines Geräts **verwaist** die Nachrichten statt sie zu löschen), Rate-Limit-Events (Duplikate werden ignoriert, leerer Batch), Projekt-Shares (48-stelliges Token, abgelaufene Shares sind öffentlich unsichtbar, bleiben aber verwaltbar, Löschen)
+  - **Aggregator**: Vormonats-Cutoff-Clamping (31.03. → 28.02.), Montag als Wochenstart (Sonntag zählt zur abgelaufenen Woche), Zukunftsdaten werden ignoriert, leerer Aggregator liefert ein Null-Payload, Momentum-Einträge ohne Volumen fallen raus, `daily90` sind 90 lückenlose aufeinanderfolgende Lokaltage
+  - **Achievements**: Backfill ist deterministisch (zwei Läufe = identische Daten), nutzt die atomare `replaceAchievementsForUser`-API wenn vorhanden, macht bei leerer History nichts (löscht insbesondere nichts) und die **Sample-Gates greifen stufenweise** (4 aktive Tage: kein Gold; 10: Gold, aber kein Platin/Diamant; 31: alle)
+  - **API**: echte Zahlen statt Formen — Overview zählt die geseedeten 270 Nachrichten/90 Sessions/45 aktiven Tage, `/api/daily` deckt alle 45 Tage ab und summiert sich zum Overview, `daily90` endet auf heute, Heatmap-Summe == Overview, Tool-Kosten-Attribution inkl. MCP-Typisierung, MCP-Server-Gruppierung, Sub-Agent-Anteil, öffentliches `/api/pricing`, Zeitraumfilter verengt das Ergebnis, unbekannte `/api/*`-Routen liefern 404
+  - **Config**: `DATA_DIR`/`DB_PATH`-Auflösung inkl. relativer Pfade
+- **Automatisch aktualisierte Badges** ganz oben in allen drei READMEs: **Tests** (aus dem echten Vitest-JSON-Report, nicht geschätzt) und **Lines of Code** (aus `git ls-files` über `*.js`/`*.css`/`*.html`). `scripts/update-badges.js` schreibt den Block zwischen `<!-- BADGES:START/END -->`, `npm run badges` lokal, und der neue Workflow `.github/workflows/badges.yml` rechnet sie bei **jedem Push auf main** neu und committet sie zurück (`[skip ci]`). Die handgepflegten Zahlen waren chronisch veraltet (Badge: 238 Tests, Suite: 255; „LOC 25k+" geraten statt gemessen)
+
 ## [Unreleased] - 2026-07-22
 
 ### Added
