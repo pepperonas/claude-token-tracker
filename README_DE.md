@@ -5,7 +5,7 @@
 <!-- BADGES:START -->
 <p align="center">
   <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
-  <img src="https://img.shields.io/badge/code-31.8k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31775 lines of code across 45 files">
+  <img src="https://img.shields.io/badge/code-32k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31960 lines of code across 47 files">
 </p>
 <!-- BADGES:END -->
 
