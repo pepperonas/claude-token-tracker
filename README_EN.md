@@ -4,8 +4,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
-  <img src="https://img.shields.io/badge/code-32k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31960 lines of code across 47 files">
+  <img src="https://img.shields.io/badge/tests-333_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="333 tests passing">
+  <img src="https://img.shields.io/badge/code-32.2k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="32151 lines of code across 47 files">
 </p>
 <!-- BADGES:END -->
 
@@ -197,7 +197,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **296 automated tests** (unit + integration + multi-user API + achievements)
+- **333 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -462,7 +462,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters. Ana
 ## Development
 
 ```bash
-npm test              # Run all 296 tests (vitest)
+npm test              # Run all 333 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

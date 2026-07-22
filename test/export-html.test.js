@@ -114,6 +114,43 @@ describe('generateExportHTML', () => {
     expect(html).toContain('>60<');      // Max Points (fmtNum(60))
   });
 
+  it('escapes project, session and model names taken from user data', () => {
+    const evil = '"><script>alert(1)</script>';
+    const html = generateExportHTML(makeInput({
+      projects: [{ project: evil, totalTokens: 1, sessions: 1, messages: 1, cost: 0 }],
+      sessions: [{ id: 's1', date: '2026-06-15', project: evil, model: evil, totalTokens: 1, cost: 0 }],
+      models: [{ model: evil, inputTokens: 1, outputTokens: 1, messages: 1, cost: 0 }],
+      toolStats: [{ name: evil, type: 'mcp', calls: 1, cost: 0, tokens: 1 }]
+    }));
+    // A project name comes straight from a folder name on disk — it must never
+    // become markup in the exported (and often shared) HTML file.
+    // The names live in the inline JSON payload: `<` must be \u003c-escaped so
+    // nothing can close the <script> block; the raw markup must not appear.
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).not.toContain('</script><script>');
+    expect(html).toContain('\\u003c');
+    // …and the payload is still valid JS/JSON
+    expect(JSON.parse('"\\u003cscript\\u003e"')).toBe('<script>');
+  });
+
+  it('renders the rate-limit KPI and daily chart data when events exist', () => {
+    const html = generateExportHTML(makeInput({
+      overview: { ...makeInput().overview, rateLimitHits: 7 },
+      rateLimits: { total: 7, daily: [{ date: '2026-06-15', count: 4 }, { date: '2026-06-16', count: 3 }] }
+    }));
+    expect(html).toContain('2026-06-16');
+    expect(html).toMatch(/7/);
+  });
+
+  it('produces a self-contained document (no local asset references)', () => {
+    const html = generateExportHTML(makeInput());
+    // Chart.js comes from a CDN; nothing else may point at the local server,
+    // otherwise the export breaks the moment it is moved or emailed.
+    expect(html).not.toMatch(/src="\/(js|css)\//);
+    expect(html).not.toMatch(/href="\/(js|css)\//);
+    expect(html).toContain('cdn.jsdelivr.net');
+  });
+
   it('does not throw on empty / minimal data', () => {
     const empty = {
       overview: {}, daily: [], sessions: [], projects: [], models: [], tools: [],

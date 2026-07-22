@@ -456,6 +456,102 @@ describe('API endpoints', () => {
     expect(status).toBe(404);
   });
 
+  it('serves static files with an ETag and answers a revalidation with 304', async () => {
+    const raw = (pathName, headers = {}) => new Promise((resolve, reject) => {
+      http.get(baseUrl + pathName, { headers }, (res) => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
+      }).on('error', reject);
+    });
+
+    const first = await raw('/js/app.js');
+    expect(first.status).toBe(200);
+    expect(first.headers['content-type']).toContain('javascript');
+    expect(first.headers['cache-control']).toBe('public, max-age=0, must-revalidate');
+    expect(first.headers.etag).toMatch(/^"[^"]+"$/);
+    expect(first.body.length).toBeGreaterThan(1000);
+
+    // Browsers revalidate instead of re-downloading ~640KB of JS/CSS per reload
+    const second = await raw('/js/app.js', { 'If-None-Match': first.headers.etag });
+    expect(second.status).toBe(304);
+    expect(second.body).toBe('');
+    expect(second.headers.etag).toBe(first.headers.etag);
+
+    // A stale validator must NOT produce a 304
+    const stale = await raw('/js/app.js', { 'If-None-Match': '"stale-etag"' });
+    expect(stale.status).toBe(200);
+  });
+
+  it('serves the dashboard shell at /', async () => {
+    const res = await new Promise((resolve, reject) => {
+      http.get(baseUrl + '/', (r) => {
+        let data = '';
+        r.on('data', c => data += c);
+        r.on('end', () => resolve({ status: r.statusCode, headers: r.headers, body: data }));
+      }).on('error', reject);
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.body).toContain('<!DOCTYPE html>');
+  });
+
+  it('GET /api/config reports the runtime mode', async () => {
+    const { status, body } = await get('/api/config');
+    expect(status).toBe(200);
+    expect(body.multiUser).toBe(false);
+  });
+
+  it('POST /api/rebuild keeps the DB-persisted history (pruned JSONL must not delete data)', async () => {
+    // CLAUDE_DIR is empty here — exactly the situation after Claude Code has
+    // pruned old session files. A rebuild that only re-parses JSONL would drop
+    // the whole history; it must reload the DB first.
+    const before = await get('/api/overview');
+    const { status, body } = await post('/api/rebuild');
+    expect(status).toBe(200);
+    expect(body.rebuilt).toBe(true);
+
+    const after = await get('/api/overview');
+    expect(after.body.messages).toBe(before.body.messages);
+    expect(after.body.totalTokens).toBe(before.body.totalTokens);
+  });
+
+  it('GET /api/rate-limits returns the expected envelope even with no events', async () => {
+    const { status, body } = await get('/api/rate-limits');
+    expect(status).toBe(200);
+    expect(body).toHaveProperty('total');
+    expect(Array.isArray(body.daily)).toBe(true);
+    expect(body.total).toBe(0);   // the fixture has no rate-limit events
+  });
+
+  it('GET /api/tool-cost-daily returns one row per active day', async () => {
+    const { status, body } = await get('/api/tool-cost-daily');
+    expect(status).toBe(200);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(45);
+    expect(body[0]).toHaveProperty('date');
+  });
+
+  it('GET /api/sessions returns the seeded sessions with active time', async () => {
+    const { body } = await get('/api/sessions');
+    expect(body.length).toBe(45 * 2);
+    const s = body[0];
+    expect(s).toHaveProperty('id');
+    expect(s.messages).toBeGreaterThan(0);
+    expect(s.totalTokens).toBeGreaterThan(0);
+    expect(typeof s.activeMin).toBe('number');
+    // newest first
+    expect(body[0].firstTs >= body[body.length - 1].firstTs).toBe(true);
+  });
+
+  it('GET /api/day-of-week spreads the history over all seven weekdays', async () => {
+    const { status, body } = await get('/api/day-of-week');
+    expect(status).toBe(200);
+    expect(body.length).toBe(7);
+    expect(body.reduce((s, d) => s + d.messages, 0)).toBe(45 * 6);
+    expect(body.every(d => d.messages > 0)).toBe(true);   // 45 days covers every weekday
+  });
+
   it('prevents path traversal on static files', async () => {
     const { status } = await get('/../package.json');
     // Should either return 403 or a regular 404 (path normalization)

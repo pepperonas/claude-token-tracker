@@ -40,6 +40,33 @@ describe('backup', () => {
     it('throws without destination', () => {
       expect(() => backupToPath('')).toThrow();
     });
+
+    it('rejects a backup that is less than half the size of the previous one', () => {
+      const good = backupToPath(backupDir);
+      // Simulate a much larger previous snapshot: a shrunken new one then looks
+      // like a corrupt/emptied DB and must not be kept.
+      fs.appendFileSync(good.path, Buffer.alloc(good.size * 4, 0));
+
+      expect(() => backupToPath(backupDir)).toThrow(/<50%/);
+      // …and the rejected file is not left behind
+      const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.db'));
+      expect(files).toHaveLength(1);
+    });
+
+    it('never overwrites a snapshot taken in the same second', () => {
+      const a = backupToPath(backupDir);
+      const b = backupToPath(backupDir);
+      expect(b.path).not.toBe(a.path);
+      expect(fs.existsSync(a.path)).toBe(true);
+      expect(fs.existsSync(b.path)).toBe(true);
+    });
+
+    it('accepts a backup that grew', () => {
+      backupToPath(backupDir);
+      insertMessages(SAMPLE_MESSAGES, () => 1);
+      expect(() => backupToPath(backupDir)).not.toThrow();
+      expect(fs.readdirSync(backupDir).filter(f => f.endsWith('.db')).length).toBe(2);
+    });
   });
 
   describe('pruneBackups', () => {

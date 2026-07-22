@@ -10,8 +10,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
-  <img src="https://img.shields.io/badge/code-32k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31960 lines of code across 47 files">
+  <img src="https://img.shields.io/badge/tests-333_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="333 tests passing">
+  <img src="https://img.shields.io/badge/code-32.2k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="32151 lines of code across 47 files">
 </p>
 <!-- BADGES:END -->
 
@@ -157,7 +157,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **296 automated tests** — unit, integration, and multi-user API tests
+- **333 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

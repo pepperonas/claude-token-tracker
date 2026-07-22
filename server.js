@@ -213,13 +213,18 @@ try {
 }
 
 // --- HTTP Server ---
+// NO blanket `Access-Control-Allow-Origin: *` here. It made every API response
+// readable by any website the user's browser visited (single-user mode has no
+// auth at all), and — because writeHead's header object overrides setHeader —
+// it also overwrote the deliberate origin allowlist on the public share
+// endpoint, silently turning that allowlist into a wildcard. Endpoints that
+// genuinely need CORS set the header themselves (see /api/public/share/:token).
 function sendJSON(res, data, status = 200) {
   const body = JSON.stringify(data);
-  res.writeHead(status, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'no-cache'
-  });
+  const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' };
+  const cors = res.getHeader('Access-Control-Allow-Origin');
+  if (cors) headers['Access-Control-Allow-Origin'] = cors;
+  res.writeHead(status, headers);
   res.end(body);
 }
 
@@ -1188,8 +1193,8 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
+      'Connection': 'keep-alive'
+      // same-origin only — the dashboard is served from this server
     });
     res.write('data: {"type":"connected"}\n\n');
     // Tag SSE client with userId for multi-user filtering
@@ -1693,8 +1698,8 @@ const server = http.createServer((req, res) => {
       const data = backup.exportJSON();
       res.writeHead(200, {
         'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="claude-tracker-export-${new Date().toISOString().slice(0, 10)}.json"`,
-        'Access-Control-Allow-Origin': '*'
+        'Content-Disposition': `attachment; filename="claude-tracker-export-${new Date().toISOString().slice(0, 10)}.json"`
+        // no CORS: this is a full data export, downloaded same-origin
       });
       return res.end(JSON.stringify(data, null, 2));
     } catch (err) {

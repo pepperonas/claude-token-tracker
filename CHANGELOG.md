@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased] - 2026-07-22 (Test-Ausbau II)
+
+### Fixed
+Die neuen Tests (Share-API, Watcher, Export, Backup) haben vier echte Fehler aufgedeckt:
+- **Wildcard-CORS auf allen API-Antworten** — `sendJSON()` setzte pauschal `Access-Control-Allow-Origin: *`. Damit konnte **jede** Webseite, die der Browser des Nutzers besucht, die (im Single-User-Modus komplett ungeschützte) Dashboard-API auf `localhost:5010` auslesen. Schlimmer: weil `writeHead()` die per `setHeader()` gesetzten Header überschreibt, hat der Wildcard auch die **bewusste Origin-Allowlist des öffentlichen Share-Endpunkts** stillschweigend ausgehebelt — die dokumentierte CORS-Beschränkung auf `ops.celox.io`/`tracker.celox.io` war faktisch wirkungslos. `sendJSON()` setzt jetzt keinen CORS-Header mehr, reicht aber einen zuvor gesetzten durch; `/api/live` (SSE) und `/api/export` (voller Datenexport!) verlieren ihren Wildcard ebenfalls. Server-zu-Server-Konsumenten (OPS-Backend, Sync-Agent, curl) sind nicht betroffen — CORS ist reine Browser-Policy
+- **`/api/shares/projects` lieferte `last_activity: undefined`** — das Feld wurde aus `p.lastTs` gemappt, das `getProjects()` gar nicht kennt. Der Aggregator führt jetzt pro Projekt ein Aktivitätsfenster (`firstTs`/`lastTs`) und gibt es in beiden `getProjects()`-Zweigen aus
+- **HTML-Export war aus Projektnamen heraus manipulierbar** — die eingebettete JSON-Nutzlast wurde unescaped in einen Inline-`<script>`-Block geschrieben; ein Ordnername wie `</script><script>…` (Projektnamen kommen direkt von der Platte) konnte damit aus dem Script-Block ausbrechen. `<` wird jetzt als `<` serialisiert (bleibt gültiges JSON, identisches Parse-Ergebnis)
+- **Zwei Backups innerhalb derselben Sekunde** scheiterten mit dem nackten SQLite-Fehler „output file already exists" (der Dateiname hat Sekundenauflösung) — jetzt wird ein Zähler-Suffix angehängt
+
+### Added
+- **17 weitere Tests (296 → 333)**, zwei neue Testdateien:
+  - **`test/share-api.test.js`** (12) — die einzige öffentlich erreichbare Fläche des Trackers: Token-Format (48 Hex, Fehlformat wird vor dem DB-Zugriff abgewiesen), Ablauf, sofortige Sperrung beim Löschen, Admin-Key ist **kein** Ersatz für ein gültiges Token, sanitisierte Nutzlast (nur `label`/`period`/`summary`/`daily`/`sessions` — der interne Projektpfad darf nicht durchsickern), Zeitraumfilter, CORS-Allowlist (erlaubter Origin wird gespiegelt, fremder nicht, Preflight) und das Rate-Limit von 30 Requests/Minute **pro IP** (ein anderer Client bleibt unbehelligt)
+  - **`test/watcher.test.js`** (11) — bisher ungetestet: das `ignored`-Prädikat (ein Dotfile-**Regex** hätte `.claude` im Pfad getroffen und alle Events verschluckt), inkrementelles Nachlesen nur der angehängten Bytes, Ignorieren von Nicht-JSONL und Sub-Agent-Transkripten, Überleben einer kaputten Datei, Rate-Limit-Events ohne Token-Nachrichten, sowie die SSE-Verteilung (Frames, Nutzer-Filterung, Auswerfen toter Clients, Abmeldung bei `close`). Events werden synthetisch ausgelöst (`emit`) statt auf echte Dateisystem-Benachrichtigungen zu warten — dadurch deterministisch und schnell in CI
+  - **API**: statische Auslieferung mit ETag + `304` bei Revalidierung (und `200` bei veraltetem Validator), Dashboard-Shell unter `/`, `/api/config`, `/api/rebuild` **behält die DB-History** (Regressionstest für geprunte JSONL), `/api/rate-limits`, `/api/tool-cost-daily`, Sessions inkl. aktiver Zeit, Wochentagsverteilung
+  - **Export**: Escaping von Projekt-/Session-/Modellnamen, Rate-Limit-Sektion, Selbstgenügsamkeit (keine lokalen Asset-Referenzen)
+  - **Backup**: 50-%-Schrumpf-Schutz greift, gewachsene Backups werden akzeptiert, kein Überschreiben in derselben Sekunde
+- **Testdaten-Fixture gehärtet**: die Nachrichten des letzten Tages liegen jetzt wenige Minuten **vor „jetzt"** statt auf festen Uhrzeiten — sonst lagen sie bei einem Lauf früh am Morgen (oder in einer UTC+14-Zeitzone) in der Zukunft, und `getTrends()` ignoriert Zukunftsdaten korrekterweise, wodurch „heute" still leer war. Suite läuft jetzt in UTC, Berlin, Los Angeles und Kolkata identisch durch
+
 ## [Unreleased] - 2026-07-22 (Tests & Badges)
 
 ### Fixed

@@ -4,8 +4,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-296_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="296 tests passing">
-  <img src="https://img.shields.io/badge/code-32k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="31960 lines of code across 47 files">
+  <img src="https://img.shields.io/badge/tests-333_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="333 tests passing">
+  <img src="https://img.shields.io/badge/code-32.2k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="32151 lines of code across 47 files">
 </p>
 <!-- BADGES:END -->
 
@@ -197,7 +197,7 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **296 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **333 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -462,7 +462,7 @@ Alle GET-Endpunkte unterstützen `?from=YYYY-MM-DD&to=YYYY-MM-DD` Query-Paramete
 ## Entwicklung
 
 ```bash
-npm test              # Alle 296 Tests ausführen (vitest)
+npm test              # Alle 333 Tests ausführen (vitest)
 npm run test:watch    # Tests im Watch-Modus
 npm run test:coverage # Coverage-Report
 npm run lint          # ESLint (lib/ + server.js)
