@@ -592,7 +592,9 @@ function updatePeriodRange() {
   if (!el) return;
   const { from, to } = getPeriodRange();
   let text;
-  if (!from && !to) {
+  // "All time" has no `from` but still carries today as `to` — without the
+  // empty-from check the header rendered as "– Wed 07/22/2026".
+  if (!from || !to) {
     text = t('allTime');
   } else if (from === to) {
     text = formatDateWithWeekday(from, true);
@@ -903,10 +905,12 @@ function _formatResetDate(isoStr) {
 
 function _formatActiveTime(minutes) {
   if (!minutes || minutes <= 0) return '-';
-  if (minutes < 60) return minutes + ' Min.';
+  const de = currentLang === 'de';
+  const hUnit = de ? ' Std.' : 'h', mUnit = de ? ' Min.' : 'm';
+  if (minutes < 60) return minutes + mUnit;
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
-  return m > 0 ? h + ' Std. ' + m + ' Min.' : h + ' Std.';
+  return m > 0 ? h + hUnit + ' ' + m + mUnit : h + hUnit;
 }
 
 // --- Usage trends (now-anchored comparisons, independent of period filter) ---
@@ -1284,7 +1288,9 @@ async function loadProjects() {
     } catch { /* non-fatal */ }
   }
 
-  createProjectBarChart('chart-projects', projects, false);
+  // Honour the cache toggle like every other chart — hard-coded `false` made
+  // the bars (input+output only) contradict the totals in the table below.
+  createProjectBarChart('chart-projects', projects, state.includeCache);
 
   // Make chart bars clickable
   const chart = chartInstances['chart-projects'];

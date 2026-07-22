@@ -681,7 +681,7 @@ function createProjectBarChart(canvasId, data, includeCache) {
     data: {
       labels: top.map(d => { const max = isMobile() ? 15 : 25; return d.name.length > max ? d.name.slice(0, max) + '...' : d.name; }),
       datasets: [{
-        label: 'Total Tokens',
+        label: t('totalTokens'),
         data: tokenValues,
         backgroundColor: COLORS.input + '80',
         borderColor: COLORS.input,
@@ -777,12 +777,21 @@ function createToolCostBarChart(canvasId, data) {
         }
       },
       scales: {
-        x: { ticks: { callback: v => '$' + v.toFixed(2) } },
+        // Compact axis ($16k, not $16000.00) — full precision stays in the tooltip.
+        x: { ticks: { maxTicksLimit: isMobile() ? 4 : 6, maxRotation: 0, callback: v => _compactCost(v) } },
         y: { grid: { display: false } }
       }
     }
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** Axis-friendly cost: $16k / $1.2k / $42 / $0.50 */
+function _compactCost(v) {
+  const a = Math.abs(v);
+  if (a >= 1000) return '$' + (v / 1000).toFixed(a >= 10000 ? 0 : 1) + 'k';
+  if (a >= 10) return '$' + Math.round(v);
+  return '$' + v.toFixed(2);
 }
 
 function createToolCostDailyChart(canvasId, dailyData) {

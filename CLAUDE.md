@@ -147,6 +147,15 @@ VPS deployment to tracker.celox.io:
 - Nginx reverse proxy with SSL (certbot)
 - `scripts/deploy.sh` handles rsync + npm ci + PM2 restart
 
+## README Screenshots
+
+`public/screenshots/` holds the images embedded in `README.md` (+ the mobile row in `README_EN.md`/`README_DE.md`). Captured from the **live local dashboard** (real data, All-Time period, English UI, dark theme) with Playwright against `http://localhost:5010`:
+
+- **Desktop 1280×800**, viewport shots (not `fullPage`): `01-overview`, `02-trends`, `03-trend-charts`, `04-sessions`, `05-projects`, `06-tools`, `07-models`, `08-insights`, `09-productivity`, `10-achievements`.
+- **Mobile 393×852** (iPhone 16): `mobile-overview`, `mobile-trends`, `mobile-insights`, `mobile-productivity`, `mobile-achievements`.
+- Procedure: resize → load → `setLang('en')` + `setPeriod('all')` → wait for the tab's data (the aggregator needs ~20–30 s after a restart) → `switchTab(...)` → scroll the target section to ~160 px (desktop) / ~290 px (mobile) below the viewport top so the sticky header doesn't clip it → screenshot. Renumbering means the README table must be updated **and** the stale files deleted — nothing else in the repo references them.
+- A screenshot pass is a cheap full-UI review: the current set surfaced five real bugs (all-time header, German time units in the English UI, the projects chart ignoring the cache toggle, an unreadable cost axis, squeezed active-session cards on mobile). **Charts must honour `state.includeCache`** — a hard-coded value makes a chart contradict the table next to it.
+
 ## TODO
 
 - **Plan Usage Limits**: `lib/plan-usage.js` and sync-agent support fetching claude.ai plan usage (session %, weekly all-models %, Sonnet-only %) — frontend section in Overview tab ready but hidden. Currently blocked: Claude Code OAuth token (`sk-ant-oat01-*`) lacks scopes for claude.ai web API (`/api/organizations/{org_id}/usage`). Needs official Anthropic Usage API endpoint or web-session-based auth. Code is in place and will activate automatically once a working token/endpoint is available.

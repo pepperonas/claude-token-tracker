@@ -1086,7 +1086,9 @@ html.js .uheat-anim .uheat-legend {
   .data-table { font-size: 12px; }
   .data-table th, .data-table td { padding: 8px; }
 
-  .active-session-card { max-width: 100%; min-width: 0; }
+  /* Stack instead of shrinking: with several live sessions, `min-width: 0` on a
+     flex row squeezed each card to ~50px and broke the text one word per line. */
+  .active-session-card { flex: 1 1 100%; max-width: 100%; min-width: 0; }
 
   .comparison-grid { grid-template-columns: 1fr; }
   .achievements-cards { grid-template-columns: 1fr; }

@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-238_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-255_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -51,7 +51,7 @@
   <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
-  <img src="https://img.shields.io/badge/charts-25+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
+  <img src="https://img.shields.io/badge/charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
   <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
 </p>
 
@@ -130,7 +130,7 @@ Open [http://localhost:5010](http://localhost:5010)
 
 ## Highlights
 
-- **25+ interactive charts** across 10 tabs with real-time SSE updates
+- **40+ interactive charts** across 10 tabs with real-time SSE updates
 - **Claude API tab** — Anthropic Admin API usage/cost dashboard: budget tracking with progress bar, 4 KPIs (total cost, tokens, avg cost/day, cache efficiency), daily cost/token charts by model, model distribution doughnut, cumulative cost trend. **Per-API-key breakdown**: horizontal stacked bar chart showing cost per key by model, daily cost timeline per key, key comparison table (tokens, input, output, cache %, calculated cost, last used), token history timeline (stacked area). Costs per key calculated via model pricing since the cost API doesn't support `group_by api_key_id`. Key names resolved via `/v1/organizations/api_keys`. AES-256-GCM encrypted key storage, SWR caching with configurable TTL
 - **Usage trends** — four live cards (today / this week / this month / last 7 days) comparing against the previous period **cut off at the same point in time** (yesterday up to this hour, last week up to this weekday+time, last month up to this day-of-month, clamped for shorter months), each with a delta badge, overlay sparkline and month-end projection. Below them five comparison charts on the same payload: 90-day volume with 7d/30d moving averages, cumulative month vs. previous month, week comparison Mon–Sun, project momentum (last 7 days vs. the 7 before) and model-mix shift as 100 % stacked bars. Independent of the period filter, honours the cache and token↔cost toggles
 - **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
@@ -152,28 +152,30 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **216 automated tests** — unit, integration, and multi-user API tests
+- **255 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
 
 | | |
 |---|---|
-| ![Overview](public/screenshots/01-overview.png) | ![Sessions](public/screenshots/02-sessions.png) |
-| **Overview** — KPI cards, token breakdown, lines of code, daily charts | **Sessions** — sortable table with project, model, duration, tokens, cost |
-| ![Projects](public/screenshots/03-projects.png) | ![Tools](public/screenshots/04-tools.png) |
-| **Projects** — per-project statistics and cost breakdown | **Tools** — tool cost attribution, MCP server breakdown, sub-agent tracking |
-| ![Models](public/screenshots/05-models.png) | ![Insights](public/screenshots/06-insights.png) |
-| **Models** — model usage, daily tokens by model, cost breakdown | **Insights** — cache efficiency, stop reasons, lines of code chart |
-| ![Productivity](public/screenshots/07-productivity.png) | ![Achievements](public/screenshots/08-achievements.png) |
-| **Productivity** — efficiency metrics with period comparison | **Achievements** — 700 achievements across 14 categories with 5 tiers |
+| ![Overview](public/screenshots/01-overview.png) | ![Usage trends](public/screenshots/02-trends.png) |
+| **Overview** — live sessions, KPI cards, token breakdown, active work time | **Usage trends** — today / week / month / rolling 7d vs. the previous period at the same point, plus the 90-day trend with moving averages |
+| ![Trend charts](public/screenshots/03-trend-charts.png) | ![Sessions](public/screenshots/04-sessions.png) |
+| **Trend comparisons** — cumulative month vs. previous month, week comparison, project momentum, model-mix shift | **Sessions** — sortable table with project, model, duration, active time, tokens, cost |
+| ![Projects](public/screenshots/05-projects.png) | ![Tools](public/screenshots/06-tools.png) |
+| **Projects** — per-project tokens and cost, live search, non-destructive merge | **Tools** — tool cost attribution, MCP server breakdown, sub-agent tracking |
+| ![Models](public/screenshots/07-models.png) | ![Insights](public/screenshots/08-insights.png) |
+| **Models** — model usage over time, per-model tokens and cost | **Insights** — cost breakdown, cumulative cost, weekday activity, cache efficiency |
+| ![Productivity](public/screenshots/09-productivity.png) | ![Achievements](public/screenshots/10-achievements.png) |
+| **Productivity** — efficiency metrics with period comparison | **Achievements** — 700 achievements across 14 categories, unlocked with historical dates |
 
 ### Mobile (iPhone 16 — 393px)
 
-| | | | |
-|---|---|---|---|
-| ![Overview](public/screenshots/mobile-overview.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
-| **Overview** | **Insights** | **Productivity** | **Achievements** |
+| | | | | |
+|---|---|---|---|---|
+| ![Overview](public/screenshots/mobile-overview.png) | ![Trends](public/screenshots/mobile-trends.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
+| **Overview** | **Trends** | **Insights** | **Productivity** | **Achievements** |
 
 ## Architecture
 

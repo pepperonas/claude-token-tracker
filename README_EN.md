@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
   <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
   <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/Vitest-238_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/Vitest-255_tests-6E9F18?logo=vitest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
 </p>
 
@@ -45,7 +45,7 @@
   <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
-  <img src="https://img.shields.io/badge/charts-25+-FF6384?logo=chartdotjs&logoColor=white" alt="20+ Charts">
+  <img src="https://img.shields.io/badge/charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
   <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
 </p>
 
@@ -123,6 +123,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Token breakdown** — detail KPI cards for input, output, cache read, and cache create tokens with individual costs
 - **Active Work Time** — actual working time (wall-clock) computed from a unified message timeline within the period (gaps > 5 min counted as breaks). Additional "Avg Work Time/Day" KPI divides by days with actual activity (not by period length) — for a 30-day filter with only 15 active days, divisor is 15
 - **Lines of Code** — Write (green), Edit (yellow), Delete (red) with Net Change calculation and adaptive hourly/daily chart
+- **Usage trends** — four now-anchored comparison cards in the overview (today / this week / this month / rolling 7 days), each measured against the previous period **cut off at the same point in time**: yesterday up to this hour, last week up to this weekday+time, last month up to this day-of-month (clamped for shorter months). Delta badge, overlay sparkline (running period stops where it stands, previous period dashed), month-end projection and a tooltip with messages + active time for both sides. Below them five comparison charts on the **same payload** — 90-day volume with 7d/30d moving averages, cumulative month vs. previous month, week comparison Mon–Sun, project momentum (last 7 days vs. the 7 before) and model-mix shift as 100 % stacked bars. Independent of the period filter, honours the cache and token↔cost toggles. Served by `GET /api/trends` / `Aggregator.getTrends()` in a single message scan
 - **Usage heatmap** — weekday × hour grid in the overview visualizing token-usage intensity. Multi-day ranges render a 7×24 grid (rows Mon→Sun); a single day renders a 24-hour strip. Cache-toggle aware, with per-cell tooltips (tokens · messages · cost). Lightweight CSS grid (no extra dependency), served by `GET /api/hourly-weekday` / `Aggregator.getHourlyWeekday()`
 - **Weekday-aware dates** — chart axis labels carry the weekday (`Sat 06-27`) and a period-range header shows the full selected window with weekdays (`Thu 05/28/2026 – Sat 06/27/2026`)
 - **Global period filter** — Today / 7 Days / 30 Days / All Time with prev/next navigation arrows, applies to all tabs
@@ -191,14 +192,14 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **216 automated tests** (unit + integration + multi-user API + achievements)
+- **255 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
-| | | | |
-|---|---|---|---|
-| ![Overview](public/screenshots/mobile-overview.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
-| **Overview** | **Insights** | **Productivity** | **Achievements** |
+| | | | | |
+|---|---|---|---|---|
+| ![Overview](public/screenshots/mobile-overview.png) | ![Trends](public/screenshots/mobile-trends.png) | ![Insights](public/screenshots/mobile-insights.png) | ![Productivity](public/screenshots/mobile-productivity.png) | ![Achievements](public/screenshots/mobile-achievements.png) |
+| **Overview** | **Trends** | **Insights** | **Productivity** | **Achievements** |
 
 ## Architecture
 
@@ -456,7 +457,7 @@ All GET endpoints support `?from=YYYY-MM-DD&to=YYYY-MM-DD` query parameters. Ana
 ## Development
 
 ```bash
-npm test              # Run all 238 tests (vitest)
+npm test              # Run all 255 tests (vitest)
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 npm run lint          # ESLint (lib/ + server.js)

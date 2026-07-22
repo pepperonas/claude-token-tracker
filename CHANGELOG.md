@@ -11,6 +11,14 @@
   - **Modell-Mix-Verschiebung** — 100 %-gestapelte Anteile letzte 7 Tage vs. Vor-7-Tage; deckt eine Verschiebung zwischen Modellen auch dann auf, wenn das Gesamtvolumen gleich bleibt
 - Backend: `getTrends()` liefert aus demselben Scan zusätzlich `daily90` (90 lokale Tage, per Datums-String indiziert — `ms/86400000` würde bei DST einen Tag verschmieren) und `momentum` (`{windowDays, projects[], models[]}` mit `cur`/`prev` je Eintrag). i18n DE/EN, Tooltips, Demo-Daten, Tests (Aggregator + API-Shape)
 
+### Fixed
+Beim Neuaufnehmen der README-Screenshots (alle 10 Desktop- + 5 Mobile-Ansichten, jetzt inkl. der Trend-Ansichten) sind fünf UI-Fehler aufgefallen und behoben worden:
+- **„All Time"-Kopfzeile zeigte „– Wed 07/22/2026"** — der Zeitraum-Header prüfte `!from && !to`, aber „Gesamt" hat nur kein `from`, sehr wohl aber `to` (heute)
+- **Deutsche Zeiteinheiten in der englischen UI** — „Active Work Time" rendete `751 Std. 49 Min.` statt `751h 49m`; `_formatActiveTime()` ist jetzt sprachabhängig (wie in der Doku ohnehin beschrieben)
+- **Projekt-Chart ignorierte den Cache-Toggle** — `createProjectBarChart(..., false)` war hart verdrahtet, wodurch die Balken (nur Input+Output, 18 M) den Summen der Tabelle direkt darunter (7,9 Mrd.) widersprachen; jetzt `state.includeCache` wie überall sonst. Der Dataset-Titel „Total Tokens" wird zusätzlich übersetzt
+- **Achse der Tool-Kosten-Attribution unlesbar** — schräg gestellte `$0.00 $2000.00 $4000.00 …`-Labels; jetzt kompakt (`$5k`, `$10k`) mit `maxTicksLimit` und ohne Rotation, volle Präzision bleibt im Tooltip
+- **Aktive-Sessions-Karten auf dem Handy zerquetscht** — die `min-width: 0`-Regel unter 480 px ließ fünf parallele Sessions in einer Flex-Zeile auf je ~50 px schrumpfen (ein Wort pro Zeile); die Karten stapeln jetzt (`flex: 1 1 100%`)
+
 ## [Unreleased] - 2026-07-19
 
 ### Added
