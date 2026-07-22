@@ -331,6 +331,344 @@ function createHourlyChart(canvasId, data, includeCache, mode) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+// --- Usage-trend charts (overview, independent of the period filter) ---------
+// All of them take the metric `key` ('tokens'|'tokensNoCache'|'cost'|
+// 'costNoCache') resolved by the caller from the cache + token↔cost toggles,
+// plus `mode` ('tokens'|'cost') for formatting.
+
+function _trendChartFmt(mode) { return mode === 'cost' ? formatCost : formatTokens; }
+
+/** Simple trailing moving average; leading slots stay null (no partial window). */
+function _movingAvg(values, window) {
+  const out = new Array(values.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    sum += values[i];
+    if (i >= window) sum -= values[i - window];
+    if (i >= window - 1) out[i] = sum / window;
+  }
+  return out;
+}
+
+/**
+ * 90-day daily volume with 7d and 30d moving averages — the long-range
+ * direction the single-period cards can't show.
+ */
+function createTrend90Chart(canvasId, daily90, key, mode) {
+  if (!daily90 || daily90.length === 0) return;
+  const fmt = _trendChartFmt(mode);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const vals = daily90.map(d => d[key] || 0);
+  renderChart(canvasId, ctx, {
+    type: 'bar',
+    data: {
+      labels: daily90.map(d => formatChartDate(d.date)),
+      datasets: [
+        {
+          label: t('trendDailyLabel'),
+          data: vals,
+          backgroundColor: COLORS.input + '40',
+          borderColor: COLORS.input + '60',
+          borderWidth: 0,
+          order: 3
+        },
+        {
+          label: t('trendAvg7'),
+          data: _movingAvg(vals, 7),
+          type: 'line',
+          borderColor: COLORS.cost,
+          backgroundColor: COLORS.cost + '20',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.35,
+          spanGaps: true,
+          order: 1
+        },
+        {
+          label: t('trendAvg30'),
+          data: _movingAvg(vals, 30),
+          type: 'line',
+          borderColor: COLORS.cacheRead,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.35,
+          spanGaps: true,
+          order: 2
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.raw || 0)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: isMobile() ? 5 : 12, autoSkip: true } },
+        y: { beginAtZero: true, ticks: { callback: v => fmt(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/**
+ * Cumulative month-to-date vs the full previous month, plus a dashed
+ * projection to month end — answers "am I above or below last month?".
+ */
+function createTrendMonthCumulativeChart(canvasId, month, key, mode, todayDom) {
+  if (!month || !month.series) return;
+  const fmt = _trendChartFmt(mode);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const cur = month.series.cur || [], prev = month.series.prev || [];
+  const n = Math.max(cur.length, prev.length);
+  // Cumulative up to today only — trailing zero-days would flatline the line.
+  let lastDay = 0;
+  for (let i = 0; i < cur.length; i++) if ((cur[i][key] || 0) > 0) lastDay = i + 1;
+  const today = todayDom || new Date().getDate();
+  const upTo = Math.max(lastDay, Math.min(today, cur.length));
+  const cumulate = (arr, limit) => {
+    const out = new Array(n).fill(null);
+    let acc = 0;
+    for (let i = 0; i < arr.length; i++) {
+      acc += arr[i][key] || 0;
+      if (limit === undefined || i < limit) out[i] = Math.round(acc * 100) / 100;
+    }
+    return out;
+  };
+  const curCum = cumulate(cur, upTo);
+  const prevCum = cumulate(prev);
+  const curTotal = curCum[upTo - 1] || 0;
+  const projected = month.elapsedFraction > 0 ? curTotal / month.elapsedFraction : curTotal;
+  const projection = new Array(n).fill(null);
+  if (upTo >= 1 && upTo < cur.length) {
+    projection[upTo - 1] = curTotal;
+    projection[cur.length - 1] = Math.round(projected * 100) / 100;
+  }
+  renderChart(canvasId, ctx, {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: n }, (_, i) => String(i + 1)),
+      datasets: [
+        {
+          label: t('trendThisMonth'),
+          data: curCum,
+          borderColor: COLORS.input,
+          backgroundColor: COLORS.input + '20',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          fill: true,
+          tension: 0.2
+        },
+        {
+          label: t('trendLastMonthLabel'),
+          data: prevCum,
+          borderColor: COLORS.cacheRead,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.2
+        },
+        {
+          label: t('trendProjectionLabel'),
+          data: projection,
+          borderColor: COLORS.cacheCreate,
+          borderWidth: 1.5,
+          borderDash: [2, 3],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          spanGaps: true,
+          tension: 0
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: (items) => t('trendDayOfMonth') + ' ' + items[0].label,
+            label: (c) => c.raw === null ? null : `${c.dataset.label}: ${fmt(c.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: isMobile() ? 6 : 16 } },
+        y: { beginAtZero: true, ticks: { callback: v => fmt(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/** This week vs last week, per weekday (Mon–Sun) — grouped bars. */
+function createTrendWeekCompareChart(canvasId, week, key, mode, todayIdx) {
+  if (!week || !week.series) return;
+  const fmt = _trendChartFmt(mode);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const lang = (typeof currentLang !== 'undefined' && currentLang === 'de') ? 'de' : 'en';
+  const names = WEEKDAY_SHORT[lang];
+  const labels = [1, 2, 3, 4, 5, 6, 0].map(i => names[i]); // Mon..Sun
+  const cur = week.series.cur || [], prev = week.series.prev || [];
+  renderChart(canvasId, ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: t('trendThisWeek'),
+          // Days still ahead of us stay empty instead of reading as a drop.
+          data: cur.map((b, i) => (todayIdx !== undefined && i > todayIdx) ? null : (b[key] || 0)),
+          backgroundColor: COLORS.input + 'cc',
+          borderRadius: 4
+        },
+        {
+          label: t('trendLastWeekLabel'),
+          data: prev.map(b => b[key] || 0),
+          backgroundColor: COLORS.cacheRead + '80',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.raw || 0)}` } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { callback: v => fmt(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
+/**
+ * Biggest movers: change of the last 7 days vs the 7 days before, per project.
+ * Diverging horizontal bars (green = growing, red = shrinking).
+ */
+function createTrendMomentumChart(canvasId, projects, key, mode) {
+  if (!projects || projects.length === 0) return;
+  const fmt = _trendChartFmt(mode);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const rows = projects
+    .map(p => ({ name: p.name, cur: p.cur[key] || 0, prev: p.prev[key] || 0, delta: (p.cur[key] || 0) - (p.prev[key] || 0) }))
+    .filter(r => r.delta !== 0)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, isMobile() ? 6 : 8);
+  if (rows.length === 0) return;
+  const maxLen = isMobile() ? 14 : 22;
+  renderChart(canvasId, ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => {
+        // Keep the last two path segments — the leaf alone is ambiguous
+        // ("…/celox/datenschutz" vs "…/portal/datenschutz").
+        const parts = r.name.split('/').filter(Boolean);
+        const short = parts.slice(-2).join('/') || r.name;
+        return short.length > maxLen ? '…' + short.slice(-maxLen) : short;
+      }),
+      datasets: [{
+        label: t('trendDelta'),
+        data: rows.map(r => r.delta),
+        backgroundColor: rows.map(r => (r.delta >= 0 ? COLORS.output : COLORS.red) + 'aa'),
+        borderColor: rows.map(r => r.delta >= 0 ? COLORS.output : COLORS.red),
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => rows[items[0].dataIndex].name,
+            label: (c) => {
+              const r = rows[c.dataIndex];
+              return [
+                `${t('trendCur7')}: ${fmt(r.cur)}`,
+                `${t('trendPrev7')}: ${fmt(r.prev)}`,
+                `${t('trendDelta')}: ${r.delta >= 0 ? '+' : '−'}${fmt(Math.abs(r.delta))}`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { callback: v => (v < 0 ? '−' : '') + fmt(Math.abs(v)) }, grid: { color: '#30363d40' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+/**
+ * Model mix of the last 7 days vs the 7 days before, as 100 % stacked bars —
+ * shows a shift between models even when the absolute volume is flat.
+ */
+function createTrendModelMixChart(canvasId, models, key, mode) {
+  if (!models || models.length === 0) return;
+  const fmt = _trendChartFmt(mode);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const rows = ['cur', 'prev'];
+  const totals = rows.map(side => models.reduce((s, m) => s + (m[side][key] || 0), 0));
+  if (totals[0] <= 0 && totals[1] <= 0) return;
+  const datasets = models.map((m, i) => ({
+    label: m.name,
+    data: rows.map((side, r) => totals[r] > 0 ? ((m[side][key] || 0) / totals[r]) * 100 : 0),
+    _abs: rows.map(side => m[side][key] || 0),
+    backgroundColor: COLORS.models[i % COLORS.models.length] + 'cc',
+    borderRadius: 3,
+    stack: 'mix'
+  }));
+  renderChart(canvasId, ctx, {
+    type: 'bar',
+    data: { labels: [t('trendCur7'), t('trendPrev7')], datasets },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              const abs = c.dataset._abs ? c.dataset._abs[c.dataIndex] : 0;
+              return `${c.dataset.label}: ${c.raw.toFixed(1)} % (${fmt(abs)})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true, max: 100, grid: { color: '#30363d40' },
+          ticks: { stepSize: 25, maxRotation: 0, callback: v => v + ' %' }
+        },
+        y: { stacked: true, grid: { display: false } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 function createProjectBarChart(canvasId, data, includeCache) {
   const top = data.slice(0, 15);
   const ctx = document.getElementById(canvasId).getContext('2d');

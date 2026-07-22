@@ -517,6 +517,10 @@ html.js .uheat-anim .uheat-legend {
 .trend-grid .kpi-card:nth-child(4) .trend-spark-cur { stroke: var(--orange); }
 .trend-sub { margin-top: 6px; }
 
+/* Trend comparison charts (below the trend cards, same live payload) */
+.trend-charts { margin-top: 16px; }
+.trend-charts .chart-box h3 { font-size: 13px; }
+
 .kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
 .kpi-card:nth-child(2) .kpi-value { color: var(--green); }
 .kpi-card:nth-child(3) .kpi-value { color: var(--purple); }

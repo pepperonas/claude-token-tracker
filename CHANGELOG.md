@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] - 2026-07-22
+
+### Added
+- **Fünf Vergleichs-Charts unter den Nutzungs-Trends** — die vier Trend-Karten beantworten „mehr oder weniger als zuletzt?", die Charts jetzt auch „in welche Richtung, wo und womit?". Alle fünf hängen am **selben `/api/trends`-Payload** (kein zusätzlicher Request, kein zweiter Message-Scan) und folgen Cache- und Token↔Kosten-Toggle:
+  - **90-Tage-Verlauf mit gleitendem Durchschnitt** — Tagesbalken + 7-Tage- und 30-Tage-Schnitt: die 7er-Linie glättet das Wochentags-Rauschen, die 30er zeigt die eigentliche Richtung (unvollständige Fenster bleiben leer statt verzerrt)
+  - **Monatsverlauf (kumuliert)** — laufender Monat gegen den kompletten Vormonat, plus gestrichelte Hochrechnung aufs Monatsende; kumuliert nur bis heute, damit kommende Tage die Linie nicht flach auslaufen lassen
+  - **Wochenvergleich (Mo–So)** — diese vs. letzte Woche je Wochentag; **noch kommende Tage bleiben leer statt 0**, sonst liest sich der Rest der Woche wie ein Einbruch
+  - **Projekt-Momentum** — divergierende Balken (letzte 7 Tage minus die 7 Tage davor) zeigen, welche Projekte zu- bzw. abgenommen haben; Labels tragen die letzten zwei Pfadsegmente (der Leaf allein ist mehrdeutig)
+  - **Modell-Mix-Verschiebung** — 100 %-gestapelte Anteile letzte 7 Tage vs. Vor-7-Tage; deckt eine Verschiebung zwischen Modellen auch dann auf, wenn das Gesamtvolumen gleich bleibt
+- Backend: `getTrends()` liefert aus demselben Scan zusätzlich `daily90` (90 lokale Tage, per Datums-String indiziert — `ms/86400000` würde bei DST einen Tag verschmieren) und `momentum` (`{windowDays, projects[], models[]}` mit `cur`/`prev` je Eintrag). i18n DE/EN, Tooltips, Demo-Daten, Tests (Aggregator + API-Shape)
+
 ## [Unreleased] - 2026-07-19
 
 ### Added

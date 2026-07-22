@@ -1,4 +1,5 @@
 const Aggregator = require('../lib/aggregator');
+const { getModelLabel } = require('../lib/pricing');
 const { SAMPLE_MESSAGES } = require('./fixtures/sample-messages');
 
 describe('aggregator', () => {
@@ -600,6 +601,32 @@ describe('aggregator', () => {
       }
       // Tiny token counts round to $0.00 — just assert non-negative
       expect(tr.today.current.cost).toBeGreaterThanOrEqual(0);
+    });
+
+    it('builds the 90-day daily series ending today (local dates)', () => {
+      expect(tr.daily90.length).toBe(90);
+      expect(tr.daily90[89].date).toBe('2026-06-17');
+      expect(tr.daily90[0].date).toBe('2026-03-20');   // 89 days before
+      expect(tr.daily90[89].tokens).toBe(20);          // A
+      expect(tr.daily90[89].messages).toBe(1);
+      expect(tr.daily90[88].tokens).toBe(40);          // B + C (yesterday)
+      // May 10 (E) is inside the window, April dates are not represented twice
+      const may10 = tr.daily90.find(d => d.date === '2026-05-10');
+      expect(may10.tokens).toBe(20);
+      const total = tr.daily90.reduce((s, d) => s + d.tokens, 0);
+      expect(total).toBe(120);                         // all six messages
+    });
+
+    it('splits momentum into last 7 days vs the 7 days before, per project and model', () => {
+      const p = tr.momentum.projects.find(x => x.name === 'p');
+      expect(tr.momentum.windowDays).toBe(7);
+      expect(p.cur.tokens).toBe(60);                   // A + B + C
+      expect(p.cur.messages).toBe(3);
+      expect(p.prev.tokens).toBe(20);                  // D (Jun 10 10:00)
+      const m = tr.momentum.models[0];
+      expect(m.name).toBe(getModelLabel('claude-sonnet-5'));
+      expect(m.cur.tokens).toBe(60);
+      expect(m.prev.tokens).toBe(20);
     });
   });
 

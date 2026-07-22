@@ -491,6 +491,45 @@
             <div class="kpi-sub trend-sub" id="trend-sub-rolling7"></div>
           </div>
         </div>
+
+        <div class="chart-grid full trend-charts">
+          <div class="chart-box">
+            <h3 data-i18n="trendChart90" data-tooltip-key="tooltipTrend90">90-Tage-Verlauf mit gleitendem Durchschnitt</h3>
+            <div class="chart-container">
+              <canvas id="chart-trend-90"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-grid trend-charts">
+          <div class="chart-box">
+            <h3 data-i18n="trendChartMonth" data-tooltip-key="tooltipTrendMonth">Monatsverlauf (kumuliert)</h3>
+            <div class="chart-container">
+              <canvas id="chart-trend-month"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="trendChartWeek" data-tooltip-key="tooltipTrendWeek">Wochenvergleich (Mo–So)</h3>
+            <div class="chart-container">
+              <canvas id="chart-trend-week"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-grid trend-charts">
+          <div class="chart-box">
+            <h3 data-i18n="trendChartMomentum" data-tooltip-key="tooltipTrendMomentum">Projekt-Momentum (7 T vs. Vor-7 T)</h3>
+            <div class="chart-container">
+              <canvas id="chart-trend-momentum"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3 data-i18n="trendChartModelMix" data-tooltip-key="tooltipTrendModelMix">Modell-Mix-Verschiebung</h3>
+            <div class="chart-container small">
+              <canvas id="chart-trend-modelmix"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Official stats banner -->

@@ -119,6 +119,13 @@ describe('API endpoints', () => {
     expect(body.today.series.cur.length).toBe(24);
     expect(body.week.series.cur.length).toBe(7);
     expect(typeof body.month.elapsedFraction).toBe('number');
+    // Trend charts ride on the same payload (one scan, one request)
+    expect(body.daily90.length).toBe(90);
+    expect(body.daily90[89]).toHaveProperty('date');
+    expect(body.daily90[89]).toHaveProperty('tokensNoCache');
+    expect(body.momentum.windowDays).toBe(7);
+    expect(Array.isArray(body.momentum.projects)).toBe(true);
+    expect(Array.isArray(body.momentum.models)).toBe(true);
   });
 
   it('GET /api/daily-by-model returns model breakdown', async () => {

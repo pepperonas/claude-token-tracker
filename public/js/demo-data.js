@@ -943,9 +943,37 @@ const DEMO_DATA = (() => {
     const rollCur = mkDaily(7, 1.85e9);
     const rollPrev = mkDaily(7, 1.5e9);
 
+    // 90-day series with a gentle upward trend + weekend dips
+    const day90 = Array.from({ length: 90 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (89 - i));
+      const weekend = d.getDay() === 0 || d.getDay() === 6;
+      const b = mkBucket(1.35e9 * (0.6 + (i / 89) * 0.8) * (weekend ? 0.4 : 1));
+      return {
+        date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'),
+        ...b,
+        messages: Math.round(b.tokens / 1e6 * 2.6)
+      };
+    });
+    const mkMom = (scale) => { const b = mkBucket(scale); return { ...b, messages: Math.round(b.tokens / 1e6 * 2.6) }; };
+    const momentum = {
+      windowDays: 7,
+      projects: [
+        { name: 'my-webapp', cur: mkMom(5.4e9), prev: mkMom(3.1e9) },
+        { name: 'api-server', cur: mkMom(2.8e9), prev: mkMom(4.2e9) },
+        { name: 'mobile-app', cur: mkMom(1.9e9), prev: mkMom(1.2e9) }
+      ],
+      models: [
+        { name: 'Claude Sonnet 4.5', cur: mkMom(5.1e9), prev: mkMom(5.8e9) },
+        { name: 'Claude Opus 4.6', cur: mkMom(4.2e9), prev: mkMom(2.1e9) },
+        { name: 'Claude Haiku 4.5', cur: mkMom(0.8e9), prev: mkMom(0.6e9) }
+      ]
+    };
+
     const cutSum = (arr, n) => sumOf(arr.slice(0, n));
     return {
       generatedAt: now.toISOString(),
+      daily90: day90,
+      momentum,
       today: { current: sumOf(todayCur), prevSame: cutSum(todayPrev, h + 1), prevFull: sumOf(todayPrev), series: { cur: todayCur, prev: todayPrev } },
       week: { current: sumOf(weekCur), prevSame: cutSum(weekPrev, dow + 1), prevFull: sumOf(weekPrev), series: { cur: weekCur, prev: weekPrev } },
       month: {

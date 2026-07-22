@@ -1024,6 +1024,35 @@ function renderTrends() {
     compareLabel: t('trendVsPrev7'),
     subLabel: (prevFull) => t('trendPrev7Total') + ': ' + _trendFmt(prevFull)
   });
+
+  renderTrendCharts();
+}
+
+// The trend charts share the cards' metric selection (cache toggle + token↔cost
+// pill), so they re-render from the cached payload whenever either flips.
+function renderTrendCharts() {
+  const tr = _trendsData;
+  if (!tr) return;
+  const key = _trendSeriesKey();
+  const mode = state.metricMode === 'cost' ? 'cost' : 'tokens';
+  const nowD = new Date(tr.generatedAt);
+  if (tr.daily90) createTrend90Chart('chart-trend-90', tr.daily90, key, mode);
+  createTrendMonthCumulativeChart('chart-trend-month', tr.month, key, mode, nowD.getDate());
+  createTrendWeekCompareChart('chart-trend-week', tr.week, key, mode, (nowD.getDay() + 6) % 7);
+  if (tr.momentum) {
+    _toggleTrendBox('chart-trend-momentum', tr.momentum.projects && tr.momentum.projects.length > 1);
+    createTrendMomentumChart('chart-trend-momentum', tr.momentum.projects, key, mode);
+    _toggleTrendBox('chart-trend-modelmix', tr.momentum.models && tr.momentum.models.length > 0);
+    createTrendModelMixChart('chart-trend-modelmix', tr.momentum.models, key, mode);
+  }
+}
+
+// Hide a trend chart box when there's nothing to compare (fresh install, one
+// project only) instead of showing an empty canvas.
+function _toggleTrendBox(canvasId, show) {
+  const canvas = document.getElementById(canvasId);
+  const box = canvas && canvas.closest('.chart-box');
+  if (box) box.style.display = show ? '' : 'none';
 }
 
 async function loadTrends() {
