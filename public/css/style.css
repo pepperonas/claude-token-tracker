@@ -647,6 +647,36 @@ html.js .uheat-anim .uheat-legend {
   letter-spacing: 0.5px;
   color: var(--text-muted);
   margin-bottom: 12px;
+  /* button reset — the header is a real toggle */
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.active-collapse-caret {
+  margin-left: auto;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  transition: transform var(--dur-quick, 140ms) var(--ease-flat, ease);
+}
+
+.active-sessions.collapsed .active-sessions-header {
+  margin-bottom: 0;
+}
+
+.active-sessions.collapsed .active-collapse-caret {
+  transform: rotate(-90deg);
+}
+
+.active-sessions.collapsed .active-sessions-grid {
+  display: none;
 }
 
 .active-dot {

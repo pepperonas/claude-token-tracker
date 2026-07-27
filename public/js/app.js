@@ -803,6 +803,7 @@ async function loadActiveSessions() {
     container.style.display = '';
     countEl.textContent = sessions.length;
     grid.textContent = '';
+    initActiveSessionsCollapse();
 
     for (const s of sessions) {
       const card = document.createElement('div');
@@ -830,6 +831,28 @@ async function loadActiveSessions() {
   } catch {
     // ignore
   }
+}
+
+// Collapse toggle for the Active Sessions panel. The grid is rebuilt on every
+// status refresh, but the collapsed state lives on the container (not the grid)
+// and is persisted, so it survives refreshes. Handler is wired exactly once.
+function initActiveSessionsCollapse() {
+  const container = document.getElementById('active-sessions');
+  const toggle = document.getElementById('active-sessions-toggle');
+  if (!container || !toggle) return;
+
+  const collapsed = localStorage.getItem('activeSessionsCollapsed') === '1';
+  container.classList.toggle('collapsed', collapsed);
+  toggle.setAttribute('aria-expanded', String(!collapsed));
+
+  if (toggle.dataset.bound) return;
+  toggle.dataset.bound = '1';
+  toggle.addEventListener('click', () => {
+    const nowCollapsed = !container.classList.contains('collapsed');
+    container.classList.toggle('collapsed', nowCollapsed);
+    toggle.setAttribute('aria-expanded', String(!nowCollapsed));
+    localStorage.setItem('activeSessionsCollapsed', nowCollapsed ? '1' : '0');
+  });
 }
 
 async function loadPlanUsage() {

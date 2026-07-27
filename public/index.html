@@ -294,11 +294,12 @@
     <div id="tab-overview" class="tab-panel active">
       <!-- Active Sessions -->
       <div class="active-sessions" id="active-sessions" style="display:none;">
-        <div class="active-sessions-header">
+        <button type="button" class="active-sessions-header" id="active-sessions-toggle" aria-expanded="true" aria-controls="active-sessions-grid">
           <span class="active-dot"></span>
           <span data-i18n="activeSessions">Aktive Sitzungen</span>
           <span class="active-count" id="active-count"></span>
-        </div>
+          <span class="active-collapse-caret" aria-hidden="true"></span>
+        </button>
         <div class="active-sessions-grid" id="active-sessions-grid"></div>
       </div>
 
