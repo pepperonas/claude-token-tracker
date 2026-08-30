@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Refreshes the two live badges (test count + lines of code) in all READMEs.
+ * Refreshes the live badges in all READMEs.
  *
  * The numbers used to be hand-maintained and drifted constantly (the badge
  * claimed 238 tests while the suite had 255, and "25k+ LOC" was a guess). CI
@@ -68,23 +68,74 @@ function countTests(reportPath) {
   return count;
 }
 
+/**
+ * Facts derived from the code itself. Every one of these was hand-written in a
+ * badge at some point and every one of them drifted — the achievement badge
+ * still claimed 700 after the catalogue had grown to 1200.
+ */
+function countProject() {
+  const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  const db = fs.readFileSync(path.join(ROOT, 'lib', 'db.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(ROOT, 'public', 'js', 'i18n.js'), 'utf8');
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+
+  const routes = new Set([
+    ...(server.match(/pathname === '\/api\/[a-z0-9/-]+'/g) || []),
+    ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/-]+'/g) || [])
+  ]);
+
+  const achievements = fs
+    .readFileSync(path.join(ROOT, 'lib', 'achievements.js'), 'utf8')
+    .split('\n')
+    .filter(l => /^\s*\{\s*key:\s*'/.test(l)).length;
+
+  return {
+    routes: routes.size,
+    tables: (db.match(/CREATE TABLE IF NOT EXISTS/g) || []).length,
+    achievements,
+    // Two locales x (name + description) per achievement, plus the UI strings.
+    i18nKeys: (i18n.match(/^\s{4}[a-zA-Z_][a-zA-Z0-9_]*:/gm) || []).length,
+    deps: Object.keys(pkg.dependencies || {}).length,
+    node: (pkg.engines && pkg.engines.node) || '>=20',
+    version: pkg.version,
+    testFiles: fs.readdirSync(path.join(ROOT, 'test')).filter(f => f.endsWith('.test.js')).length
+  };
+}
+
 function fmtLoc(lines) {
   return lines >= 1000 ? (lines / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(lines);
 }
 
-function badgeBlock({ tests, lines: loc, files }) {
+const badge = (label, value, color, opts = {}) => {
+  const enc = (t) => String(t).replace(/-/g, '--').replace(/_/g, '__').replace(/ /g, '_');
+  const logo = opts.logo ? `&logo=${opts.logo}&logoColor=${opts.logoColor || 'white'}` : '';
+  const style = opts.big ? 'for-the-badge' : 'flat-square';
+  return `  <img src="https://img.shields.io/badge/${enc(label)}-${enc(value)}-${color}?style=${style}${logo}" alt="${opts.alt || `${label} ${value}`}">`;
+};
+
+function badgeBlock({ tests, lines: loc, files, p }) {
   return [
     START,
     '<p align="center">',
-    `  <img src="https://img.shields.io/badge/tests-${tests}_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="${tests} tests passing">`,
-    `  <img src="https://img.shields.io/badge/code-${fmtLoc(loc)}_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="${loc} lines of code across ${files} files">`,
+    badge('tests', `${tests} passing`, '3fb950', { big: true, logo: 'vitest', alt: `${tests} tests passing` }),
+    badge('code', `${fmtLoc(loc)} lines`, '58a6ff', { big: true, logo: 'javascript', alt: `${loc} lines of code across ${files} files` }),
+    badge('achievements', p.achievements, '8957e5', { big: true, logo: 'trophy', alt: `${p.achievements} achievements` }),
+    '</p>',
+    '',
+    '<p align="center">',
+    badge('API routes', p.routes, '0969da', { alt: `${p.routes} API routes` }),
+    badge('DB tables', p.tables, '0969da', { alt: `${p.tables} database tables` }),
+    badge('test files', p.testFiles, '3fb950', { alt: `${p.testFiles} test files` }),
+    badge('i18n keys', `${p.i18nKeys} x2`, 'bf8700', { alt: `${p.i18nKeys} translation keys in two languages` }),
+    badge('runtime deps', p.deps, 'cf222e', { alt: `${p.deps} runtime dependencies` }),
+    badge('build step', 'none', '1a7f37', { alt: 'no build step' }),
     '</p>',
     END
   ].join('\n');
 }
 
 function main() {
-  const stats = { ...countLoc(), tests: countTests(arg('--report')) };
+  const stats = { ...countLoc(), tests: countTests(arg('--report')), p: countProject() };
   const block = badgeBlock(stats);
   const check = process.argv.includes('--check');
   let changed = 0;
@@ -98,14 +149,21 @@ function main() {
       console.error(`! ${name}: no ${START} / ${END} markers — skipped`);
       continue;
     }
-    const next = txt.slice(0, s) + block + txt.slice(e + END.length);
+    // The same number also appears in prose ("**411 automated tests**"). It
+    // drifted independently of the badge — README_DE claimed 333 while the
+    // suite had 411 — so it is rewritten from the same source.
+    let next = txt.slice(0, s) + block + txt.slice(e + END.length);
+    next = next.replace(/\*\*\d[\d,.]*\s+(automated tests|automatisierte Tests)\*\*/g,
+      (_, unit) => `**${stats.tests} ${unit}**`);
     if (next === txt) continue;
     changed++;
     if (!check) fs.writeFileSync(file, next);
     console.log(`${check ? 'would update' : 'updated'} ${name}`);
   }
 
-  console.log(`tests: ${stats.tests} · code: ${stats.lines} lines in ${stats.files} files`);
+  console.log(`tests: ${stats.tests} · code: ${stats.lines} lines in ${stats.files} files · ` +
+    `${stats.p.routes} routes · ${stats.p.tables} tables · ${stats.p.achievements} achievements · ` +
+    `${stats.p.i18nKeys} i18n keys · ${stats.p.deps} deps`);
   if (check && changed) process.exit(1);
 }
 

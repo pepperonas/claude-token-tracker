@@ -4,15 +4,25 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
-  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-412_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="412 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36616 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/API_routes-68-0969da?style=flat-square" alt="68 API routes">
+  <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
+  <img src="https://img.shields.io/badge/test_files-23-3fb950?style=flat-square" alt="23 test files">
+  <img src="https://img.shields.io/badge/i18n_keys-5872_x2-bf8700?style=flat-square" alt="5872 translation keys in two languages">
+  <img src="https://img.shields.io/badge/runtime_deps-2-cf222e?style=flat-square" alt="2 runtime dependencies">
+  <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=flat-square" alt="no build step">
 </p>
 <!-- BADGES:END -->
 
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.1.0-orange.svg" alt="Version"></a>
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
   <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/demo-tracker.celox.io-blue?logo=googlechrome&logoColor=white" alt="Live Demo"></a>
 </p>
@@ -34,9 +44,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?logo=apple&logoColor=white" alt="Platform">
-  <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
   <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
-  <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
+  <img src="https://img.shields.io/badge/offline-first-lightgrey?logo=databricks&logoColor=white" alt="Works offline">
 </p>
 
 <p align="center">
@@ -47,7 +56,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
   <img src="https://img.shields.io/badge/charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
@@ -61,6 +69,22 @@
   <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
   <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/pricing-live_via_LiteLLM-6f42c1?logo=anthropic&logoColor=white" alt="Live pricing from LiteLLM">
+  <img src="https://img.shields.io/badge/cache_tiers-5min_%2B_1h-0969da" alt="Both cache-write tiers priced">
+  <img src="https://img.shields.io/badge/cost_model-time--aware-0969da" alt="Historical prices pinned per message">
+  <img src="https://img.shields.io/badge/data-never_deleted-1a7f37" alt="No DELETE FROM messages anywhere">
+</p>
+
+<p align="center">
+  <a href="docs/API.md"><img src="https://img.shields.io/badge/docs-API_reference-informational?logo=readthedocs&logoColor=white" alt="API reference"></a>
+  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/docs-Architecture-informational?logo=readthedocs&logoColor=white" alt="Architecture"></a>
+  <a href="docs/METRICS.md"><img src="https://img.shields.io/badge/docs-How_the_numbers_work-informational?logo=readthedocs&logoColor=white" alt="Metrics"></a>
+  <a href="docs/CONFIGURATION.md"><img src="https://img.shields.io/badge/docs-Configuration-informational?logo=readthedocs&logoColor=white" alt="Configuration"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/docs-Contributing-informational?logo=readthedocs&logoColor=white" alt="Contributing"></a>
+</p>
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/pricing-auto--synced-brightgreen?logo=anthropic&logoColor=white" alt="Auto-synced pricing">
@@ -197,7 +221,10 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **374 automated tests** (unit + integration + multi-user API + achievements)
+- **412 automated tests** (unit + integration + multi-user API + achievements)
+- **Per-project report (HTML + PDF)** — standalone, print-optimised report per project: KPIs, cost split by component including both cache-write tiers, cost over time, model and session tables, and a methodology section. No CDN, no chart library — inline SVG only. "PDF" is the browser's own print dialog
+- **"How it adds up"** — a methodology dialog behind every KPI: formulas, the 5-minute idle cap, the price source, and what is deliberately not counted
+- **Accurate cache pricing** — cache writes billed by TTL tier (5 min = 1.25x input, 1 h = 2x). Claude Code writes mostly to the 1-hour cache; a flat rate understates cost by ~8.5%
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -498,6 +525,18 @@ npm run lint          # ESLint (lib/ + server.js)
 - CSV and HTML export for transparent client communication
 
 [OPS on GitHub](https://github.com/pepperonas/celox-ops)
+
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/API.md](docs/API.md) | Every route, its authentication and its parameters |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Data flow, modules, and the decisions behind them |
+| [docs/METRICS.md](docs/METRICS.md) | What every number means |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every environment variable |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup and ground rules |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
 
 ## Author
 

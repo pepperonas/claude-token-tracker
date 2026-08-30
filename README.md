@@ -10,15 +10,25 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
-  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-412_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="412 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36616 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/API_routes-68-0969da?style=flat-square" alt="68 API routes">
+  <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
+  <img src="https://img.shields.io/badge/test_files-23-3fb950?style=flat-square" alt="23 test files">
+  <img src="https://img.shields.io/badge/i18n_keys-5872_x2-bf8700?style=flat-square" alt="5872 translation keys in two languages">
+  <img src="https://img.shields.io/badge/runtime_deps-2-cf222e?style=flat-square" alt="2 runtime dependencies">
+  <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=flat-square" alt="no build step">
 </p>
 <!-- BADGES:END -->
 
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.1.0-orange.svg" alt="Version"></a>
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
   <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/demo-tracker.celox.io-blue?logo=googlechrome&logoColor=white" alt="Live Demo"></a>
 </p>
@@ -40,9 +50,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?logo=apple&logoColor=white" alt="Platform">
-  <img src="https://img.shields.io/badge/deps-2_runtime-success" alt="Dependencies">
   <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
-  <img src="https://img.shields.io/badge/API-50+_endpoints-blue" alt="API Endpoints">
+  <img src="https://img.shields.io/badge/offline-first-lightgrey?logo=databricks&logoColor=white" alt="Works offline">
 </p>
 
 <p align="center">
@@ -53,7 +62,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
   <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
   <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
   <img src="https://img.shields.io/badge/charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
@@ -67,6 +75,22 @@
   <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
   <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/pricing-live_via_LiteLLM-6f42c1?logo=anthropic&logoColor=white" alt="Live pricing from LiteLLM">
+  <img src="https://img.shields.io/badge/cache_tiers-5min_%2B_1h-0969da" alt="Both cache-write tiers priced">
+  <img src="https://img.shields.io/badge/cost_model-time--aware-0969da" alt="Historical prices pinned per message">
+  <img src="https://img.shields.io/badge/data-never_deleted-1a7f37" alt="No DELETE FROM messages anywhere">
+</p>
+
+<p align="center">
+  <a href="docs/API.md"><img src="https://img.shields.io/badge/docs-API_reference-informational?logo=readthedocs&logoColor=white" alt="API reference"></a>
+  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/docs-Architecture-informational?logo=readthedocs&logoColor=white" alt="Architecture"></a>
+  <a href="docs/METRICS.md"><img src="https://img.shields.io/badge/docs-How_the_numbers_work-informational?logo=readthedocs&logoColor=white" alt="Metrics"></a>
+  <a href="docs/CONFIGURATION.md"><img src="https://img.shields.io/badge/docs-Configuration-informational?logo=readthedocs&logoColor=white" alt="Configuration"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/docs-Contributing-informational?logo=readthedocs&logoColor=white" alt="Contributing"></a>
+</p>
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/pricing-auto--synced-brightgreen?logo=anthropic&logoColor=white" alt="Auto-synced pricing">
@@ -157,8 +181,11 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation. Cache writes are billed by **TTL tier** (5 min = 1.25× input, 1 h = 2× input) — Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5 %
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
+- **Per-project report (HTML + PDF)** — a standalone, print-optimised report for any project: KPIs, cost split by component including both cache-write tiers, cost over time, model and session tables, and a methodology section so the document explains itself. No CDN and no chart library — charts are inline SVG, so it survives being mailed around and printed. "PDF" is the browser's own print-to-PDF
+- **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
+- **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **374 automated tests** — unit, integration, and multi-user API tests
+- **412 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
@@ -288,6 +315,18 @@ store of the full history. Continuity across devices and reinstalls:
   pulls a consistent DB snapshot from the hosted server, swaps it in and
   restarts. Local JSONL is re-parsed on top (deduplicated by message id) and
   achievements recompute with historical dates automatically.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/API.md](docs/API.md) | Every route, its authentication and its parameters |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Data flow, modules, and the decisions behind them |
+| [docs/METRICS.md](docs/METRICS.md) | What every number means — and which definitions used to be wrong |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every environment variable, and what is deliberately not configurable |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, ground rules, and how to add an achievement without shipping an impossible one |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [README_EN.md](README_EN.md) / [README_DE.md](README_DE.md) | Long-form manual, English and German |
 
 ## Links
 

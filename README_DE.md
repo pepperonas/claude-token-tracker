@@ -4,15 +4,25 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
-  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-412_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="412 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36616 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/API_routes-68-0969da?style=flat-square" alt="68 API routes">
+  <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
+  <img src="https://img.shields.io/badge/test_files-23-3fb950?style=flat-square" alt="23 test files">
+  <img src="https://img.shields.io/badge/i18n_keys-5872_x2-bf8700?style=flat-square" alt="5872 translation keys in two languages">
+  <img src="https://img.shields.io/badge/runtime_deps-2-cf222e?style=flat-square" alt="2 runtime dependencies">
+  <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=flat-square" alt="no build step">
 </p>
 <!-- BADGES:END -->
 
 <p align="center">
   <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-MIT-blue.svg" alt="Lizenz: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/Version-0.1.0-orange.svg" alt="Version"></a>
+  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/Version-0.2.0-orange.svg" alt="Version"></a>
   <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-willkommen-brightgreen.svg" alt="PRs willkommen"></a>
   <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/Demo-tracker.celox.io-blue?logo=googlechrome&logoColor=white" alt="Live Demo"></a>
 </p>
@@ -47,7 +57,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Achievements-700-blueviolet?logo=trophy&logoColor=white" alt="700 Achievements">
+  <img src="https://img.shields.io/badge/Achievements-1200-blueviolet?logo=trophy&logoColor=white" alt="1200 Achievements">
   <img src="https://img.shields.io/badge/Kategorien-14-9cf" alt="14 Kategorien">
   <img src="https://img.shields.io/badge/Stufen-5_(Bronze→Diamant)-gold" alt="5 Stufen">
   <img src="https://img.shields.io/badge/Charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
@@ -101,6 +111,22 @@
   <img src="https://img.shields.io/badge/HTTP--Server-ohne_Express-000000?logo=node.js&logoColor=white" alt="Ohne Express">
   <img src="https://img.shields.io/badge/Coverage-vitest-6E9F18?logo=vitest&logoColor=white" alt="Coverage">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Preise-live_über_LiteLLM-6f42c1?logo=anthropic&logoColor=white" alt="Live-Preise über LiteLLM">
+  <img src="https://img.shields.io/badge/Cache--Stufen-5_Min_%2B_1_Std-0969da" alt="Beide Cache-Schreibstufen bepreist">
+  <img src="https://img.shields.io/badge/Kostenmodell-zeitbewusst-0969da" alt="Historische Preise je Nachricht fixiert">
+  <img src="https://img.shields.io/badge/Daten-werden_nie_gelöscht-1a7f37" alt="Kein DELETE FROM messages im Code">
+</p>
+
+<p align="center">
+  <a href="docs/API.md"><img src="https://img.shields.io/badge/Doku-API--Referenz-informational?logo=readthedocs&logoColor=white" alt="API-Referenz"></a>
+  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/Doku-Architektur-informational?logo=readthedocs&logoColor=white" alt="Architektur"></a>
+  <a href="docs/METRICS.md"><img src="https://img.shields.io/badge/Doku-Wie_die_Zahlen_entstehen-informational?logo=readthedocs&logoColor=white" alt="Kennzahlen"></a>
+  <a href="docs/CONFIGURATION.md"><img src="https://img.shields.io/badge/Doku-Konfiguration-informational?logo=readthedocs&logoColor=white" alt="Konfiguration"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/Doku-Mitwirken-informational?logo=readthedocs&logoColor=white" alt="Mitwirken"></a>
+</p>
+
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Projekt_unterstützen-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal"></a>
@@ -192,12 +218,15 @@ Dashboard zur Analyse deiner Claude Code Token-Nutzung. Liest die JSONL-Sitzungs
 - **SEO-optimiert** mit Open Graph, Twitter Cards und strukturierten Meta-Tags
 - **CI/CD Pipeline** mit GitHub Actions (Lint + Tests)
 - **Demo-Modus** — nicht eingeloggte Besucher sehen ein Beispiel-Dashboard; mit GitHub anmelden, um eigene Daten zu sehen
-- **700 Achievements** — Gamification-System über 14 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial, Effizienz, Rate-Limits) mit 5 Stufen (Bronze bis Diamant), stufenbasierten Punkten (10–250), Zeitverlauf-Chart, täglichen Freischaltungs-Statistiken und Echtzeit-Benachrichtigungen bei neuen Freischaltungen via SSE
+- **1200 Achievements** — Gamification-System über 14 Kategorien (Tokens, Sessions, Nachrichten, Kosten, Lines, Modelle, Tools, Zeit, Projekte, Streaks, Cache, Spezial, Effizienz, Rate-Limits) mit 5 Stufen (Bronze bis Diamant), stufenbasierten Punkten (10–250), Zeitverlauf-Chart, täglichen Freischaltungs-Statistiken und Echtzeit-Benachrichtigungen bei neuen Freischaltungen via SSE
 - **Produktivitäts-Tab** — Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Cache-Ersparnis, Code-Anteil mit Trend-Indikatoren
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **333 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **412 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **Projekt-Report (HTML + PDF)** — eigenständiger, druckoptimierter Report je Projekt: Kennzahlen, Kosten nach Komponente inklusive beider Cache-Schreibstufen, Kostenverlauf, Modell- und Sitzungstabellen sowie ein Abschnitt zum Rechenweg. Ohne CDN und ohne Chart-Bibliothek — Diagramme sind Inline-SVG. „PDF" läuft über den Druckdialog des Browsers
+- **„Wie wird gerechnet?"** — ein Rechenweg-Dialog hinter jeder Kennzahl: Formeln, der 5-Minuten-Deckel, die Preisquelle und was bewusst nicht erfasst wird
+- **Exakte Cache-Preise** — Cache-Schreibvorgänge werden nach Laufzeit abgerechnet (5 Min = 1,25× Eingabe, 1 Std = 2×). Claude Code schreibt überwiegend in den 1-Stunden-Cache; ein Pauschalsatz beziffert die Kosten rund 8,5 % zu niedrig
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -236,7 +265,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar File-Watcher mit debounced inkrementellem Parsing |
 | `lib/auth.js` | GitHub OAuth Flow, Session-Management, Cookie-basierte Authentifizierung |
 | `lib/backup.js` | SQLite `VACUUM INTO` für atomare Backups, Auto-Pruning auf 10 Kopien, 50%-Größen-Sicherheitscheck |
-| `lib/achievements.js` | 700 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
+| `lib/achievements.js` | 1200 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
 | `lib/github.js` | GitHub-API-Integration (REST + GraphQL), Billing via Usage-Summary-API, PR-Statistiken, Contributions, Code-Statistiken, Actions-Nutzung pro Repo mit OS-Multiplikatoren, Stale-While-Revalidate-Cache (60-Min-TTL) |
 | `lib/anthropic-api.js` | Anthropic Admin API Integration — Usage/Cost-Reports, Per-API-Key-Aufschlüsselung (4 parallele Requests: Usage nach Modell, Usage nach Key+Modell, Cost-Report, API-Key-Namen), SWR-Cache, AES-256-GCM Key-Verschlüsselung |
 | `lib/export-html.js` | Mobil-optimierter HTML-Snapshot-Generator mit Chart.js, 8 Tabs, 12+ Charts, sortierbaren Tabellen und responsiven Breakpoints (768px/480px/412px) |
@@ -435,7 +464,7 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Verteilung der Stop-Reasons |
 | `/api/session-efficiency` | GET | Tokens/Message und Kosten/Message |
 | `/api/active-sessions` | GET | Aktive Sessions (letzte 10 Min.) |
-| `/api/achievements` | GET | Alle 700 Achievements mit Unlock-Status |
+| `/api/achievements` | GET | Alle 1200 Achievements mit Unlock-Status |
 | `/api/productivity` | GET | Produktivitäts-Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Trends) |
 | `/api/export-html` | GET | Interaktiver HTML-Snapshot (Chart.js, 8 Tabs, 12+ Charts) |
 | `/api/github/stats` | GET | GitHub Contributions, Repos, PRs (benötigt Token) |
@@ -499,6 +528,18 @@ npm run lint          # ESLint (lib/ + server.js)
 - CSV- und HTML-Export fuer transparente Kundenkommunikation
 
 [OPS auf GitHub](https://github.com/pepperonas/celox-ops)
+
+
+## Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| [docs/API.md](docs/API.md) | Jede Route mit Authentifizierung und Parametern |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Datenfluss, Module und die Entscheidungen dahinter |
+| [docs/METRICS.md](docs/METRICS.md) | Was jede Zahl bedeutet |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Alle Umgebungsvariablen |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Einrichtung und Grundregeln |
+| [CHANGELOG.md](CHANGELOG.md) | Versionsverlauf |
 
 ## Autor
 

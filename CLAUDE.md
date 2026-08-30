@@ -165,6 +165,34 @@ VPS deployment to tracker.celox.io:
 
 - **Plan Usage Limits**: `lib/plan-usage.js` and sync-agent support fetching claude.ai plan usage (session %, weekly all-models %, Sonnet-only %) — frontend section in Overview tab ready but hidden. Currently blocked: Claude Code OAuth token (`sk-ant-oat01-*`) lacks scopes for claude.ai web API (`/api/organizations/{org_id}/usage`). Needs official Anthropic Usage API endpoint or web-session-based auth. Code is in place and will activate automatically once a working token/endpoint is available.
 
+## Documentation
+
+Reference docs live in `docs/` and are **enforced by tests** (`test/docs.test.js`),
+because documentation drifts silently — nothing breaks when a route is added and
+the reference is not. The suite checks that every `/api` route appears in
+`docs/API.md`, that the reference documents no route that no longer exists, that
+every `process.env` variable appears in both `docs/CONFIGURATION.md` and
+`.env.example`, that stated achievement and test counts match reality, that no
+markdown link points at a missing file, that every `lib/` module is named in
+`docs/ARCHITECTURE.md`, and that `CHANGELOG.md` has an entry for the current
+`package.json` version.
+
+| File | Contents |
+|---|---|
+| `docs/API.md` | All routes, their authentication, their parameters |
+| `docs/ARCHITECTURE.md` | Data flow, module responsibilities, the decisions and why |
+| `docs/METRICS.md` | What every number means — the written form of the in-app methodology dialog, including the definitions that were wrong and the measurements that proved it |
+| `docs/CONFIGURATION.md` | Every environment variable, plus what is deliberately NOT configurable |
+| `docs/metrik-audit-2026-08-30.md` | The audit that produced the cost and time corrections |
+| `CONTRIBUTING.md` | Setup, ground rules, how to add an achievement without shipping an impossible one |
+
+⚠️ **Numbers in prose drift worse than numbers in badges** because nobody looks
+at them: README_DE claimed 333 tests when the suite had 411 and 700 achievements
+when there were 1200, months after the English one had been updated. The badge
+script (`npm run badges`) now rewrites the prose count from the same source as
+the badge, and the German/English long-form READMEs are pinned to the same
+section count so one cannot quietly fall behind the other.
+
 ## Conventions
 
 - **CommonJS** throughout backend (`require`/`module.exports`)

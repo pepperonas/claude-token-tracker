@@ -1,6 +1,108 @@
 # Changelog
 
-## [Unreleased] - 2026-07-22 (Test-Ausbau II)
+Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
+[Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
+[Semantic Versioning](https://semver.org/lang/de/).
+
+## [0.2.0] — 2026-08-30
+
+Der Schwerpunkt dieser Version ist **Richtigkeit**: zwei Kennzahlen auf der
+Oberfläche waren nachweislich falsch, und zwar nicht knapp.
+
+### Fixed
+
+- **Kosten waren rund 8,5 % zu niedrig.** `usage.cache_creation` wurde nie
+  gelesen, also lief jeder Cache-Schreibvorgang zum 5-Minuten-Satz (1,25×
+  Eingabepreis). Laut Anthropic-Preisdoku kostet ein 1-Stunden-Write **2×
+  Eingabe**, und **90,5 % aller Cache-Write-Tokens** im Datenbestand sind
+  1-Stunden-Writes. Über das vorhandene JSONL-Fenster nachgerechnet:
+  $32.246,90 → $34.996,18. Parser und Sync-Agent lesen die Aufteilung jetzt aus,
+  zwei additive Spalten halten sie fest, `calculateCost` rechnet je Stufe.
+  Zeilen ohne erfasste Aufteilung behalten den 5-Minuten-Satz — nachträglich zu
+  verteuern, was niemand mehr belegen kann, wäre schlechter; Oberfläche und
+  Report weisen die Abdeckung aus
+- **„Gesamtzeit" im Projekt-Dialog war keine Zeit.** Angezeigt wurde die Summe
+  der Sitzungs-Spannen: Leerlauf zählte als Arbeit, parallele Sitzungen doppelt,
+  und eine Sitzung, die den Zeitraum nur überlappte, brachte ihre gesamte
+  Historie mit. Gemessen 2.344 h in einem 2.062-h-Fenster und 659 h in einem
+  10-Tage-Filter — mehr Zeit, als überhaupt vergangen war. Die aktive Zeit
+  kommt jetzt aus einer projektweiten Zeitachse (`computeActiveMinutes`), also
+  aus derselben Korrektur, die die Übersicht längst hatte
+- **`claude-opus-5` fehlte in der Offline-Preistabelle** — 38.911 Nachrichten
+  und 19,5 Mrd. Tokens, das meistgenutzte Modell, wären ohne LiteLLM zu
+  Sonnet-Preisen abgerechnet worden
+- **Sonnet-5-Preisepoche behauptete eine abgesagte Erhöhung** — $2/$10 ist der
+  Standardpreis; die Epoche ist entfernt, der Fallback korrigiert
+- **Der Projekt-Dialog ignorierte den Cache-Umschalter** (13,0 Mrd. neben
+  26,7 Mio. für dasselbe Projekt) und zählte Sitzungen anders als die Tabelle
+- **Acht Achievements waren unerreichbar, nicht schwer** — `output_ratio_60/70/80`
+  verlangten 60–80 % Output-Anteil bei real 0,204 %, `model_haiku_majority` eine
+  Haiku-Mehrheit bei 2,9 % Ist-Anteil, dazu vier Streaks über vier bis zehn
+  Jahre. Schlüssel bleiben, Schwellen sind korrigiert und gegen Rückbau gepinnt
+- **Der Backup-Suchpfad übersprang `/root/apps`** (Betriebs-Skript) — drei
+  Datenbanken lagen in keiner Off-Site-Sicherung, darunter die des Trackers.
+  Zusätzlich vergab das Skript bei gleichnamigen Datenbanken denselben
+  Zieldateinamen und überschrieb die größere **stillschweigend**
+
+### Added
+
+- **500 neue Achievements (700 → 1.200).** Schwellen sind **abgeleitet, nicht
+  geschätzt**: `heutiger Wert + gemessene Rate × Horizont` gegen einen
+  Messstand der echten Historie. Die nächsten liegen etwa drei Wochen Arbeit
+  entfernt, die fernsten rund zwanzig Monate; alle 500 waren bei Auslieferung
+  verschlossen. Drei Bauformen: 414 Leitern mit thematischer Namensfolge,
+  60 Kombinationen mit zwei gleichzeitigen Bedingungen, 26 Wegmarken
+- **Neue Kennzahlen** dafür: echte Arbeitszeit (`totalActiveHours`,
+  `deepSessions_*`, `deepDays_*`), MCP-Server und Sub-Agenten,
+  `cacheSavingsUsd` (was die Cache-Reads zum vollen Eingabepreis gekostet
+  hätten, minus was sie kosteten), Modelle je Generation, Projekt-Tiefe nach
+  Aufwand und Rhythmus-Muster
+- **Projekt-Report als HTML und PDF** (`GET /api/project-report`) —
+  eigenständig, druckoptimiert, ohne CDN und ohne Chart-Bibliothek; Diagramme
+  sind Inline-SVG. PDF über den Druckdialog des Browsers
+- **Rechenweg-Dialog** — Info-Symbol an jeder Kennzahl, dazu ein Dialog mit
+  Formeln, dem 5-Minuten-Deckel, der Preisquelle und dem, was bewusst nicht
+  erfasst wird
+- **Vier Referenzdokumente**: `docs/API.md`, `docs/ARCHITECTURE.md`,
+  `docs/METRICS.md`, `docs/CONFIGURATION.md`, dazu `CONTRIBUTING.md` und
+  `docs/metrik-audit-2026-08-30.md` mit den Messungen hinter den Korrekturen
+- **Doku-Synchronitätstests** — jede Route steht in der Referenz, jede
+  Umgebungsvariable in der Konfiguration und in `.env.example`, jede
+  Achievement-Zahl stimmt, kein Link zeigt ins Leere, und die deutsche
+  Langfassung darf der englischen nicht mehr davonlaufen (genau das war
+  passiert: sie stand noch bei 700 Achievements)
+- **Tests für drei bislang ungetestete Module** — `lib/cache.js`,
+  `lib/github.js` (inklusive Stale-while-revalidate) und `lib/plan-usage.js`,
+  dort samt Pin gegen das Auseinanderdriften der Normalisierer in Server und
+  Sync-Agent
+- **Badges werden generiert statt gepflegt** — Testzahl, Codezeilen,
+  Achievements, Routen, Tabellen, i18n-Schlüssel und Abhängigkeiten kommen aus
+  dem Code
+
+### Changed
+
+- **Der „Rückdatiert neu berechnen"-Knopf ist entfernt.** Der Backfill läuft
+  ohnehin bei frischer Installation und bei jedem Versionssprung des
+  Migrationsmerkers; der Endpunkt bleibt als Wartungsweg
+- `ACH_BACKFILL_FLAG` v2 → v3, damit die korrigierten Schwellen ihre
+  Freischaltdaten historisch bekommen
+- Der öffentliche Share-Endpunkt liefert `span_min`; `total_duration_min` ist
+  ein Alias der aktiven Zeit, damit bestehende Abnehmer keine unmögliche Zahl
+  mehr bekommen
+
+---
+
+## Vor 0.2.0
+
+⚠️ Bis einschließlich 0.1.0 wurden Versionsnummern nicht durchgehend gepflegt:
+`0.1.0` taucht unten dreimal mit verschiedenen Daten auf, und die als `0.0.4`
+und `0.0.5` geführten Einträge stammen von **nach** dem ersten `0.1.0`. Es gab
+in diesem Zeitraum auch keine GitHub-Releases. Verlässlich ist deshalb allein
+das **Datum** der jeweiligen Abschnitte; die Überschriften bleiben unverändert,
+weil das der tatsächliche Verlauf ist. Ab 0.2.0 gilt Semantic Versioning mit
+Tag und Release.
+
+### 2026-07-22 (Test-Ausbau II)
 
 ### Fixed
 Die neuen Tests (Share-API, Watcher, Export, Backup) haben vier echte Fehler aufgedeckt:
@@ -18,7 +120,7 @@ Die neuen Tests (Share-API, Watcher, Export, Backup) haben vier echte Fehler auf
   - **Backup**: 50-%-Schrumpf-Schutz greift, gewachsene Backups werden akzeptiert, kein Überschreiben in derselben Sekunde
 - **Testdaten-Fixture gehärtet**: die Nachrichten des letzten Tages liegen jetzt wenige Minuten **vor „jetzt"** statt auf festen Uhrzeiten — sonst lagen sie bei einem Lauf früh am Morgen (oder in einer UTC+14-Zeitzone) in der Zukunft, und `getTrends()` ignoriert Zukunftsdaten korrekterweise, wodurch „heute" still leer war. Suite läuft jetzt in UTC, Berlin, Los Angeles und Kolkata identisch durch
 
-## [Unreleased] - 2026-07-22 (Tests & Badges)
+### 2026-07-22 (Tests & Badges)
 
 ### Fixed
 - **CI-Fehlschlag `POST /api/achievements/recompute` (`expected 0 to be greater than 0`)** — die API-Tests starteten den Server gegen die **echte** `data/tracker.db` und das echte `~/.claude`. Lokal lief das (zufällig) durch, in CI gibt es beides nicht → 0 Nachrichten → 0 Achievements. Nebenwirkungen: die Suite brauchte ~33 s und der Recompute-Test **überschrieb die reale Achievements-Tabelle des Entwicklers**. `DATA_DIR`/`DB_PATH` sind jetzt per Env überschreibbar; die API-Tests booten gegen eine Wegwerf-DB in `mkdtemp()` mit leerem `CLAUDE_DIR` und seeden vorher eine deterministische 45-Tage-History (`test/fixtures/history.js`). **Suite: 33 s → 0,6 s**, und sie ist reproduzierbar statt vom Rechner abhängig
@@ -33,7 +135,7 @@ Die neuen Tests (Share-API, Watcher, Export, Backup) haben vier echte Fehler auf
   - **Config**: `DATA_DIR`/`DB_PATH`-Auflösung inkl. relativer Pfade
 - **Automatisch aktualisierte Badges** ganz oben in allen drei READMEs: **Tests** (aus dem echten Vitest-JSON-Report, nicht geschätzt) und **Lines of Code** (aus `git ls-files` über `*.js`/`*.css`/`*.html`). `scripts/update-badges.js` schreibt den Block zwischen `<!-- BADGES:START/END -->`, `npm run badges` lokal, und der neue Workflow `.github/workflows/badges.yml` rechnet sie bei **jedem Push auf main** neu und committet sie zurück (`[skip ci]`). Die handgepflegten Zahlen waren chronisch veraltet (Badge: 238 Tests, Suite: 255; „LOC 25k+" geraten statt gemessen)
 
-## [Unreleased] - 2026-07-22
+### 2026-07-22
 
 ### Added
 - **Fünf Vergleichs-Charts unter den Nutzungs-Trends** — die vier Trend-Karten beantworten „mehr oder weniger als zuletzt?", die Charts jetzt auch „in welche Richtung, wo und womit?". Alle fünf hängen am **selben `/api/trends`-Payload** (kein zusätzlicher Request, kein zweiter Message-Scan) und folgen Cache- und Token↔Kosten-Toggle:
@@ -52,7 +154,7 @@ Beim Neuaufnehmen der README-Screenshots (alle 10 Desktop- + 5 Mobile-Ansichten,
 - **Achse der Tool-Kosten-Attribution unlesbar** — schräg gestellte `$0.00 $2000.00 $4000.00 …`-Labels; jetzt kompakt (`$5k`, `$10k`) mit `maxTicksLimit` und ohne Rotation, volle Präzision bleibt im Tooltip
 - **Aktive-Sessions-Karten auf dem Handy zerquetscht** — die `min-width: 0`-Regel unter 480 px ließ fünf parallele Sessions in einer Flex-Zeile auf je ~50 px schrumpfen (ein Wort pro Zeile); die Karten stapeln jetzt (`flex: 1 1 100%`)
 
-## [Unreleased] - 2026-07-19
+### 2026-07-19
 
 ### Added
 - **Achievements-Timeline: Balken-Klick zeigt Tages-Detail** — ein Klick auf einen Balken im „Achievements im Zeitverlauf"-Chart öffnet einen Dialog mit allen an diesem Tag freigeschalteten Achievements (Icon, Name, Beschreibung, Stufe mit Tier-Farbe, Punkte + Tagessumme), sortiert nach Stufe; Cursor wird über Balken zum Pointer, Schließen per ×/Escape/Overlay
@@ -79,12 +181,12 @@ Beim Neuaufnehmen der README-Screenshots (alle 10 Desktop- + 5 Mobile-Ansichten,
 ### Tests
 - Suite auf **242** erweitert (streamAllMessages ≡ getAllMessages, `hasMessage`/`messageCount`, Generator-Input für `addMessages`, Werterhaltung durchs Interning)
 
-## [Unreleased] - 2026-07-13
+### 2026-07-13
 
 ### Changed
 - **Projects table fits without horizontal scrolling** — long project paths are shortened from the left (`…/customers/celox/portal` — the distinguishing tail is kept, the full name shows as a tooltip and remains the sort key), the name column is width-capped, and cell padding tightens in steps below 1100/1000/800px so all 9 columns stay visible at once (verified overflow-free at 768–1440px)
 
-## [Unreleased] - 2026-07-02
+### 2026-07-02
 
 ### Fixed
 - **Card entrance animations replayed after every live refresh** — the root cause of the remaining card flicker. `body.motion-quiet` sets `animation: none` on cards during a refresh; *removing* the class re-applied `md-drop`, and CSS restarts a re-applied animation from the beginning (22 elements — 15 KPI cards, 6 chart boxes, active-sessions — replayed their entrance after every SSE refresh, blanking during their stagger delay). Fix: `body.motion-settled` is added once, 1.6s after load (when the first-paint choreography has finished), and never removed — entrances are permanently disarmed, so nothing is ever re-applied/restarted. The tab-panel swing and the KPI value pop remain the only recurring motion. Verified with real SSE traffic: 0 entrance restarts in 25s (previously 22 per refresh), value pops still firing
@@ -107,7 +209,7 @@ Beim Neuaufnehmen der README-Screenshots (alle 10 Desktop- + 5 Mobile-Ansichten,
 ### Tests
 - Test suite expanded to **238** (9 new: pricing-epoch resolution incl. override precedence and timestamp fallback, per-day cost-breakdown sum, heatmap cost cells/maxima, time-aware heatmap cost)
 
-## [Unreleased] - 2026-07-01
+### 2026-07-01
 
 ### Fixed
 - **New-model label derivation** — `_deriveLabel` now handles the newest ID shapes: single-digit versions with no minor (`claude-sonnet-5` → "Sonnet 5"), a brand-new family (`claude-fable-5` → "Fable 5"), and dated base IDs whose release-date suffix was being misread as a minor version (`claude-opus-4-20250514` → "Opus 4", was "Opus 4.20250514"). Model **costs** were already auto-detected correctly from LiteLLM — this fixes only the display label. The family set is now open/extensible (`opus|sonnet|haiku|fable`)
@@ -119,7 +221,7 @@ Beim Neuaufnehmen der README-Screenshots (alle 10 Desktop- + 5 Mobile-Ansichten,
 ### Tests
 - Test suite expanded to **229** (13 new): new-generation label derivation, trailing-alias/two-digit-minor labels, unrecognized-family fallback, Fable pricing, offline-fallback pricing for Opus 4.8 / Sonnet 5 / Fable 5, Opus 4.8 full-formula + bare-ID pricing, hard-coded-label precedence over overrides, and `getPricingMeta` origin tagging
 
-## [Unreleased] - 2026-06-27
+### 2026-06-27
 
 ### Added
 - **Usage heatmap** — weekday × hour grid in the overview that visualizes token-usage intensity. Multi-day ranges render a 7×24 grid (rows Mon→Sun); a single day renders a 24-hour strip. Cache-toggle aware, with a per-cell tooltip (tokens · messages · cost) and a colour legend. Lightweight CSS grid (no extra dependency). New `Aggregator.getHourlyWeekday()` + `GET /api/hourly-weekday`, plus demo-data coverage
