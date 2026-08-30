@@ -4,8 +4,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-367_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="367 tests passing">
-  <img src="https://img.shields.io/badge/code-33.7k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="33712 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
 </p>
 <!-- BADGES:END -->
 
@@ -192,12 +192,12 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **SEO-optimized** with Open Graph, Twitter Cards, and structured meta tags
 - **CI/CD pipeline** with GitHub Actions (lint + tests)
 - **Demo mode** — non-logged-in visitors see sample data dashboard; sign in with GitHub to view your own data
-- **700 achievements** — gamification system across 14 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special, efficiency, ratelimits) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, daily unlock stats, and real-time unlock notifications via SSE
+- **1200 achievements** — gamification system across 14 categories (tokens, sessions, messages, cost, lines, models, tools, time, projects, streaks, cache, special, efficiency, ratelimits) with 5 tiers (bronze to diamond), tier-based points (10–250), timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Productivity tab** — Tokens/Min, Lines/Hour, Cost/Line, Cache Savings, Code Ratio with trend indicators
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **367 automated tests** (unit + integration + multi-user API + achievements)
+- **374 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 
@@ -236,7 +236,7 @@ Multi-User:
 | `lib/watcher.js` | Chokidar file watcher with debounced incremental parsing |
 | `lib/auth.js` | GitHub OAuth flow, session management, cookie-based authentication |
 | `lib/backup.js` | SQLite `VACUUM INTO` for atomic backups, auto-pruning to 10 copies, 50% size safety check |
-| `lib/achievements.js` | 700 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
+| `lib/achievements.js` | 1200 achievement definitions with check logic, stats builder, tier-based points, and unlock tracking |
 | `lib/github.js` | GitHub API integration (REST + GraphQL), billing via usage summary API, PR stats, contributions, code stats, actions usage per repo with OS multipliers, stale-while-revalidate cache (60-min TTL) |
 | `lib/anthropic-api.js` | Anthropic Admin API integration — usage/cost reports, per-API-key breakdown (4 parallel requests: usage by model, usage by key+model, cost report, API key names), SWR cache, AES-256-GCM key encryption |
 | `lib/export-html.js` | Mobile-responsive HTML snapshot generator with Chart.js, 8 tabs, 12+ charts, sortable tables, and responsive breakpoints (768px/480px/412px) |
@@ -435,7 +435,7 @@ The tracker runs in production at [tracker.celox.io](https://tracker.celox.io).
 | `/api/stop-reasons` | GET | Stop reason distribution |
 | `/api/session-efficiency` | GET | Tokens/message and cost/message |
 | `/api/active-sessions` | GET | Active sessions (last 10 min) |
-| `/api/achievements` | GET | All 700 achievements with unlock status |
+| `/api/achievements` | GET | All 1200 achievements with unlock status |
 | `/api/productivity` | GET | Productivity metrics (tokens/min, lines/hour, cost/line, trends) |
 | `/api/export-html` | GET | Interactive HTML snapshot (Chart.js, 8 tabs, 12+ charts) |
 | `/api/github/stats` | GET | GitHub contributions, repos, PRs (requires token) |

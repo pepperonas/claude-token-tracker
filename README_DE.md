@@ -4,8 +4,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-367_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="367 tests passing">
-  <img src="https://img.shields.io/badge/code-33.7k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="33712 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
 </p>
 <!-- BADGES:END -->
 

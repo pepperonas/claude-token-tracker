@@ -47,13 +47,13 @@ function createMockDb() {
 
 describe('Achievements', () => {
   describe('ACHIEVEMENTS array', () => {
-    it('should have exactly 700 achievements', () => {
-      expect(ACHIEVEMENTS.length).toBe(700);
+    it('should have exactly 1200 achievements', () => {
+      expect(ACHIEVEMENTS.length).toBe(1200);
     });
 
     it('should have unique keys', () => {
       const keys = ACHIEVEMENTS.map(a => a.key);
-      expect(new Set(keys).size).toBe(700);
+      expect(new Set(keys).size).toBe(1200);
     });
 
     it('should have valid tiers', () => {
@@ -387,13 +387,13 @@ describe('Achievements', () => {
       }
     });
 
-    it('should return all 700 achievements with unlock status', () => {
+    it('should return all 1200 achievements with unlock status', () => {
       const db = createMockDb();
       db.unlockAchievementsBatch(0, ['tokens_1k', 'sessions_1']);
 
       const response = getAchievementsResponse(0, db);
 
-      expect(response.length).toBe(700);
+      expect(response.length).toBe(1200);
 
       const tokens1k = response.find(a => a.key === 'tokens_1k');
       expect(tokens1k.unlocked).toBe(true);
@@ -417,5 +417,149 @@ describe('Achievements', () => {
         expect(a).toHaveProperty('unlockedAt');
       }
     });
+  });
+});
+
+describe('achievement catalogue (1200 definitions)', () => {
+  const { ACHIEVEMENTS } = require('../lib/achievements');
+  const fs = require('fs');
+  const path = require('path');
+  const i18nSrc = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'i18n.js'), 'utf8');
+  // The English block comes first in the file, the German one after it.
+  const deStart = i18nSrc.indexOf("achievementCat_sessions: 'Sitzungen'");
+  const EN = i18nSrc.slice(0, deStart);
+  const DE = i18nSrc.slice(deStart);
+
+  it('has unique keys', () => {
+    const keys = ACHIEVEMENTS.map(a => a.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('gives every achievement a name and description in both languages', () => {
+    // A missing string renders as the raw key in the UI — easy to ship, ugly
+    // to discover. 1200 entries make this impossible to eyeball.
+    const missing = [];
+    for (const a of ACHIEVEMENTS) {
+      for (const [part, lang] of [[EN, 'en'], [DE, 'de']]) {
+        if (!part.includes(`    ach_${a.key}: `)) missing.push(`${lang}:${a.key}`);
+        if (!part.includes(`    ach_${a.key}_desc: `)) missing.push(`${lang}:${a.key}_desc`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('gives every achievement a valid tier, category and emoji', () => {
+    const tiers = new Set(['bronze', 'silver', 'gold', 'platinum', 'diamond']);
+    for (const a of ACHIEVEMENTS) {
+      expect(tiers.has(a.tier)).toBe(true);
+      expect(typeof a.category).toBe('string');
+      expect(a.category.length).toBeGreaterThan(0);
+      expect(typeof a.emoji).toBe('string');
+      expect(a.emoji.length).toBeGreaterThan(0);
+      expect(typeof a.check).toBe('function');
+    }
+  });
+
+  it('every check survives an all-zero stats object', () => {
+    // A fresh install builds stats where every counter is 0 and every object
+    // is empty. One check reaching into an undefined nested field would throw
+    // during startup, before the dashboard ever renders.
+    const zero = {
+      totalTokens: 0, totalSessions: 0, totalMessages: 0, totalCost: 0,
+      totalLinesWritten: 0, totalLinesAdded: 0, totalLinesRemoved: 0, netLines: 0,
+      modelNames: [], modelCount: 0, modelMessages: { sonnet: 0, opus: 0, haiku: 0 },
+      toolNames: new Set(), toolCount: 0, totalToolCalls: 0, toolCallsByName: {},
+      activeDays: 0, longestStreak: 0, avgCacheRate: 0, outputRatio: 0,
+      modelMessagesOf: () => 0,
+      totalActiveHours: 0, maxSessionActiveMin: 0, avgActiveMinPerSession: 0,
+      mcpServerCount: 0, mcpToolCalls: 0, subagentMessages: 0, subagentCost: 0,
+      cacheSavingsUsd: 0, maxHoursInDay: 0, longestWeekdayStreak: 0,
+      maxModelsInSession: 0, multiModelSessions: 0
+    };
+    const proxied = new Proxy(zero, {
+      get: (t, k) => (k in t ? t[k] : (typeof k === 'string' && k.startsWith('has') ? false : 0))
+    });
+    for (const a of ACHIEVEMENTS) {
+      expect(() => a.check(proxied)).not.toThrow();
+    }
+  });
+
+  it('has no achievement that is unreachable by construction', () => {
+    // output_ratio_* once demanded a 60-80% output share while the real figure
+    // is 0.2% (cache reads dominate); model_haiku_majority demanded Haiku above
+    // 50% of all messages against 2.9% actual. Those were not hard, they were
+    // impossible. Pin the corrected bounds so nobody restores them.
+    const byKey = Object.fromEntries(ACHIEVEMENTS.map(a => [a.key, a]));
+    const highOutput = { ...{}, outputRatio: 0.05 };
+    expect(byKey.output_ratio_80.check(highOutput)).toBe(true);
+    const haikuHeavy = { totalMessages: 1000, modelMessages: { haiku: 200, opus: 0, sonnet: 0 } };
+    expect(byKey.model_haiku_majority.check(haikuHeavy)).toBe(true);
+    // A decade of unbroken daily work is padding, not a goal.
+    expect(byKey.active_days_3650.check({ activeDays: 1200 })).toBe(true);
+  });
+
+  it('keeps at least 400 of the second wave locked against the baseline it was built for', () => {
+    // The brief: 500 new achievements, at least 400 of them still ahead. The
+    // thresholds were derived from a measured snapshot (208 active days,
+    // 248,230 messages, 80.6B tokens, $59,189, 3,474 sessions, 1,733.65 hours
+    // of real work). Re-checking against that snapshot is what makes "hard but
+    // achievable" verifiable instead of a claim — every one of the 500 was
+    // locked when it shipped.
+    const BASELINE = {
+      totalTokens: 80_754_687_261, totalOutputTokens: 164_336_638, totalInputTokens: 7_476_204,
+      totalCacheCreateTokens: 1_438_368_966, totalCacheReadTokens: 79_028_869_717,
+      totalMessages: 248_230, totalSessions: 3_474, totalCost: 59_189,
+      totalLinesWritten: 1_341_822, totalLinesAdded: 703_523, totalLinesRemoved: 321_744,
+      netLines: 1_723_601, totalToolCalls: 237_712, toolCount: 82,
+      toolCallsByName: { Bash: 104_597, Edit: 44_179, Read: 41_640, Write: 10_117, Grep: 8_656, Glob: 1_598 },
+      projectCount: 189, maxProjectMessages: 26_745, maxProjectCost: 10_730, maxProjectSessions: 530,
+      projectsAbove100Usd: 60, projectsAbove500Usd: 25, projectsAbove1kUsd: 16,
+      projectsAbove50Sessions: 15, maxProjectsInDay: 17,
+      maxSessionsInDay: 134, daysAbove10Sessions: 87, sessionsAbove100Msgs: 297, sessionsAbove500Msgs: 79,
+      maxMessagesInSession: 14_200, peakDayMessages: 5_214, daysAbove500Msgs: 149, daysAbove2kMsgs: 36,
+      maxDayCost: 1_771, maxCostInSession: 5_156, daysAbove50Cost: 163,
+      maxDayLines: 40_163, maxLinesInSession: 101_678, daysAbove1kLines: 178,
+      activeDays: 208, longestStreak: 53, uniqueWeeksActive: 34, fullWeekendCount: 26,
+      monthsActive: 9, longestWeekdayStreak: 47, daysWith8Hours: 50, maxHoursInDay: 19,
+      totalActiveHours: 1_733.65, maxSessionActiveMin: 6_414, avgActiveMinPerSession: 29.9,
+      deepSessions_1h: 207, deepSessions_2h: 133, deepSessions_3h: 91,
+      deepSessions_4h: 71, deepSessions_6h: 53, deepSessions_8h: 46,
+      maxDayActiveMin: 6_547, deepDays_2h: 105, deepDays_4h: 81, deepDays_6h: 65,
+      deepDays_8h: 53, deepDays_10h: 46,
+      mcpServerCount: 6, mcpToolCalls: 12_294, subagentMessages: 24_059, subagentCost: 1_543,
+      cacheSavingsUsd: 400_598, avgCacheRate: 98.2, outputRatio: 0.00204,
+      multiModelSessions: 371, tripleModelDayCount: 96, maxModelsInSession: 9,
+      modelMessages: { opus: 204_867, sonnet: 10_095, haiku: 7_181 },
+      modelMessagesOf: (label) => ({
+        'Opus 5': 41_353, 'Fable 5': 25_515, 'Haiku 4.5': 7_181, 'Sonnet 5': 2_141, 'Opus 4.8': 49_553
+      })[label] || 0
+    };
+    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'achievements.js'), 'utf8');
+    const waveTwoStart = src.indexOf('Wave 2 — 500 achievements');
+    const waveTwoKeys = new Set(
+      src.slice(waveTwoStart, src.indexOf('\n];'))
+        .split('\n').filter(l => /^\s*\{\s*key:/.test(l))
+        .map(l => l.match(/key: '([^']+)'/)[1])
+    );
+    expect(waveTwoKeys.size).toBe(500);
+
+    const waveTwo = ACHIEVEMENTS.filter(a => waveTwoKeys.has(a.key));
+    const unlocked = waveTwo.filter(a => a.check(BASELINE));
+    expect(waveTwo.length - unlocked.length).toBeGreaterThanOrEqual(400);
+    // In fact none of them were reachable on day one.
+    expect(unlocked.map(a => a.key)).toEqual([]);
+  });
+
+  it('keeps the second wave on real working time, never on session spans', () => {
+    // durationMin is last-minus-first message including idle; on real data it
+    // ran 36x higher than actual work. Wave 2 must not inherit that.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'achievements.js'), 'utf8');
+    const arrayEnd = src.indexOf('\n];');
+    const waveTwo = src.slice(src.indexOf('Wave 2 — 500 achievements'), arrayEnd);
+    // Strip comments first: the block explains WHY durationMin is avoided, so a
+    // raw text search matches the explanation and passes/fails on prose.
+    const code = waveTwo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    expect(code).not.toMatch(/durationMin/);
+    expect(code).toMatch(/totalActiveHours/);
   });
 });

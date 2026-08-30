@@ -10,8 +10,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-367_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="367 tests passing">
-  <img src="https://img.shields.io/badge/code-33.7k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="33712 lines of code across 51 files">
+  <img src="https://img.shields.io/badge/tests-374_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="374 tests passing">
+  <img src="https://img.shields.io/badge/code-36.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="36551 lines of code across 51 files">
 </p>
 <!-- BADGES:END -->
 
@@ -149,7 +149,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs, 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **700 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
+- **1200 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Usage heatmap** — weekday × hour grid in the overview showing token-usage intensity (rows Mon→Sun for multi-day ranges, a single 24-hour strip for one day), cache-toggle aware with per-cell tooltips
 - **Weekday-aware dates** — chart axis labels and the period-range header show the weekday (e.g. `Sa 06-27`, `Thu 05/28/2026 – Sat 06/27/2026`)
@@ -158,7 +158,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation. Cache writes are billed by **TTL tier** (5 min = 1.25× input, 1 h = 2× input) — Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5 %
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **367 automated tests** — unit, integration, and multi-user API tests
+- **374 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
@@ -174,7 +174,7 @@ Open [http://localhost:5010](http://localhost:5010)
 | ![Models](public/screenshots/07-models.png) | ![Insights](public/screenshots/08-insights.png) |
 | **Models** — model usage over time, per-model tokens and cost | **Insights** — cost breakdown, cumulative cost, weekday activity, cache efficiency |
 | ![Productivity](public/screenshots/09-productivity.png) | ![Achievements](public/screenshots/10-achievements.png) |
-| **Productivity** — efficiency metrics with period comparison | **Achievements** — 700 achievements across 14 categories, unlocked with historical dates |
+| **Productivity** — efficiency metrics with period comparison | **Achievements** — 1200 achievements across 14 categories, unlocked with historical dates |
 
 ### Mobile (iPhone 16 — 393px)
 
