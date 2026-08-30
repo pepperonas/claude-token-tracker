@@ -1464,21 +1464,35 @@ async function openProjectDetail(projectName) {
   // KPIs
   const kpiGrid = document.getElementById('project-detail-kpis');
   kpiGrid.textContent = '';
+  // Tokens honour the cache switch, exactly like the projects table — showing
+  // 13.0B here next to 26.7M there for the same project made the two read as
+  // different projects.
   const kpis = [
-    { label: t('totalTokensH'), value: formatTokens(data.totalTokens), cls: 'c-blue' },
-    { label: t('cost'), value: formatCost(data.cost), cls: 'c-orange' },
-    { label: t('sessionsLabel'), value: formatNumber(data.sessions), cls: 'c-green' },
-    { label: t('messagesLabel'), value: formatNumber(data.messages), cls: 'c-purple' },
-    { label: t('pdTotalTime'), value: data.totalDurationMin > 0 ? _formatDuration(data.totalDurationMin) : '-', cls: 'c-cyan' },
-    { label: t('pdNetLines'), value: _formatNetLines(data), cls: 'c-green' },
+    { label: t('totalTokensH'), value: formatTokens(getDisplayTokens(data)), cls: 'c-blue', tip: t('mTokensD') },
+    { label: t('cost'), value: formatCost(data.cost), cls: 'c-orange', tip: t('mCostD') },
+    { label: t('sessionsLabel'), value: formatNumber(data.sessions), cls: 'c-green', tip: t('mSessionsD') },
+    { label: t('messagesLabel'), value: formatNumber(data.messages), cls: 'c-purple', tip: t('mMessagesD') },
+    // Active time on one shared timeline — NOT the sum of session spans, which
+    // counts idle time and overlapping sessions and exceeds the wall clock.
+    { label: t('pdTotalTime'), value: data.totalActiveMin > 0 ? _formatDuration(data.totalActiveMin) : '-', cls: 'c-cyan', tip: t('mActiveD') },
+    { label: t('pdNetLines'), value: _formatNetLines(data), cls: 'c-green', tip: t('mLinesD') },
   ];
   for (const k of kpis) {
     const div = document.createElement('div');
     div.className = 'kpi ' + k.cls;
-    div.innerHTML = '';
     const lbl = document.createElement('div');
     lbl.className = 'kpi-label';
     lbl.textContent = k.label;
+    if (k.tip) {
+      const info = document.createElement('button');
+      info.type = 'button';
+      info.className = 'kpi-info';
+      info.textContent = '\u2139';
+      info.title = k.tip;
+      info.setAttribute('aria-label', k.label + ': ' + k.tip);
+      info.addEventListener('click', (e) => { e.stopPropagation(); openMethodology(); });
+      lbl.appendChild(info);
+    }
     const val = document.createElement('div');
     val.className = 'kpi-value';
     val.textContent = k.value;
@@ -1537,6 +1551,30 @@ async function openProjectDetail(projectName) {
     tbody.appendChild(tr);
   }
 
+  // Report buttons. The report is a standalone, print-styled HTML page served
+  // by the API; "PDF" is the same page with the browser's print dialog opened,
+  // which is what actually produces the PDF (no server-side PDF engine).
+  // The report is fetched straight from the API (not through api()), so it has
+  // no demo-data path — hide it rather than hand a demo visitor a 401 page.
+  const reportBtns = ['project-detail-report-html', 'project-detail-report-pdf'];
+  for (const id of reportBtns) {
+    document.getElementById(id).style.display = state.demoMode ? 'none' : '';
+  }
+  const reportUrl = (extra) => 'api/project-report?name=' + encodeURIComponent(projectName)
+    + pq.replace('?', '&') + (extra || '');
+  document.getElementById('project-detail-report-html').onclick = () => {
+    const a = document.createElement('a');
+    a.href = reportUrl('&download=1');
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  document.getElementById('project-detail-report-pdf').onclick = () => {
+    window.open(reportUrl('&print=1'), '_blank', 'noopener');
+  };
+  document.getElementById('project-detail-methodology').onclick = () => openMethodology();
+
   // Export button
   document.getElementById('project-detail-export').onclick = () => {
     const json = JSON.stringify(data, null, 2);
@@ -1554,6 +1592,72 @@ function closeProjectDetail() {
   _projectDetailData = null;
   destroyChart('chart-project-detail-daily');
   destroyChart('chart-project-detail-models');
+}
+
+// --- Methodology dialog: what every number on the dashboard actually measures ---
+
+function _methodologyRow(head, body, extra) {
+  const sec = document.createElement('div');
+  sec.className = 'meth-row';
+  const h = document.createElement('h4');
+  h.textContent = head;
+  const p = document.createElement('p');
+  p.textContent = body;
+  sec.appendChild(h);
+  sec.appendChild(p);
+  if (extra) {
+    const e = document.createElement('p');
+    e.className = 'meth-note';
+    e.textContent = extra;
+    sec.appendChild(e);
+  }
+  return sec;
+}
+
+function openMethodology() {
+  const body = document.getElementById('methodology-body');
+  body.textContent = '';
+
+  const intro = document.createElement('p');
+  intro.className = 'meth-intro';
+  intro.textContent = t('methodologyIntro');
+  body.appendChild(intro);
+
+  body.appendChild(_methodologyRow(t('mTokensH'), t('mTokensD')));
+  body.appendChild(_methodologyRow(t('mCostH'), t('mCostD'), t('mCostNote')));
+  body.appendChild(_methodologyRow(t('mMessagesH'), t('mMessagesD')));
+  body.appendChild(_methodologyRow(t('mSessionsH'), t('mSessionsD')));
+  body.appendChild(_methodologyRow(t('mActiveH'), t('mActiveD')));
+  body.appendChild(_methodologyRow(t('mLinesH'), t('mLinesD')));
+  body.appendChild(_methodologyRow(t('mPricingH'), t('mPricingD')));
+  body.appendChild(_methodologyRow(t('mGapsH'), t('mGapsD')));
+
+  // Cache-tier coverage is project-specific — only shown when a project detail
+  // is open, and only when there are cache writes to describe.
+  const d = _projectDetailData;
+  if (d && (d.cacheCreate5mTokens || d.cacheCreate1hTokens || d.cacheCreateUnsplitTokens)) {
+    const known = (d.cacheCreate5mTokens || 0) + (d.cacheCreate1hTokens || 0);
+    const total = known + (d.cacheCreateUnsplitTokens || 0);
+    const pct = total > 0 ? Math.round(known / total * 100) : 0;
+    body.appendChild(_methodologyRow(
+      t('mLegacyH'),
+      t('mLegacyD'),
+      `${pct} % (${formatTokens(known)} / ${formatTokens(total)})`
+    ));
+    if (d.sessionSpanSumMin) {
+      body.appendChild(_methodologyRow(
+        t('mSessionSpan'),
+        t('mSessionSpanD'),
+        `${_formatDuration(d.sessionSpanSumMin)} — ${t('mSpan')}: ${_formatDuration(d.spanMin || 0)}`
+      ));
+    }
+  }
+
+  document.getElementById('methodology-dialog').style.display = 'flex';
+}
+
+function closeMethodology() {
+  document.getElementById('methodology-dialog').style.display = 'none';
 }
 
 // --- Project Merge dialog ---
@@ -1890,13 +1994,20 @@ function _renderProjectModelsChart(models) {
 // Close modal on overlay click or Escape
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (document.getElementById('ach-day-dialog')?.style.display === 'flex') {
+  // Methodology sits on top of the project detail — it must close first,
+  // otherwise Escape closes the dialog underneath it.
+  if (document.getElementById('methodology-dialog')?.style.display === 'flex') {
+    closeMethodology();
+  } else if (document.getElementById('ach-day-dialog')?.style.display === 'flex') {
     closeAchievementsDay();
   } else if (document.getElementById('project-merge-dialog')?.style.display === 'flex') {
     closeProjectMerge();
   } else if (document.getElementById('project-detail-dialog').style.display !== 'none') {
     closeProjectDetail();
   }
+});
+document.getElementById('methodology-dialog')?.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeMethodology();
 });
 document.getElementById('ach-day-dialog')?.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) closeAchievementsDay();
@@ -2180,40 +2291,9 @@ function closeAchievementsDay() {
   if (dlg) dlg.style.display = 'none';
 }
 
-// Recompute all achievements with historical (backdated) unlock dates
-async function recomputeAchievements() {
-  if (!confirm(t('achRecomputeConfirm'))) return;
-  const btn = document.getElementById('ach-recompute-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
-  try {
-    const res = await fetch('/api/achievements/recompute', { method: 'POST' });
-    const data = await res.json();
-    if (data && data.recomputed) {
-      alert(t('achRecomputeDone').replace('{count}', data.unlocked).replace('{days}', data.days));
-      await loadAchievements();
-    } else {
-      alert((data && data.error) || 'Error');
-    }
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = t('achRecompute'); }
-  }
-}
-
 async function loadAchievements() {
   const data = await api('achievements');
   _achievementsData = data;
-
-  // Recompute button: hidden in demo mode, bound once
-  const recomputeBtn = document.getElementById('ach-recompute-btn');
-  if (recomputeBtn) {
-    recomputeBtn.style.display = state.demoMode ? 'none' : '';
-    if (!recomputeBtn._bound) {
-      recomputeBtn._bound = true;
-      recomputeBtn.addEventListener('click', recomputeAchievements);
-    }
-  }
 
   const unlockedList = data.filter(a => a.unlocked);
   const unlocked = unlockedList.length;

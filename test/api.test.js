@@ -31,6 +31,17 @@ function get(path) {
   });
 }
 
+/** Like get(), but keeps the raw body and response headers. */
+function raw(path, headers = {}) {
+  return new Promise((resolve, reject) => {
+    http.get(baseUrl + path, { headers }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
+    }).on('error', reject);
+  });
+}
+
 function post(path) {
   return new Promise((resolve, reject) => {
     const req = http.request(baseUrl + path, { method: 'POST' }, (res) => {
@@ -392,6 +403,32 @@ describe('API endpoints', () => {
     expect(body.sessions).toBeGreaterThan(0);          // count, not a list
     expect(body.totalActiveMin).toBeGreaterThanOrEqual(0);
     expect(Object.keys(body.models).length).toBeGreaterThan(0);
+  });
+
+  it('GET /api/project-report renders a standalone HTML report', async () => {
+    const { status, body } = await get('/api/project-report?name=' + encodeURIComponent('acme/web'));
+    expect(status).toBe(200);
+    expect(typeof body).toBe('string');
+    expect(body.startsWith('<!DOCTYPE html>')).toBe(true);
+    expect(body).toContain('acme/web');
+    expect(body).toContain('Rechenweg');
+  });
+
+  it('GET /api/project-report offers the report as a download with a safe filename', async () => {
+    const res = await raw('/api/project-report?name=' + encodeURIComponent('acme/web') + '&download=1');
+    expect(res.status).toBe(200);
+    const cd = res.headers['content-disposition'];
+    expect(cd).toMatch(/^attachment; filename="token-report-acme-web-\d{4}-\d{2}-\d{2}\.html"$/);
+  });
+
+  it('GET /api/project-report requires a project name', async () => {
+    const { status } = await get('/api/project-report');
+    expect(status).toBe(400);
+  });
+
+  it('GET /api/project-report reports 404 for a project with no data', async () => {
+    const { status } = await get('/api/project-report?name=does-not-exist');
+    expect(status).toBe(404);
   });
 
   it('GET /api/tool-stats aggregates the seeded tool calls with cost attribution', async () => {

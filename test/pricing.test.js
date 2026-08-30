@@ -1,4 +1,4 @@
-const { calculateCost, getModelLabel, getPricing, getPricingMeta, PRICING, DEFAULT_PRICING, _setOverrides } = require('../lib/pricing');
+const { calculateCost, getModelLabel, getPricing, getPricingMeta, cacheCreate1hPrice, PRICING, DEFAULT_PRICING, _setOverrides, _setEpochs } = require('../lib/pricing');
 
 describe('pricing', () => {
   describe('calculateCost', () => {
@@ -59,9 +59,67 @@ describe('pricing', () => {
       expect(cost).toBeCloseTo(60, 2);
     });
 
-    it('has an offline fallback for Sonnet 5', () => {
+    it('has an offline fallback for Sonnet 5 at the standard $2 rate', () => {
+      // The $2/$10 launch price BECAME the standard price — Anthropic cancelled
+      // the increase to $3/$15 once scheduled for 2026-09-01.
       const cost = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 });
-      expect(cost).toBe(3);
+      expect(cost).toBe(2);
+    });
+
+    it('has an offline fallback for Opus 5 (not undercounted as Sonnet)', () => {
+      // Opus 5 is the most-used model in real data; without a fallback entry an
+      // offline boot priced 19.5B tokens at Sonnet rates.
+      const cost = calculateCost('claude-opus-5', { inputTokens: 1_000_000, outputTokens: 1_000_000 });
+      expect(cost).toBe(30);
+      expect(cost).not.toBe(DEFAULT_PRICING.input + DEFAULT_PRICING.output);
+    });
+
+    it('charges 1-hour cache writes at 2x input, not the 5m 1.25x rate', () => {
+      // Verified against the official pricing table: Opus 5 base input $5 →
+      // 5m write $6.25, 1h write $10. Claude Code writes mostly to the 1h cache,
+      // so treating every write as 5m understated cost by ~8.5% in real data.
+      const fiveMin = calculateCost('claude-opus-5', {
+        cacheCreateTokens: 1_000_000, cacheCreate5m: 1_000_000, cacheCreate1h: 0
+      });
+      const oneHour = calculateCost('claude-opus-5', {
+        cacheCreateTokens: 1_000_000, cacheCreate5m: 0, cacheCreate1h: 1_000_000
+      });
+      expect(fiveMin).toBeCloseTo(6.25, 4);
+      expect(oneHour).toBeCloseTo(10, 4);
+    });
+
+    it('splits a mixed-TTL cache write across both rates', () => {
+      const cost = calculateCost('claude-opus-5', {
+        cacheCreateTokens: 1_000_000, cacheCreate5m: 400_000, cacheCreate1h: 600_000
+      });
+      // 0.4 * 6.25 + 0.6 * 10 = 2.5 + 6 = 8.5
+      expect(cost).toBeCloseTo(8.5, 4);
+    });
+
+    it('prices a write with no TTL split at the 5m rate (legacy rows)', () => {
+      // Messages stored before the split was parsed carry only the total. They
+      // must keep the old price rather than be silently re-priced upward on
+      // data that can no longer be verified.
+      const cost = calculateCost('claude-fable-5', { cacheCreateTokens: 1_000_000 });
+      expect(cost).toBeCloseTo(12.5, 4);
+    });
+
+    it('clamps a 1h figure that exceeds the reported total', () => {
+      // Defensive: a malformed sync payload must not produce more cache-write
+      // tokens than the message actually reported.
+      const cost = calculateCost('claude-opus-5', {
+        cacheCreateTokens: 1_000_000, cacheCreate1h: 5_000_000
+      });
+      expect(cost).toBeCloseTo(10, 4);
+    });
+
+    it('derives the 1h price from input so it can never drift', () => {
+      for (const id of Object.keys(PRICING)) {
+        const p = PRICING[id];
+        expect(cacheCreate1hPrice(p)).toBeCloseTo(p.input * 2, 6);
+        // Sanity: the 1h tier is always dearer than the 5m tier.
+        expect(cacheCreate1hPrice(p)).toBeGreaterThan(p.cacheCreate);
+      }
     });
 
     it('uses default pricing for unknown models', () => {
@@ -170,17 +228,29 @@ describe('pricing', () => {
       _setOverrides({}, { source: 'fallback', fetchedAt: null });
     });
 
-    it('prices Sonnet 5 at introductory rates inside the intro window', () => {
-      const cost = calculateCost('claude-sonnet-5', {
+    // The real PRICING_EPOCHS table is empty (no live model has changed price
+    // under the same ID). These exercise the MECHANISM with an injected window,
+    // so the table can reflect reality without losing coverage.
+    const EPOCH_MODEL = 'claude-sonnet-4-5';
+    beforeEach(() => {
+      _setEpochs({
+        [EPOCH_MODEL]: [
+          { from: null, to: '2026-08-31', label: 'Sonnet 4.5', input: 2, output: 10, cacheRead: 0.2, cacheCreate: 2.5 }
+        ]
+      });
+    });
+    afterEach(() => { _setEpochs({}); });
+
+    it('prices inside the epoch window at the historical rate', () => {
+      const cost = calculateCost(EPOCH_MODEL, {
         inputTokens: 1_000_000,
         outputTokens: 1_000_000
       }, '2026-07-02T10:00:00Z');
-      // Intro: 2 + 10 = 12 (standard would be 3 + 15 = 18)
-      expect(cost).toBeCloseTo(12, 2);
+      expect(cost).toBeCloseTo(12, 2); // epoch 2 + 10; current is 3 + 15
     });
 
-    it('prices Sonnet 5 at standard rates after the intro window ends', () => {
-      const cost = calculateCost('claude-sonnet-5', {
+    it('prices after the epoch window at the current rate', () => {
+      const cost = calculateCost(EPOCH_MODEL, {
         inputTokens: 1_000_000,
         outputTokens: 1_000_000
       }, '2026-09-01T00:00:00Z');
@@ -191,10 +261,10 @@ describe('pricing', () => {
       // LiteLLM only knows the CURRENT price; a message from inside the
       // epoch window must keep its historical price even after a refresh.
       _setOverrides({
-        'claude-sonnet-5': { label: 'Sonnet 5', input: 3, output: 15, cacheRead: 0.3, cacheCreate: 3.75 }
+        [EPOCH_MODEL]: { label: 'Sonnet 4.5', input: 3, output: 15, cacheRead: 0.3, cacheCreate: 3.75 }
       }, { source: 'litellm', fetchedAt: '2026-09-15T00:00:00Z' });
-      const intro = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 }, '2026-08-31T23:00:00Z');
-      const after = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 }, '2026-09-01T01:00:00Z');
+      const intro = calculateCost(EPOCH_MODEL, { inputTokens: 1_000_000 }, '2026-08-31T23:00:00Z');
+      const after = calculateCost(EPOCH_MODEL, { inputTokens: 1_000_000 }, '2026-09-01T01:00:00Z');
       expect(intro).toBe(2);
       expect(after).toBe(3);
     });
@@ -202,7 +272,7 @@ describe('pricing', () => {
     it('reads the timestamp from the usage object (message) when not passed explicitly', () => {
       // Aggregator call sites pass the full message as usage — its own
       // timestamp must make the cost time-aware without any extra argument.
-      const cost = calculateCost('claude-sonnet-5', {
+      const cost = calculateCost(EPOCH_MODEL, {
         inputTokens: 1_000_000,
         timestamp: '2026-07-15T12:00:00Z'
       });
@@ -210,8 +280,14 @@ describe('pricing', () => {
     });
 
     it('falls back to current pricing when no timestamp is available', () => {
-      const cost = calculateCost('claude-sonnet-5', { inputTokens: 1_000_000 });
+      const cost = calculateCost(EPOCH_MODEL, { inputTokens: 1_000_000 });
       expect(cost).toBe(3);
+    });
+
+    it('ships an empty epoch table — no model currently has a price history', () => {
+      _setEpochs({});
+      const { epochs } = getPricingMeta();
+      expect(Object.keys(epochs)).toEqual([]);
     });
 
     it('models without epochs are unaffected by timestamps', () => {

@@ -259,6 +259,87 @@ describe('aggregator', () => {
     });
   });
 
+  describe('getProjectDetail — time and counting semantics', () => {
+    // Two sessions running at the same time, plus one session whose messages
+    // lie entirely outside the queried window. This is the shape that made the
+    // old per-session summation produce impossible numbers.
+    const P = 'proj-time';
+    const base = Date.parse('2026-05-10T10:00:00.000Z');
+    const at = (min) => new Date(base + min * 60000).toISOString();
+    const msg = (id, sess, min) => ({
+      id, timestamp: at(min), model: 'claude-opus-4-6', sessionId: sess, project: P,
+      inputTokens: 10, outputTokens: 10, cacheReadTokens: 0, cacheCreateTokens: 0,
+      tools: [], stopReason: 'end_turn'
+    });
+
+    let a;
+    beforeEach(() => {
+      a = new Aggregator();
+      a.addMessages([
+        // session A and session B overlap minute-for-minute
+        msg('a1', 'sA', 0), msg('a2', 'sA', 2), msg('a3', 'sA', 4),
+        msg('b1', 'sB', 0), msg('b2', 'sB', 2), msg('b3', 'sB', 4),
+        // long-running session: one message far before, one far after
+        msg('c1', 'sC', -60 * 24 * 40), msg('c2', 'sC', 60 * 24 * 40)
+      ]);
+    });
+
+    it('never reports more active time than wall-clock time in the window', () => {
+      const d = a.getProjectDetail(P, '2026-05-10', '2026-05-10');
+      expect(d.totalActiveMin).toBeLessThanOrEqual(d.spanMin);
+    });
+
+    it('counts a shared minute once, not once per parallel session', () => {
+      const d = a.getProjectDetail(P, '2026-05-10', '2026-05-10');
+      // 6 interleaved messages across 4 minutes on one timeline → 4 minutes.
+      // Summing per session would give 4 + 4 = 8.
+      expect(d.totalActiveMin).toBe(4);
+    });
+
+    it('keeps the old session-span sum only as a clearly-unusable reference', () => {
+      const d = a.getProjectDetail(P, '2026-05-10', '2026-05-10');
+      // sA and sB contribute 4 min each, but the overlapping 80-day session sC
+      // contributes its ENTIRE span even though it has no message in the window.
+      // 115208 minutes inside a 1440-minute day: this is why it is not a KPI.
+      expect(d.sessionSpanSumMin).toBe(4 + 4 + 80 * 24 * 60);
+      expect(d.sessionSpanSumMin).toBeGreaterThan(24 * 60);
+    });
+
+    it('excludes messages outside the window from active time', () => {
+      const d = a.getProjectDetail(P, '2026-05-10', '2026-05-10');
+      // Session sC overlaps the window but has no message inside it; its
+      // 80-day span must not leak into the day's active time.
+      expect(d.totalActiveMin).toBe(4);
+      expect(d.messages).toBe(6);
+    });
+
+    it('counts sessions with messages in the window, matching getProjects', () => {
+      const d = a.getProjectDetail(P, '2026-05-10', '2026-05-10');
+      const fromTable = a.getProjects('2026-05-10', '2026-05-10').find(p => p.name === P);
+      expect(d.sessions).toBe(2);
+      expect(d.sessions).toBe(fromTable.sessions);
+    });
+
+    it('splits cost into components that add up to the total', () => {
+      const d = a.getProjectDetail(P);
+      const parts = d.inputCost + d.outputCost + d.cacheReadCost
+        + d.cacheCreate5mCost + d.cacheCreate1hCost;
+      expect(parts).toBeCloseTo(d.cost, 2);
+    });
+
+    it('reports how much of the cache-write volume has a known TTL', () => {
+      const b = new Aggregator();
+      b.addMessages([
+        { ...msg('k1', 'sK', 0), cacheCreateTokens: 1000, cacheCreate5m: 200, cacheCreate1h: 800 },
+        { ...msg('k2', 'sK', 1), cacheCreateTokens: 1000 } // legacy row, no split
+      ]);
+      const d = b.getProjectDetail(P);
+      expect(d.cacheCreate1hTokens).toBe(800);
+      expect(d.cacheCreate5mTokens).toBe(200);
+      expect(d.cacheCreateUnsplitTokens).toBe(1000);
+    });
+  });
+
   describe('getHourlyByModel', () => {
     it('returns 24 entries with model breakdowns', () => {
       const data = agg.getHourlyByModel();

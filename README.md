@@ -10,8 +10,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-333_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="333 tests passing">
-  <img src="https://img.shields.io/badge/code-32.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="32642 lines of code across 49 files">
+  <img src="https://img.shields.io/badge/tests-367_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="367 tests passing">
+  <img src="https://img.shields.io/badge/code-33.3k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="33296 lines of code across 49 files">
 </p>
 <!-- BADGES:END -->
 
@@ -140,7 +140,8 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Usage trends** — four live cards (today / this week / this month / last 7 days) comparing against the previous period **cut off at the same point in time** (yesterday up to this hour, last week up to this weekday+time, last month up to this day-of-month, clamped for shorter months), each with a delta badge, overlay sparkline and month-end projection. Below them five comparison charts on the same payload: 90-day volume with 7d/30d moving averages, cumulative month vs. previous month, week comparison Mon–Sun, project momentum (last 7 days vs. the 7 before) and model-mix shift as 100 % stacked bars. Independent of the period filter, honours the cache and token↔cost toggles
 - **GitHub Integration** — SWR caching, billing with plan detection & percentages, code statistics (LOC by repo), PR Code Impact, Actions Usage by Repository, contribution heatmap
 - **Tool Cost Attribution** — proportional cost/token distribution per tool, MCP server breakdown (auto-detected via `mcp__` prefix), sub-agent tracking (via `/subagents/` path), cost-over-time chart, enhanced table with Type/Cost/Tokens columns
-- **Project Detail Dialog** — click any project in chart or table to open a detail modal with 6 KPIs (tokens, cost, sessions, messages, total time, net lines), daily token chart, model distribution doughnut, top tools, sessions list, and JSON export to clipboard
+- **Project Detail Dialog** — click any project in chart or table to open a detail modal with 6 KPIs (tokens, cost, sessions, messages, **active time**, net lines), daily token chart, model distribution doughnut, top tools, sessions list, and JSON export to clipboard. Every KPI carries a one-line explanation and opens a **methodology dialog** ("How these numbers are computed") covering the formulas, the 5-minute idle cap, the price source — and what is *not* counted
+- **Per-project report (HTML + PDF)** — a standalone, print-optimised report per project: KPIs, cost split by component (including the 5-minute and 1-hour cache-write tiers), cost-over-time chart, model and session tables, and a methodology section so the document explains itself. No CDN, no chart library, charts are inline SVG — it survives being mailed around and printed. "PDF" is the browser's own print-to-PDF
 - **Project search & merge** — live substring filter over the Projects table, plus non-destructive merging of projects that are the same codebase (renamed/moved or synced from another device under a different path) into one canonical name, with a 🪄 suggestions button that auto-detects likely duplicates from path names
 - **Rate-Limit Tracking** — automatic detection of Claude Code rate-limit events from JSONL logs, daily aggregation, KPI card, backfill for historical data
 - **Period navigation** — prev/next arrows beside date picker jump by selected period duration
@@ -154,10 +155,10 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Weekday-aware dates** — chart axis labels and the period-range header show the weekday (e.g. `Sa 06-27`, `Thu 05/28/2026 – Sat 06/27/2026`)
 - **Multi-device tracking** — track usage across multiple machines (MacBook, VPS, Desktop), per-device API keys, device switcher in dashboard, aggregated "All Devices" view, click-to-rename devices, OS-selectable install commands
 - **Multi-user mode** — GitHub OAuth, per-user data isolation, Sync Agent with one-click install (macOS/Linux/Windows)
-- **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation
+- **Token breakdown** — Input, Output, Cache Read, Cache Create with per-type API-equivalent cost estimation. Cache writes are billed by **TTL tier** (5 min = 1.25× input, 1 h = 2× input) — Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5 %
 - **Share API** — secure external API for sharing project-specific token usage data with clients. Share tokens (48-char hex, 192-bit entropy) expose sanitized project data (tokens, cost, sessions, code lines, daily breakdown) via public endpoints. Admin key authentication for share management, rate limiting (30 req/min/IP), CORS restrictions, and optional expiry. Used by [OPS](https://github.com/pepperonas/celox-ops) for customer transparency dashboards. Settings UI shows Share Admin Key with copy button.
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **333 automated tests** — unit, integration, and multi-user API tests
+- **367 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

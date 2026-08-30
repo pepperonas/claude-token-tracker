@@ -335,6 +335,44 @@ describe('parser', () => {
     });
   });
 
+  describe('cache-write TTL split', () => {
+    function write(name, usage) {
+      const raw = JSON.stringify({
+        type: 'assistant',
+        timestamp: '2026-08-20T10:00:00.000Z',
+        sessionId: 'sess-ttl',
+        message: { id: 'ttl_' + name, model: 'claude-opus-5', usage }
+      });
+      const p = path.join(tmpDir, name + '.jsonl');
+      fs.writeFileSync(p, raw + '\n');
+      return parseSessionFile(p).messages[0];
+    }
+
+    it('reads the 5m/1h breakdown from usage.cache_creation', () => {
+      // The two tiers are priced differently (1.25x vs 2x input), so the split
+      // has to survive parsing — the total alone cannot be priced correctly.
+      const msg = write('split', {
+        input_tokens: 2, output_tokens: 8,
+        cache_creation_input_tokens: 206981,
+        cache_creation: { ephemeral_5m_input_tokens: 981, ephemeral_1h_input_tokens: 206000 }
+      });
+      expect(msg.cacheCreateTokens).toBe(206981);
+      expect(msg.cacheCreate5m).toBe(981);
+      expect(msg.cacheCreate1h).toBe(206000);
+    });
+
+    it('leaves both tiers at 0 when the entry has no cache_creation object', () => {
+      // "Split unknown" — lib/pricing.js falls back to the 5m rate for these
+      // rather than guessing a tier.
+      const msg = write('nosplit', {
+        input_tokens: 2, output_tokens: 8, cache_creation_input_tokens: 5000
+      });
+      expect(msg.cacheCreateTokens).toBe(5000);
+      expect(msg.cacheCreate5m).toBe(0);
+      expect(msg.cacheCreate1h).toBe(0);
+    });
+  });
+
   describe('offsets', () => {
     it('reports the file size as the new offset and skips already-read bytes', () => {
       const p = path.join(tmpDir, 'off.jsonl');

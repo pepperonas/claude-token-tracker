@@ -25,6 +25,7 @@ const {
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
+const { generateProjectReport } = require('./lib/report-project');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 const github = require('./lib/github');
@@ -681,6 +682,7 @@ const server = http.createServer((req, res) => {
           id: m.id, timestamp: m.timestamp, model: m.model, sessionId: m.sessionId,
           project: m.project, inputTokens: m.inputTokens || 0, outputTokens: m.outputTokens || 0,
           cacheReadTokens: m.cacheReadTokens || 0, cacheCreateTokens: m.cacheCreateTokens || 0,
+          cacheCreate5m: m.cacheCreate5m || 0, cacheCreate1h: m.cacheCreate1h || 0,
           stopReason: m.stopReason, tools: m.tools || [], toolCounts: m.toolCounts || {},
           isSubagent: !!(m.isSubagent), linesAdded: m.linesAdded || 0,
           linesRemoved: m.linesRemoved || 0, linesWritten: m.linesWritten || 0
@@ -856,8 +858,13 @@ const server = http.createServer((req, res) => {
         lines_added: projectData.linesAdded || 0,
         lines_removed: projectData.linesRemoved || 0,
         lines_written: projectData.linesWritten || 0,
-        total_duration_min: projectData.totalDurationMin || 0,
+        // total_duration_min used to be the sum of session spans, which counted
+        // idle time and overlapping sessions and could exceed the wall clock.
+        // It is now an alias of the active time so existing consumers stop
+        // receiving an impossible number; span_min carries the elapsed range.
+        total_duration_min: projectData.totalActiveMin || 0,
         total_active_min: projectData.totalActiveMin || 0,
+        span_min: projectData.spanMin || 0,
         first_activity: projectData.firstTs || null,
         last_activity: projectData.lastTs || null,
         models_used: (projectData.models || []).map(m => ({
@@ -1079,6 +1086,36 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, agg.getProjectDetail(query.name, query.from, query.to));
   }
 
+  // Standalone per-project report. `download=1` saves it as a file,
+  // `print=1` opens the browser print dialog (that is the PDF path — there is
+  // no server-side PDF engine, see lib/report-project.js).
+  if (pathname === '/api/project-report') {
+    if (!query.name) return sendJSON(res, { error: 'name parameter required' }, 400);
+    const detail = agg.getProjectDetail(query.name, query.from, query.to);
+    if (!detail || !detail.messages) {
+      return sendJSON(res, { error: 'no data for project' }, 404);
+    }
+    const periodLabel = query.from && query.to
+      ? `${query.from} – ${query.to}`
+      : query.from ? `ab ${query.from}` : 'Gesamter Zeitraum';
+    const html = generateProjectReport(detail, {
+      periodLabel,
+      print: query.print === '1'
+    });
+    const headers = {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store'
+    };
+    if (query.download === '1') {
+      // Project names contain slashes and dots — flatten to a safe filename.
+      const safe = String(detail.name).replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'projekt';
+      const stamp = new Date().toISOString().slice(0, 10);
+      headers['Content-Disposition'] = `attachment; filename="token-report-${safe}-${stamp}.html"`;
+    }
+    res.writeHead(200, headers);
+    return res.end(html);
+  }
+
   if (pathname === '/api/projects') {
     return sendJSON(res, agg.getProjects(query.from, query.to));
   }
@@ -1260,6 +1297,11 @@ const server = http.createServer((req, res) => {
 
   // Recompute all achievements with historical unlock dates (replays the
   // message history day by day; rewrites the user's achievements table).
+  // Manual re-run of the historical backfill. No longer wired to a button: the
+  // backfill runs automatically on a fresh install and once per user whenever
+  // ACH_BACKFILL_FLAG is bumped, which covers every case that actually changes
+  // unlock dates. Kept as the maintainer's recovery path (curl -XPOST) for the
+  // ones that don't — e.g. after a project merge shifts per-project counts.
   if (pathname === '/api/achievements/recompute' && req.method === 'POST') {
     const achUserId = MULTI_USER ? user.id : 0;
     // Always replay the FULL (all-device) history — a device-filtered replay

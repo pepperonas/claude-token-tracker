@@ -52,6 +52,9 @@
       <div class="modal-header">
         <h2 id="project-detail-title"></h2>
         <div class="modal-header-actions">
+          <button class="btn-small" id="project-detail-report-html" data-i18n="pdReportHtml">HTML-Report</button>
+          <button class="btn-small" id="project-detail-report-pdf" data-i18n="pdReportPdf">PDF</button>
+          <button class="btn-small" id="project-detail-methodology" data-i18n="methodologyBtn" title="Wie wird gerechnet?">&#8505; Rechenweg</button>
           <button class="btn-small" id="project-detail-export" title="Export JSON">Export JSON</button>
           <button class="modal-close" onclick="closeProjectDetail()">&times;</button>
         </div>
@@ -89,6 +92,21 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology: how every number on the dashboard is computed -->
+  <div id="methodology-dialog" class="modal-overlay" style="display:none;">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h2 data-i18n="methodologyTitle">Wie wird gerechnet?</h2>
+        <div class="modal-header-actions">
+          <button class="modal-close" onclick="closeMethodology()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="methodology-body" class="methodology"></div>
       </div>
     </div>
   </div>
@@ -1005,7 +1023,6 @@
         <button class="ach-sort-btn" data-sort="recent" data-i18n="achievementsSortRecent">Zuletzt</button>
         <button class="ach-sort-btn" data-sort="points-desc" data-i18n="achievementsSortPoints">Punkte</button>
         <button class="ach-sort-btn" data-sort="tier" data-i18n="achievementsSortTier">Stufe</button>
-        <button class="btn-small ach-recompute-btn" id="ach-recompute-btn" data-i18n="achRecompute" title="">🔄 Rückdatiert neu berechnen</button>
       </div>
       <div class="chart-grid full">
         <div class="chart-box">
@@ -1503,6 +1520,12 @@
             <button class="lang-btn" data-lang="de">DE</button>
             <button class="lang-btn" data-lang="en">EN</button>
           </div>
+        </div>
+
+        <div class="info-section info-settings">
+          <h3 data-i18n="methodologyTitle">Wie diese Zahlen entstehen</h3>
+          <p class="muted" data-i18n="methodologyIntro"></p>
+          <button class="btn-small" onclick="openMethodology()" data-i18n="methodologyBtn">&#8505; Rechenweg</button>
         </div>
 
         <div class="info-section info-settings">

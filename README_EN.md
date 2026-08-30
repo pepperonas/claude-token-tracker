@@ -4,8 +4,8 @@
 
 <!-- BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-333_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="333 tests passing">
-  <img src="https://img.shields.io/badge/code-32.6k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="32642 lines of code across 49 files">
+  <img src="https://img.shields.io/badge/tests-367_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="367 tests passing">
+  <img src="https://img.shields.io/badge/code-33.3k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="33296 lines of code across 49 files">
 </p>
 <!-- BADGES:END -->
 
@@ -197,7 +197,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **333 automated tests** (unit + integration + multi-user API + achievements)
+- **367 automated tests** (unit + integration + multi-user API + achievements)
 
 ## Mobile Screenshots (iPhone 16 — 393px)
 

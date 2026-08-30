@@ -2065,7 +2065,6 @@ html.js .uheat-anim .uheat-legend {
 .ach-day-tier.tier-platinum { color: var(--accent); }
 .ach-day-tier.tier-diamond { color: var(--purple); }
 .ach-day-pts { font-size: 12px; font-weight: 700; }
-.ach-recompute-btn { margin-left: auto; }
 
 .achievement-card.unlocked.tier-bronze { border-left: 3px solid #cd7f32; }
 .achievement-card.unlocked.tier-silver { border-left: 3px solid #c0c0c0; }
@@ -3294,3 +3293,73 @@ html.js .tab-panel.active .data-table tbody tr:nth-child(n+9) { animation-delay:
 .metric-btn:active { transform: scale(0.96); }
 .metric-btn.active { background: var(--accent); color: #fff; }
 .metric-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- Methodology dialog + KPI info affordance -------------------------------
+   Every KPI carries a one-line explanation on hover and opens the full
+   methodology on click, so a number like "active time" can be read correctly
+   without hunting through the docs. */
+
+.kpi-info {
+  margin-left: 6px;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--state-hover, rgba(127, 127, 127, 0.14));
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  text-align: center;
+  cursor: help;
+  opacity: 0.55;
+  transition: opacity var(--dur-quick, 140ms) var(--ease-flat, ease),
+              background-color var(--dur-quick, 140ms) var(--ease-flat, ease);
+}
+
+.kpi-info:hover,
+.kpi-info:focus-visible {
+  opacity: 1;
+  background: var(--state-press, rgba(127, 127, 127, 0.24));
+}
+
+.methodology {
+  max-width: 74ch;
+}
+
+.meth-intro {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.meth-row {
+  padding: 14px 0;
+  border-top: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+}
+
+.meth-row:first-of-type {
+  border-top: none;
+}
+
+.meth-row h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.meth-row p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.meth-note {
+  margin-top: 8px !important;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent, #6ea8fe);
+  color: var(--text-muted);
+  font-size: 13px;
+}

@@ -36,6 +36,44 @@ describe('db', () => {
     });
   });
 
+  describe('cache-write TTL columns', () => {
+    const { calculateCost } = require('../lib/pricing');
+
+    it('round-trips the 5m/1h split through insert and read', () => {
+      // The split must survive the DB, not just the parse: costs are recomputed
+      // from stored token fields on every load, so losing it would silently
+      // re-price 1h writes back down to the 5m rate on the next restart.
+      insertMessages([{
+        id: 'ttl-1', timestamp: '2026-08-20T10:00:00.000Z', model: 'claude-opus-5',
+        sessionId: 's-ttl', project: 'p-ttl',
+        inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 1000,
+        cacheCreate5m: 250, cacheCreate1h: 750, tools: []
+      }], calculateCost);
+
+      const msg = getAllMessages().find(m => m.id === 'ttl-1');
+      expect(msg.cacheCreateTokens).toBe(1000);
+      expect(msg.cacheCreate5m).toBe(250);
+      expect(msg.cacheCreate1h).toBe(750);
+      // 250 tok @ $6.25/M + 750 tok @ $10/M
+      expect(calculateCost(msg.model, msg)).toBeCloseTo(250 / 1e6 * 6.25 + 750 / 1e6 * 10, 8);
+    });
+
+    it('defaults both tiers to 0 for rows written without a split', () => {
+      insertMessages([{
+        id: 'ttl-2', timestamp: '2026-08-20T11:00:00.000Z', model: 'claude-opus-5',
+        sessionId: 's-ttl', project: 'p-ttl',
+        inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 500,
+        tools: []
+      }], calculateCost);
+
+      const msg = getAllMessages().find(m => m.id === 'ttl-2');
+      expect(msg.cacheCreate5m).toBe(0);
+      expect(msg.cacheCreate1h).toBe(0);
+      // Unknown split → whole write at the 5m rate, i.e. unchanged from before.
+      expect(calculateCost(msg.model, msg)).toBeCloseTo(500 / 1e6 * 6.25, 8);
+    });
+  });
+
   describe('insertMessages / getAllMessages', () => {
     it('inserts and retrieves messages', () => {
       const msgs = SAMPLE_MESSAGES.slice(0, 3);

@@ -110,6 +110,8 @@ function parseSessionFile(filePath, fromOffset = 0) {
         outputTokens: usage.output_tokens || 0,
         cacheReadTokens: usage.cache_read_input_tokens || 0,
         cacheCreateTokens: usage.cache_creation_input_tokens || 0,
+        cacheCreate5m: (usage.cache_creation && usage.cache_creation.ephemeral_5m_input_tokens) || 0,
+        cacheCreate1h: (usage.cache_creation && usage.cache_creation.ephemeral_1h_input_tokens) || 0,
         tools: mergedTools,
         stopReason: msg.stop_reason,
         linesAdded,
