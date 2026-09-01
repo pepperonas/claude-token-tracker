@@ -16,9 +16,9 @@ describe('documentation stays in sync with the code', () => {
   // for the parameterised ones. Miss the second form and the reference looks
   // like it documents something that does not exist.
   const routes = [...new Set([
-    ...(server.match(/pathname === '\/api\/[a-z0-9/-]+'/g) || [])
+    ...(server.match(/pathname === '\/api\/[a-z0-9/.-]+'/g) || [])
       .map(m => m.slice(m.indexOf("'") + 1, -1)),
-    ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/-]+'/g) || [])
+    ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/.-]+'/g) || [])
       .map(m => m.slice(m.indexOf("'") + 1, -1))
   ])];
 

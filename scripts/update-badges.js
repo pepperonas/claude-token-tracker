@@ -85,8 +85,8 @@ function countProject() {
   const pkg = JSON.parse(rd('package.json'));
 
   const routes = new Set([
-    ...(server.match(/pathname === '\/api\/[a-z0-9/-]+'/g) || []),
-    ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/-]+'/g) || [])
+    ...(server.match(/pathname === '\/api\/[a-z0-9/.-]+'/g) || []),
+    ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/.-]+'/g) || [])
   ]);
 
   const achLines = ach.split('\n').filter(l => /^\s*\{\s*key:\s*'/.test(l));

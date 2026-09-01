@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/API_routes-68-0969da?style=flat-square" alt="68 API routes">
+  <img src="https://img.shields.io/badge/API_routes-70-0969da?style=flat-square" alt="70 API routes">
   <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
   <img src="https://img.shields.io/badge/lib_modules-16-0969da?style=flat-square" alt="16 library modules">
   <img src="https://img.shields.io/badge/charts-43-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="43 chart types">

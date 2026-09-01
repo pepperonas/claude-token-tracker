@@ -38,6 +38,10 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 - **Die Node.js-Badge war kaputt**: `>=20.12` ging unescaped in die URL, und
   dasselbe `>` im Alt-Attribut beendete das `<img>`-Tag für jeden einfachen
   Parser. Beides beim Testschreiben aufgefallen
+- **Die Routen-Badge zählte 68 statt 70** — der Punkt in
+  `/api/sync-agent/install.sh` fehlte in der Zeichenklasse der Routen-Erkennung,
+  weshalb beide Installer-Routen weder gezählt noch auf Dokumentation geprüft
+  wurden
 
 ---
 
