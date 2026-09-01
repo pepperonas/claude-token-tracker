@@ -1926,7 +1926,10 @@ function closeProjectMerge() {
 }
 
 function _formatDuration(min) {
-  if (min < 60) return min + 'm';
+  // A missing duration used to render as "NaNh NaNm" in the sessions table —
+  // _formatActiveTime already guarded, this one did not.
+  if (!Number.isFinite(min) || min <= 0) return min === 0 ? '0m' : '-';
+  if (min < 60) return Math.round(min) + 'm';
   const h = Math.floor(min / 60);
   const m = min % 60;
   return h + 'h ' + m + 'm';

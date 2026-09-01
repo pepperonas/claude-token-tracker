@@ -594,4 +594,97 @@ describe('API endpoints', () => {
     // Should either return 403 or a regular 404 (path normalization)
     expect([403, 404]).toContain(status);
   });
+
+  describe('routes that had no coverage', () => {
+    it('GET /api/active-sessions returns a list', async () => {
+      const { status, body } = await get('/api/active-sessions');
+      expect(status).toBe(200);
+      expect(Array.isArray(body)).toBe(true);
+    });
+
+    it('GET /api/hourly-by-model covers all 24 hours', async () => {
+      const { status, body } = await get('/api/hourly-by-model');
+      expect(status).toBe(200);
+      expect(body.length).toBe(24);
+    });
+
+    it('GET /api/global-averages is a multi-user feature and 404s locally', async () => {
+      // Comparing yourself against "all users" is meaningless on a single-user
+      // install; 404 is the deliberate answer, not a missing route.
+      const { status } = await get('/api/global-averages');
+      expect(status).toBe(404);
+    });
+
+    it('GET /api/stats-cache answers without throwing when there is no .claude dir', async () => {
+      // The tests boot with CLAUDE_DIR pointing at an empty temp directory,
+      // which is exactly the state of a fresh install.
+      const { status } = await get('/api/stats-cache');
+      expect([200, 404]).toContain(status);
+    });
+
+    it('GET /api/project-aliases starts empty and is shaped as expected', async () => {
+      const { status, body } = await get('/api/project-aliases');
+      expect(status).toBe(200);
+      expect(Array.isArray(body.aliases)).toBe(true);
+    });
+
+    it('GET /api/share-admin-key reports whether a key is configured', async () => {
+      // The settings UI reads data.key and data.base_url — snake_case here and
+      // camelCase elsewhere in the same API, so the contract is pinned rather
+      // than assumed.
+      const { status, body } = await get('/api/share-admin-key');
+      expect(status).toBe(200);
+      expect(body).toHaveProperty('key');
+      expect(body).toHaveProperty('base_url');
+      const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+      expect(app).toContain('data.base_url');
+    });
+
+    it('GET /api/devices returns a list', async () => {
+      const { status, body } = await get('/api/devices');
+      expect(status).toBe(200);
+      expect(Array.isArray(body) || Array.isArray(body.devices)).toBe(true);
+    });
+
+    it('GET /api/download-db streams the database file', async () => {
+      const res = await raw('/api/download-db');
+      expect(res.status).toBe(200);
+      // SQLite files start with this exact magic string.
+      expect(res.body.startsWith('SQLite format 3')).toBe(true);
+    });
+
+    it('GET /api/live opens an SSE stream with the right headers', async () => {
+      // A wrong Content-Type here makes the browser buffer the stream and the
+      // dashboard simply never updates — with no error anywhere.
+      const res = await new Promise((resolve, reject) => {
+        const req = http.get(baseUrl + '/api/live', (r) => {
+          resolve({ status: r.statusCode, headers: r.headers });
+          r.destroy();
+        });
+        req.on('error', reject);
+      });
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/text\/event-stream/);
+      expect(res.headers['cache-control']).toMatch(/no-cache/);
+    });
+
+    it('POST /api/project-merge rejects a request without sources', async () => {
+      const { status } = await post('/api/project-merge');
+      expect(status).toBeGreaterThanOrEqual(400);
+    });
+
+    it('degrades gracefully on the integrations when no credentials are set', async () => {
+      // None of these may return a 5xx just because a token is missing — a
+      // dashboard tab that 500s looks like the app is broken.
+      for (const route of ['/api/github/stats', '/api/anthropic/dashboard', '/api/plan-usage']) {
+        const { status } = await get(route);
+        expect(status).toBeLessThan(500);
+      }
+    });
+
+    it('POST /api/backup answers without a backup path configured', async () => {
+      const { status } = await post('/api/backup');
+      expect(status).toBeLessThan(500);
+    });
+  });
 });

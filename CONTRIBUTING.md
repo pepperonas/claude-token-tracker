@@ -50,6 +50,27 @@ fails — for the wrong reason.
 
 **Umlauts in German text.** ü, ö, ä, ß — never `ue`, `oe`, `ae`, `ss`.
 
+## Badges are generated, never edited
+
+Every badge that carries a number lives inside the `<!-- BADGES:START -->` /
+`<!-- BADGES:END -->` block and is written by `npm run badges`. Editing one by
+hand is how the achievement badge came to claim 700 for months after the
+catalogue reached 1200.
+
+```bash
+npm run badges              # rewrite from a real test run
+node scripts/update-badges.js --check   # CI dry run: exits 1 if it would change
+```
+
+The generator derives everything it can from the source — version, lines of
+code, tests, achievements, routes, tables, i18n keys, dependency versions — and
+the rest are live GitHub badges that shields.io refreshes on its own. A test
+(`test/badges.test.js`) fails if a value-carrying badge appears outside the
+generated block.
+
+Adding tests changes the line count, so run `npm run badges` **after** staging
+new files, not before.
+
 ## Before opening a pull request
 
 1. `npm test` and `npm run lint` are clean.

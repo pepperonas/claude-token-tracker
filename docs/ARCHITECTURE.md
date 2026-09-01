@@ -150,5 +150,11 @@ a deterministic multi-day history. An earlier version booted against the real
 database, took 33 seconds, failed on CI (which has no data) and rewrote the
 developer's own achievements.
 
+The frontend has no module system (plain `<script>` globals, no build step), so
+`test/helpers/frontend.js` loads the bundles into a `vm` sandbox with a minimal
+DOM stub and tests the pure helpers from there. ⚠️ Top-level `const`/`let` do
+**not** become sandbox globals — only `var` and function declarations do — so
+lexical bindings like `LANG` and `state` are read back with `ctx.pick([...])`.
+
 Prefer asserting numbers over shapes: `expect(body.messages).toBe(45 * 6)`
 catches an aggregation regression, `expect(Array.isArray(body))` does not.

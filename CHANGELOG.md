@@ -4,6 +4,43 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.2.1] — 2026-08-30
+
+### Added
+
+- **Alle Badges werden erzeugt statt gepflegt.** Version und Codezeilen stehen
+  jetzt prominent ganz oben, darunter Tests, Achievements und der Rest der
+  Wand. Der Generator leitet ab: Version, Zeilen, Tests, Achievements,
+  Kategorien, Stufen, Routen, Tabellen, Module, Diagrammtypen, Doku-Seiten,
+  i18n-Schlüssel, bepreiste Modelle und **jede Abhängigkeitsversion** — Chart.js
+  aus dem CDN-Tag der `index.html`. Dazu elf **dynamische GitHub-Badges**
+  (Release, letzter Commit, Commits/Monat, Codegröße, Sterne, Forks, Issues,
+  PRs, Beitragende, Lizenz), die sich bei shields.io selbst aktualisieren und
+  gar nicht erst neu erzeugt werden müssen. 67 handgepflegte Badges sind
+  entfallen; übrig sind nur die beiden ohne Wert (Sprachumschalter, Spenden)
+- **Erste Tests für das Frontend** — rund 12.000 Zeilen Browser-Code hatten
+  keinen einzigen. `test/helpers/frontend.js` lädt die Bundles in eine
+  `vm`-Sandbox mit DOM-Attrappe; getestet werden Zahlenformatierung,
+  Cache-Umschalter, Wochentagsableitung in Lokalzeit, gleitender Durchschnitt,
+  Projektnamen-Kürzung, Merge-Vorschläge und die i18n-Vollständigkeit
+- **Tests für 14 bislang ungedeckte Routen** (53 von 68 abgedeckt), darunter der
+  SSE-Kopf von `/api/live` und die Zusicherung, dass GitHub, Anthropic und
+  Plan-Usage **ohne Zugangsdaten nicht mit 5xx antworten** — ein Reiter, der
+  500 wirft, sieht aus, als sei die App kaputt
+- **`test/badges.test.js`** pinnt die Reihenfolge oben, dass keine
+  wertetragende Badge außerhalb des erzeugten Blocks steht, Alt-Text auf jedem
+  Bild, wohlgeformte URLs und die Idempotenz von `--check`
+
+### Fixed
+
+- **`_formatDuration(undefined)` ergab „NaNh NaNm"** in der Sitzungstabelle.
+  `_formatActiveTime` prüfte seine Eingabe, dieser Formatierer nicht
+- **Die Node.js-Badge war kaputt**: `>=20.12` ging unescaped in die URL, und
+  dasselbe `>` im Alt-Attribut beendete das `<img>`-Tag für jeden einfachen
+  Parser. Beides beim Testschreiben aufgefallen
+
+---
+
 ## [0.2.0] — 2026-08-30
 
 Der Schwerpunkt dieser Version ist **Richtigkeit**: zwei Kennzahlen auf der

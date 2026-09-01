@@ -9,132 +9,103 @@
 </p>
 
 <!-- BADGES:START -->
+
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-412_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="412 tests passing">
-  <img src="https://img.shields.io/badge/code-37.1k_lines-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="37096 lines of code across 55 files">
+  <img src="https://img.shields.io/badge/version-v0.2.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.2.1">
+  <img src="https://img.shields.io/badge/lines_of_code-37.7k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="37743 lines of code across 58 files">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/tests-460_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="460 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
+  <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
+</p>
+
+<p align="center">
+  <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/github/license/pepperonas/claude-token-tracker?style=flat-square&label=license&color=blue&logo=opensourceinitiative&logoColor=white" alt="license">
+  <img src="https://img.shields.io/github/v/release/pepperonas/claude-token-tracker?style=flat-square&label=release&color=orange&logo=github&logoColor=white" alt="release">
+  <img src="https://img.shields.io/github/last-commit/pepperonas/claude-token-tracker?style=flat-square&label=last%20commit&color=informational&logo=git&logoColor=white" alt="last commit">
+  <img src="https://img.shields.io/github/commit-activity/m/pepperonas/claude-token-tracker?style=flat-square&label=commits%2Fmonth&color=informational&logo=git&logoColor=white" alt="commits/month">
+  <img src="https://img.shields.io/github/languages/code-size/pepperonas/claude-token-tracker?style=flat-square&label=code%20size&color=informational&logo=github&logoColor=white" alt="code size">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/pepperonas/claude-token-tracker?style=flat-square&label=stars&color=gold&logo=github&logoColor=white" alt="stars">
+  <img src="https://img.shields.io/github/forks/pepperonas/claude-token-tracker?style=flat-square&label=forks&color=informational&logo=github&logoColor=white" alt="forks">
+  <img src="https://img.shields.io/github/issues/pepperonas/claude-token-tracker?style=flat-square&label=open%20issues&color=informational&logo=github&logoColor=white" alt="open issues">
+  <img src="https://img.shields.io/github/issues-pr/pepperonas/claude-token-tracker?style=flat-square&label=open%20PRs&color=informational&logo=github&logoColor=white" alt="open PRs">
+  <img src="https://img.shields.io/github/contributors/pepperonas/claude-token-tracker?style=flat-square&label=contributors&color=informational&logo=github&logoColor=white" alt="contributors">
+  <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome"></a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-68-0969da?style=flat-square" alt="68 API routes">
   <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
-  <img src="https://img.shields.io/badge/test_files-23-3fb950?style=flat-square" alt="23 test files">
-  <img src="https://img.shields.io/badge/i18n_keys-5872_x2-bf8700?style=flat-square" alt="5872 translation keys in two languages">
+  <img src="https://img.shields.io/badge/lib_modules-16-0969da?style=flat-square" alt="16 library modules">
+  <img src="https://img.shields.io/badge/charts-43-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="43 chart types">
+  <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
+  <img src="https://img.shields.io/badge/test_files-25-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="25 test files">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
+  <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
+  <img src="https://img.shields.io/badge/models_priced-14-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="14 models in the fallback price table">
+  <img src="https://img.shields.io/badge/i18n_keys-5872_x_2-bf8700?style=flat-square" alt="5872 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js &gt;=20.12">
+  <img src="https://img.shields.io/badge/better--sqlite3-11.0.0-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="better-sqlite3 11.0.0">
+  <img src="https://img.shields.io/badge/chokidar-4.0.0-orange?style=flat-square&logo=files&logoColor=white" alt="chokidar 4.0.0">
+  <img src="https://img.shields.io/badge/Chart.js-4.4.7-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="Chart.js 4.4.7">
+  <img src="https://img.shields.io/badge/Vitest-4.1.8-6E9F18?style=flat-square&logo=vitest&logoColor=white" alt="Vitest 4.1.8">
+  <img src="https://img.shields.io/badge/ESLint-9.0.0-4B32C3?style=flat-square&logo=eslint&logoColor=white" alt="ESLint 9.0.0">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/runtime_deps-2-cf222e?style=flat-square" alt="2 runtime dependencies">
-  <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=flat-square" alt="no build step">
+  <img src="https://img.shields.io/badge/dev_deps-3-cf222e?style=flat-square" alt="3 dev dependencies">
+  <img src="https://img.shields.io/badge/framework-none-1a7f37?style=flat-square" alt="no frontend framework">
+  <img src="https://img.shields.io/badge/bundler-none-1a7f37?style=flat-square" alt="no bundler">
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square&logo=opensourceinitiative&logoColor=white" alt="MIT license">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/storage-SQLite_WAL-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite in WAL mode">
+  <img src="https://img.shields.io/badge/live_updates-SSE-FF6600?style=flat-square&logo=lightning&logoColor=white" alt="Server-Sent Events">
+  <img src="https://img.shields.io/badge/auth-GitHub_OAuth-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub OAuth">
+  <img src="https://img.shields.io/badge/secrets-AES----256----GCM-critical?style=flat-square&logo=letsencrypt&logoColor=white" alt="AES-256-GCM encrypted">
+  <img src="https://img.shields.io/badge/pricing-live_via_LiteLLM-6f42c1?style=flat-square&logo=anthropic&logoColor=white" alt="live pricing from LiteLLM">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/cache_tiers-5min_%2B_1h-0969da?style=flat-square" alt="both cache-write tiers priced">
+  <img src="https://img.shields.io/badge/cost_model-time--aware-0969da?style=flat-square" alt="historical prices pinned per message">
+  <img src="https://img.shields.io/badge/data-never_deleted-1a7f37?style=flat-square" alt="no DELETE FROM messages anywhere">
+  <img src="https://img.shields.io/badge/offline-works_fully-lightgrey?style=flat-square" alt="works without network access">
+  <img src="https://img.shields.io/badge/mobile-responsive_393px%2B-purple?style=flat-square" alt="mobile responsive from 393px">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-macOS_%7C_Linux_%7C_Windows-lightgrey?style=flat-square&logo=linux&logoColor=white" alt="runs on macOS, Linux and Windows">
+  <img src="https://img.shields.io/badge/deploy-PM2_%2B_nginx-2B037A?style=flat-square&logo=pm2&logoColor=white" alt="PM2 and nginx">
+  <img src="https://img.shields.io/badge/sync_agent-included-success?style=flat-square&logo=rsync&logoColor=white" alt="sync agent included">
+  <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/demo-tracker.celox.io-blue?style=flat-square&logo=googlechrome&logoColor=white" alt="Live demo"></a>
+</p>
+
+<p align="center">
+  <a href="docs/API.md"><img src="https://img.shields.io/badge/docs-API-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="API reference"></a>
+  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/docs-Architecture-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="Architecture"></a>
+  <a href="docs/METRICS.md"><img src="https://img.shields.io/badge/docs-Metrics-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="Metrics"></a>
+  <a href="docs/CONFIGURATION.md"><img src="https://img.shields.io/badge/docs-Configuration-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="Configuration"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/docs-Contributing-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="Contributing"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/docs-Changelog-informational?style=flat-square&logo=readthedocs&logoColor=white" alt="Changelog"></a>
+</p>
+
 <!-- BADGES:END -->
-
-<p align="center">
-  <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/releases"><img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version"></a>
-  <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
-  <a href="https://tracker.celox.io"><img src="https://img.shields.io/badge/demo-tracker.celox.io-blue?logo=googlechrome&logoColor=white" alt="Live Demo"></a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Node.js-%3E%3D20.12-339933?logo=node.js&logoColor=white" alt="Node.js >= 20.12">
-  <img src="https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite&logoColor=white" alt="SQLite WAL">
-  <img src="https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/ESLint-9.x-4B32C3?logo=eslint&logoColor=white" alt="ESLint">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/HTML5-Vanilla-E34F26?logo=html5&logoColor=white" alt="HTML5">
-  <img src="https://img.shields.io/badge/CSS3-Responsive-1572B6?logo=css3&logoColor=white" alt="CSS3">
-  <img src="https://img.shields.io/badge/SSE-Real--time-FF6600?logo=lightning&logoColor=white" alt="SSE">
-  <img src="https://img.shields.io/badge/i18n-DE%20%7C%20EN-lightgrey" alt="i18n">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?logo=apple&logoColor=white" alt="Platform">
-  <img src="https://img.shields.io/badge/no_framework-vanilla_JS-yellow" alt="No Framework">
-  <img src="https://img.shields.io/badge/offline-first-lightgrey?logo=databricks&logoColor=white" alt="Works offline">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/GitHub_OAuth-supported-181717?logo=github&logoColor=white" alt="GitHub OAuth">
-  <img src="https://img.shields.io/badge/Anthropic_API-integrated-D4A574?logo=anthropic&logoColor=white" alt="Anthropic API">
-  <img src="https://img.shields.io/badge/GitHub_GraphQL-contributions-181717?logo=graphql&logoColor=white" alt="GitHub GraphQL">
-  <img src="https://img.shields.io/badge/AES--256--GCM-encrypted-critical" alt="Encryption">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/categories-14-9cf" alt="14 Categories">
-  <img src="https://img.shields.io/badge/tiers-5_(Bronze→Diamond)-gold" alt="5 Tiers">
-  <img src="https://img.shields.io/badge/charts-40+-FF6384?logo=chartdotjs&logoColor=white" alt="40+ Charts">
-  <img src="https://img.shields.io/badge/tabs-10-informational" alt="10 Tabs">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/sync_agent-included-success?logo=upload&logoColor=white" alt="Sync Agent">
-  <img src="https://img.shields.io/badge/PM2-production_ready-2B037A?logo=pm2&logoColor=white" alt="PM2">
-  <img src="https://img.shields.io/badge/Nginx-reverse_proxy-009639?logo=nginx&logoColor=white" alt="Nginx">
-  <img src="https://img.shields.io/badge/Chokidar-4.x-orange?logo=files&logoColor=white" alt="Chokidar">
-  <img src="https://img.shields.io/badge/mobile-responsive_(393px+)-purple?logo=smartphone&logoColor=white" alt="Mobile Responsive">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/pricing-live_via_LiteLLM-6f42c1?logo=anthropic&logoColor=white" alt="Live pricing from LiteLLM">
-  <img src="https://img.shields.io/badge/cache_tiers-5min_%2B_1h-0969da" alt="Both cache-write tiers priced">
-  <img src="https://img.shields.io/badge/cost_model-time--aware-0969da" alt="Historical prices pinned per message">
-  <img src="https://img.shields.io/badge/data-never_deleted-1a7f37" alt="No DELETE FROM messages anywhere">
-</p>
-
-<p align="center">
-  <a href="docs/API.md"><img src="https://img.shields.io/badge/docs-API_reference-informational?logo=readthedocs&logoColor=white" alt="API reference"></a>
-  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/docs-Architecture-informational?logo=readthedocs&logoColor=white" alt="Architecture"></a>
-  <a href="docs/METRICS.md"><img src="https://img.shields.io/badge/docs-How_the_numbers_work-informational?logo=readthedocs&logoColor=white" alt="Metrics"></a>
-  <a href="docs/CONFIGURATION.md"><img src="https://img.shields.io/badge/docs-Configuration-informational?logo=readthedocs&logoColor=white" alt="Configuration"></a>
-  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/docs-Contributing-informational?logo=readthedocs&logoColor=white" alt="Contributing"></a>
-</p>
-
-
-<p align="center">
-  <img src="https://img.shields.io/badge/pricing-auto--synced-brightgreen?logo=anthropic&logoColor=white" alt="Auto-synced pricing">
-  <img src="https://img.shields.io/badge/source-LiteLLM-1A73E8" alt="LiteLLM">
-  <img src="https://img.shields.io/badge/refresh-24h_%2B_on--demand-informational" alt="Pricing refresh">
-  <img src="https://img.shields.io/badge/cost-API--equivalent-blue" alt="API-equivalent cost">
-  <img src="https://img.shields.io/badge/fallback-offline--safe-success" alt="Offline-safe fallback">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Opus_4.8-supported-D4A574?logo=anthropic&logoColor=white" alt="Opus 4.8">
-  <img src="https://img.shields.io/badge/Sonnet_5-supported-D4A574?logo=anthropic&logoColor=white" alt="Sonnet 5">
-  <img src="https://img.shields.io/badge/Fable_5-supported-D4A574?logo=anthropic&logoColor=white" alt="Fable 5">
-  <img src="https://img.shields.io/badge/Haiku_4.5-supported-D4A574?logo=anthropic&logoColor=white" alt="Haiku 4.5">
-  <img src="https://img.shields.io/badge/models-auto--detected-brightgreen" alt="Auto-detected models">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/mode-single_%7C_multi--user-blueviolet" alt="Single & Multi-user">
-  <img src="https://img.shields.io/badge/multi--device-supported-success" alt="Multi-device">
-  <img src="https://img.shields.io/badge/demo-mode_included-ff69b4" alt="Demo mode">
-  <img src="https://img.shields.io/badge/GitHub_OAuth-login-181717?logo=github&logoColor=white" alt="GitHub OAuth login">
-  <img src="https://img.shields.io/badge/sessions-HttpOnly_cookies-critical" alt="Session cookies">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Material_Design_3-Expressive-6750A4?logo=materialdesign&logoColor=white" alt="Material Design 3 Expressive">
-  <img src="https://img.shields.io/badge/usage-heatmap-FF6384?logo=chartdotjs&logoColor=white" alt="Usage heatmap">
-  <img src="https://img.shields.io/badge/weekday--aware-dates-9cf" alt="Weekday-aware dates">
-  <img src="https://img.shields.io/badge/reduced--motion-a11y_guard-success" alt="Reduced motion">
-  <img src="https://img.shields.io/badge/web-manifest-5A0FC8?logo=pwa&logoColor=white" alt="Web app manifest">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/backup-VACUUM_INTO-003B57?logo=sqlite&logoColor=white" alt="Backup">
-  <img src="https://img.shields.io/badge/CommonJS-backend-F7DF1E?logo=javascript&logoColor=black" alt="CommonJS">
-  <img src="https://img.shields.io/badge/zero--config-local_mode-brightgreen" alt="Zero config">
-  <img src="https://img.shields.io/badge/HTTP_server-no_Express-000000?logo=node.js&logoColor=white" alt="No Express">
-  <img src="https://img.shields.io/badge/coverage-vitest-6E9F18?logo=vitest&logoColor=white" alt="Coverage">
-</p>
-
-<p align="center">
-  <a href="https://www.paypal.com/donate/?business=martinpaush@gmail.com&currency_code=EUR"><img src="https://img.shields.io/badge/Sponsor_this_project-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal"></a>
-</p>
 
 ---
 
@@ -185,7 +156,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **412 automated tests** — unit, integration, and multi-user API tests
+- **460 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
