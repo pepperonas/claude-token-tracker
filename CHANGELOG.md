@@ -4,6 +4,56 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.3.0] — 2026-09-16
+
+### Added
+
+- **Der Datenbank-Download liefert einen Auszug des eigenen Kontos** statt der
+  Datenbankdatei. Er wird je Anfrage gebaut (`lib/export-db.js`): eine frische
+  Datei wird per ATTACH angehängt, das Schema aus `sqlite_master` übernommen
+  und nur die Zeilen des anfragenden Kontos kopiert — Nachrichten, Tool-Zeilen,
+  Rate-Limit-Ereignisse, Achievements, Projekt-Aliase. Kontodaten,
+  Sitzungstoken, Geräteschlüssel, zwischengespeicherte Fremd-API-Antworten und
+  Serverkonfiguration sind nicht enthalten; die Tabellenliste ist eine
+  Allowlist, damit eine künftige Migration nichts stillschweigend mitnimmt. Der
+  JSON-Export folgt derselben Regel
+- **Share-Links haben einen Besitzer.** Eine angemeldete Sitzung listet,
+  erstellt und widerruft nur eigene und darf nur ein Projekt veröffentlichen,
+  das sie wirklich hat; der Link löst gegen die Daten seines Besitzers auf, so
+  dass zwei Konten mit gleichnamigem Projekt zwei verschiedene Links bekommen.
+  Der Share-Admin-Key behält die instanzweite Sicht — das ist der Weg, den
+  celox ops nutzt, dessen Anfragen bleiben unverändert
+- **`OWNER_GITHUB_ID`** benennt das Konto, das eine Multi-User-Instanz
+  betreibt. Instanzweite Funktionen (Share-Admin-Key, alle Share-Links,
+  serverseitige Sicherungen) antworten ihm; der Einzelplatzbetrieb hat genau
+  ein Konto und ist sein eigener Betreiber. `/api/config` meldet `isOperator`,
+  damit die Einstellungsseite weglässt, was ein Konto ohnehin nicht nutzen kann
+- **OAuth-Zugriffstoken liegen verschlüsselt** (`lib/secret-box.js`,
+  AES-256-GCM), wie die gespeicherten Anthropic-Admin-Keys schon vorher; beide
+  teilen sich jetzt eine Implementierung. Bestandszeilen werden am Format
+  erkannt (`iv:tag:ciphertext` — kein Zugangsdatum enthält Doppelpunkte),
+  unverändert weiterverwendet und beim nächsten Öffnen der Datenbank einmalig
+  in place verschlüsselt. Niemand muss sich dafür neu anmelden
+
+### Changed
+
+- **Die Version steht nur noch an einer Stelle.** Der Footer zeigte fest
+  verdrahtet `v0.0.7`, während `package.json` bei 0.2.1 stand. Sie kommt jetzt
+  über `/api/config` aus `package.json` und verlinkt auf dieses Protokoll
+
+### Fixed
+
+- **Der Footer bleibt unten.** Auf Reitern mit wenig Inhalt (GitHub, Claude API)
+  hing er mitten auf der Seite mit 242 px Leere darunter. Die Seite ist jetzt
+  eine Spalte, der Inhalt nimmt den Rest der Höhe auf — der 48-px-Abstand über
+  dem Footer bleibt dabei erhalten, was `margin-top: auto` auf langen Seiten
+  geschluckt hätte
+- **Die Versionszeile war unter AA.** `opacity: 0.6` multipliziert sich auf den
+  Untergrund und machte aus 6,15:1 komponierte 2,97:1. Die Deckkraft ist weg,
+  die Abstufung trägt die Schriftgröße
+- Der Auszug wird in **einer Transaktion** gebaut, damit ein zweiter Schreiber
+  auf der Datenbank ihn nicht zwischen zwei Tabellen zerreißt
+
 ## [0.2.1] — 2026-08-30
 
 ### Added

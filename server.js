@@ -35,6 +35,11 @@ const planUsage = require('./lib/plan-usage');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
+// The one place a version number is written down. Everything that shows one —
+// the footer, the badges, the changelog heading — reads it from here, so they
+// cannot drift apart.
+const APP_VERSION = require('./package.json').version;
+
 // Read sync-agent files for install script generation
 const SYNC_AGENT_INDEX = fs.readFileSync(path.join(__dirname, 'sync-agent', 'index.js'), 'utf-8');
 const SYNC_AGENT_PKG = fs.readFileSync(path.join(__dirname, 'sync-agent', 'package.json'), 'utf-8');
@@ -659,6 +664,7 @@ const server = http.createServer((req, res) => {
     // isOperator is about the requester only, so the settings page can leave
     // out what it could not use anyway (the instance-wide share key).
     return sendJSON(res, {
+      version: APP_VERSION,
       multiUser: MULTI_USER,
       hasGithubToken: !!process.env.GITHUB_TOKEN,
       isOperator: isOperator(authenticateRequest(req)),

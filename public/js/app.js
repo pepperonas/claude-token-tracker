@@ -257,6 +257,7 @@ async function checkAuth() {
     const config = await fetch('/api/config').then(r => r.json());
     state.multiUser = config.multiUser;
     state.isOperator = config.isOperator !== false;
+    showVersion(config.version);
 
     if (!state.multiUser) {
       // Single-user mode — no auth needed
@@ -3463,6 +3464,31 @@ async function loadSettings() {
   loadDeviceManagement();
   loadShareAdminKey();
   setupDbDownload();
+}
+
+/**
+ * Put the running version in the footer.
+ *
+ * It comes from `package.json` by way of `/api/config`, so the number in the
+ * footer is the number that was deployed — a literal in the markup is a number
+ * that stops being true on the next release without anyone noticing.
+ */
+function showVersion(version) {
+  const el = document.getElementById('footer-version');
+  if (!el) return;
+  if (!version) {
+    // Nothing to show is better than a wrong number, and an empty link should
+    // not sit in the tab order.
+    el.textContent = '';
+    el.removeAttribute('title');
+    el.setAttribute('aria-hidden', 'true');
+    el.tabIndex = -1;
+    return;
+  }
+  el.textContent = 'v' + version;
+  el.title = t('versionTitle').replace('{version}', version);
+  el.removeAttribute('aria-hidden');
+  el.removeAttribute('tabindex');
 }
 
 function setupDbDownload() {

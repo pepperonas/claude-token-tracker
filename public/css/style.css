@@ -57,6 +57,13 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  /* dvh, because on a phone 100vh counts the browser chrome as page and the
+     footer ends up below the fold. The vh line above stays as the fallback. */
+  min-height: 100dvh;
+  /* A column, so a tab with little content (GitHub, Claude API) does not leave
+     the footer floating mid-page with dead space underneath it. */
+  display: flex;
+  flex-direction: column;
   overflow-x: hidden;
 }
 
@@ -432,6 +439,14 @@ html.js .uheat-anim .uheat-legend {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  /* As a flex item the auto margins eat the free space instead of centring a
+     full-width box, which would shrink the content to its widest child.
+     width:100% makes them resolve to 0 again and max-width does the centring. */
+  width: 100%;
+  /* Take the leftover height so the footer is pushed to the bottom. Done here
+     rather than with `margin-top: auto` on the footer, which would swallow its
+     48px gap on pages that do scroll. */
+  flex: 1 0 auto;
 }
 
 .tab-panel { display: none; }
@@ -2484,7 +2499,17 @@ html.js .uheat-anim .uheat-legend {
 .footer-version {
   font-size: 11px;
   color: var(--text-muted);
-  opacity: 0.6;
+  /* No `opacity` here: it multiplies against the background and took this text
+     from 6.15:1 down to 2.97:1, under AA. The smaller size is the hierarchy. */
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-version:hover,
+.footer-version:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
 }
 
 .footer-dev {
