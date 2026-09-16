@@ -193,6 +193,34 @@ describe('export-db', () => {
       expect(fs.existsSync(b)).toBe(true);
     });
 
+    it('copies every table inside one transaction', () => {
+      // Read consistency, not tidiness: a second writer committing between the
+      // `messages` copy and the `message_tools` copy would leave tool rows
+      // pointing at a message the snapshot never got. Assert the property —
+      // every statement of the copy runs with a transaction open.
+      const real = db.getDB();
+      const seen = [];
+      const note = (sql) => {
+        // Only the statements that move data matter; the schema lookups and
+        // the ATTACH around them are allowed to run outside.
+        if (/^\s*(INSERT|CREATE\s+TABLE)/i.test(sql)) {
+          seen.push({ sql: sql.slice(0, 30), inTx: real.inTransaction });
+        }
+      };
+      const spy = {
+        prepare: (sql) => { note(sql); return real.prepare(sql); },
+        exec: (sql) => { note(sql); return real.exec(sql); },
+        transaction: (fn) => real.transaction(fn),
+      };
+
+      buildUserSnapshot(spy, { userId: 1, multiUser: true, dir: tmpDir });
+
+      // five tables: one CREATE and one INSERT each
+      expect(seen.length).toBe(10);
+      expect(seen.filter(x => !x.inTx)).toEqual([]);
+      expect(real.inTransaction).toBe(false); // and it is closed again
+    });
+
     it('detaches afterwards so the live connection stays usable', () => {
       buildUserSnapshot(db.getDB(), { userId: 1, multiUser: true, dir: tmpDir });
       const attached = db.getDB().prepare('PRAGMA database_list').all().map(r => r.name);

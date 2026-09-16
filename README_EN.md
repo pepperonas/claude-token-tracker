@@ -6,11 +6,11 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.2.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.2.1">
-  <img src="https://img.shields.io/badge/lines_of_code-38.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="38547 lines of code across 61 files">
+  <img src="https://img.shields.io/badge/lines_of_code-38.6k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="38587 lines of code across 61 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-495_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="495 tests passing">
+  <img src="https://img.shields.io/badge/tests-496_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="496 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -192,7 +192,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **495 automated tests** (unit + integration + multi-user API + achievements)
+- **496 automated tests** (unit + integration + multi-user API + achievements)
 - **Per-project report (HTML + PDF)** — standalone, print-optimised report per project: KPIs, cost split by component including both cache-write tiers, cost over time, model and session tables, and a methodology section. No CDN, no chart library — inline SVG only. "PDF" is the browser's own print dialog
 - **"How it adds up"** — a methodology dialog behind every KPI: formulas, the 5-minute idle cap, the price source, and what is deliberately not counted
 - **Accurate cache pricing** — cache writes billed by TTL tier (5 min = 1.25x input, 1 h = 2x). Claude Code writes mostly to the 1-hour cache; a flat rate understates cost by ~8.5%
