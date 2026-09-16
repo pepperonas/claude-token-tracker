@@ -12,11 +12,11 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.2.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.2.1">
-  <img src="https://img.shields.io/badge/lines_of_code-37.7k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="37743 lines of code across 58 files">
+  <img src="https://img.shields.io/badge/lines_of_code-38.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="38525 lines of code across 61 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-460_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="460 tests passing">
+  <img src="https://img.shields.io/badge/tests-494_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="494 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -42,10 +42,10 @@
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-70-0969da?style=flat-square" alt="70 API routes">
   <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-16-0969da?style=flat-square" alt="16 library modules">
+  <img src="https://img.shields.io/badge/lib_modules-17-0969da?style=flat-square" alt="17 library modules">
   <img src="https://img.shields.io/badge/charts-43-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="43 chart types">
   <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-25-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="25 test files">
+  <img src="https://img.shields.io/badge/test_files-27-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="27 test files">
 </p>
 
 <p align="center">
@@ -156,7 +156,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **460 automated tests** — unit, integration, and multi-user API tests
+- **494 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

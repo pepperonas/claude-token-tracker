@@ -646,11 +646,18 @@ describe('API endpoints', () => {
       expect(Array.isArray(body) || Array.isArray(body.devices)).toBe(true);
     });
 
-    it('GET /api/download-db streams the database file', async () => {
+    it('GET /api/download-db streams a snapshot of the account\'s data', async () => {
       const res = await raw('/api/download-db');
       expect(res.status).toBe(200);
       // SQLite files start with this exact magic string.
       expect(res.body.startsWith('SQLite format 3')).toBe(true);
+      // The data tables are there...
+      expect(res.body).toContain('CREATE TABLE "messages"');
+      // ...and the tables holding server state are not, even on a single-user
+      // instance where every row belongs to the one local account anyway.
+      for (const table of ['users', 'user_sessions', 'devices', 'github_cache', 'metadata']) {
+        expect(res.body).not.toContain(`CREATE TABLE "${table}"`);
+      }
     });
 
     it('GET /api/live opens an SSE stream with the right headers', async () => {

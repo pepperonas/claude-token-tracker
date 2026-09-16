@@ -91,15 +91,41 @@ variable is the fallback when nothing is stored.
 
 ---
 
+## Instance operator
+
+| Variable | Default | Description |
+|---|---|---|
+| `OWNER_GITHUB_ID` | — | GitHub id of the account that runs this instance. |
+
+Multi-user mode serves several accounts from one database. Most endpoints are
+account-scoped and need no configuration: a session reaches its own messages,
+its own projects, its own share links, and `GET /api/download-db` builds a
+snapshot of that account's own data.
+
+A few functions act on the *instance* rather than on one account — reading or
+rotating `SHARE_ADMIN_KEY`, managing every share link, and triggering a
+server-side backup. Those answer to the operator named here. Leave it unset and
+no session qualifies; they stay reachable with the share admin key, which lives
+in the server's environment rather than in any account.
+
+Single-user mode has exactly one account, which is its own operator.
+
+To find the id: `curl -s https://api.github.com/users/<login> | grep '"id"'`.
+
+---
+
 ## Share API
 
 | Variable | Default | Description |
 |---|---|---|
 | `SHARE_ADMIN_KEY` | — | 64-char hex. Required for the share **management** endpoints. |
 
-Without it the management endpoints are reachable with a dashboard session
-only. The public read endpoint `GET /api/public/share/:token` never needs it —
-it is authorised by the 48-character share token alone.
+The key manages the instance's share links, which is how an external consumer
+(such as OPS) publishes per-project dashboards. A dashboard session manages its
+own share links without it. The public read endpoint
+`GET /api/public/share/:token` never needs it — it is authorised by the
+48-character share token alone, and resolves against the data of the account
+that created the link.
 
 ---
 

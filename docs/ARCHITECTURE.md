@@ -61,6 +61,7 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/report-project.js` | Standalone per-project HTML report. |
 | `lib/export-html.js` | Self-contained interactive HTML snapshot. |
 | `lib/backup.js` | `VACUUM INTO` snapshots with a shrink guard. |
+| `lib/export-db.js` | Per-account SQLite snapshot for the database download. |
 | `lib/watcher.js` | File watching and SSE fan-out. |
 
 ---

@@ -3,14 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const { PORT, DB_PATH, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY } = require('./lib/config');
+const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY, OWNER_GITHUB_ID } = require('./lib/config');
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
 const { calculateCost, getPricingMeta } = require('./lib/pricing');
 const pricingFetcher = require('./lib/pricing-fetcher');
 const {
-  initDB, insertMessages, streamAllMessages, getParseState, setParseState, closeDB,
+  initDB, getDB, insertMessages, streamAllMessages, getParseState, setParseState, closeDB,
   insertMessagesForUser, streamMessagesForUser,
   regenerateApiKey, cleanExpiredSessions, findUserByApiKey,
   getUnlockedAchievements, unlockAchievementsBatch, unlockAchievementsBatchAt, clearAchievementsForUser, replaceAchievementsForUser,
@@ -25,6 +25,7 @@ const {
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
+const { buildUserSnapshot } = require('./lib/export-db');
 const { generateProjectReport } = require('./lib/report-project');
 const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
@@ -294,6 +295,21 @@ function readBody(req, maxBytes = 10 * 1024 * 1024) {
 function getAggregator(user, deviceId) {
   if (!MULTI_USER) return aggregator;
   return aggregatorCache.get(user.id, deviceId || null);
+}
+
+/**
+ * Whether a session may act on the instance rather than on one account:
+ * share links, the share admin key, on-demand backups.
+ *
+ * A single-user instance has exactly one account, so it is its own operator.
+ * In multi-user mode the operator is named by OWNER_GITHUB_ID; if that is
+ * unset, no session qualifies — instance-wide functions stay reachable with
+ * the share admin key, which lives in the server's environment.
+ */
+function isOperator(user) {
+  if (!MULTI_USER) return true;
+  if (!user || !OWNER_GITHUB_ID) return false;
+  return String(user.github_id) === String(OWNER_GITHUB_ID);
 }
 
 /**
@@ -823,8 +839,15 @@ const server = http.createServer((req, res) => {
     const share = getProjectShare(shareToken);
     if (!share) return sendJSON(res, { error: 'Not found' }, 404);
 
+    // A share filed under an account resolves against that account's own data,
+    // so the link shows its owner's project and nothing else. Shares with no
+    // owner are the operator's and keep resolving instance-wide.
+    const ownerAgg = MULTI_USER && share.user_id != null
+      ? aggregatorCache.get(share.user_id, null)
+      : null;
+
     // In multi-user mode, use cached global aggregator
-    const shareAgg = MULTI_USER ? (() => {
+    const shareAgg = ownerAgg || (MULTI_USER ? (() => {
       const now = Date.now();
       if (!global._shareAggCache || now - global._shareAggCacheTime > 300000) {
         const { streamAllMessages } = require('./lib/db');
@@ -840,7 +863,7 @@ const server = http.createServer((req, res) => {
         global._shareAggCacheTime = now;
       }
       return global._shareAggCache;
-    })() : aggregator;
+    })() : aggregator);
     const projectData = shareAgg.getProjectDetail(share.project, query.from, query.to);
     if (!projectData) return sendJSON(res, { error: 'Not found' }, 404);
 
@@ -936,6 +959,8 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/share-admin-key' && req.method === 'GET') {
     const sessionUser = authenticateRequest(req);
     if (MULTI_USER && !sessionUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    // One key for the whole instance: it answers to the operator.
+    if (!isOperator(sessionUser)) return sendJSON(res, { error: 'Forbidden' }, 403);
     return sendJSON(res, {
       key: SHARE_ADMIN_KEY || null,
       base_url: BASE_URL || `http://localhost:${PORT}`,
@@ -945,6 +970,7 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/share-admin-key' && req.method === 'POST') {
     const sessionUser = authenticateRequest(req);
     if (MULTI_USER && !sessionUser) return sendJSON(res, { error: 'Unauthorized' }, 401);
+    if (!isOperator(sessionUser)) return sendJSON(res, { error: 'Forbidden' }, 403);
     const crypto = require('crypto');
     const newKey = crypto.randomBytes(32).toString('hex');
     // Write to .env file
@@ -975,6 +1001,12 @@ const server = http.createServer((req, res) => {
       return sendJSON(res, { error: 'Unauthorized' }, 401);
     }
 
+    // The admin key and the operator manage the instance's shares. Any other
+    // signed-in account manages its own: `shareScope` is the account id its
+    // shares are filed under, or null for the instance-wide view.
+    const actsForInstance = isAdmin || isOperator(sessionUser);
+    const shareScope = actsForInstance ? null : sessionUser.id;
+
     // In multi-user mode, use a cached global aggregator (rebuilt every 5 min)
     const shareAgg = MULTI_USER ? (() => {
       const now = Date.now();
@@ -995,7 +1027,9 @@ const server = http.createServer((req, res) => {
     })() : aggregator;
 
     if (pathname === '/api/shares/projects' && req.method === 'GET') {
-      const projects = shareAgg.getProjects();
+      const projects = (shareScope == null
+        ? shareAgg
+        : aggregatorCache.get(shareScope, null)).getProjects();
       return sendJSON(res, (projects || []).map(p => ({
         name: p.name,
         messages: p.messages,
@@ -1005,7 +1039,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (pathname === '/api/shares' && req.method === 'GET') {
-      return sendJSON(res, listProjectShares());
+      return sendJSON(res, listProjectShares(shareScope));
     }
 
     if (pathname === '/api/shares' && req.method === 'POST') {
@@ -1015,7 +1049,16 @@ const server = http.createServer((req, res) => {
         try {
           const { project, label, expires_in_days } = JSON.parse(body);
           if (!project) return sendJSON(res, { error: 'project is required' }, 400);
-          const share = createProjectShare(project, label, expires_in_days);
+          // A share exposes a project's data without a login, so an account
+          // may only share a project it actually has — checked against its own
+          // scoped aggregator, the same way a project merge is checked.
+          if (shareScope != null) {
+            const own = aggregatorCache.get(shareScope, null).getProjects() || [];
+            if (!own.some(p => p.name === project)) {
+              return sendJSON(res, { error: 'Unknown project' }, 404);
+            }
+          }
+          const share = createProjectShare(project, label, expires_in_days, shareScope);
           return sendJSON(res, share, 201);
         } catch (err) {
           return sendJSON(res, { error: err.message }, 400);
@@ -1027,7 +1070,10 @@ const server = http.createServer((req, res) => {
     if (pathname.startsWith('/api/shares/') && req.method === 'DELETE') {
       const shareId = pathname.split('/api/shares/')[1];
       if (!shareId || shareId === 'projects') return sendJSON(res, { error: 'Invalid' }, 400);
-      deleteProjectShare(shareId);
+      const removed = deleteProjectShare(shareId, shareScope);
+      if (shareScope != null && removed.changes === 0) {
+        return sendJSON(res, { error: 'Not found' }, 404);
+      }
       res.writeHead(204);
       return res.end();
     }
@@ -1707,26 +1753,49 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb));
   }
 
-  // Database download
+  // Database download — a snapshot of the requesting account's own data.
+  // Built per request (see lib/export-db.js) rather than served as a file,
+  // so the file carries this account's rows and no server-side credentials.
   if (pathname === '/api/download-db' && req.method === 'GET') {
+    let snapshot = null;
     try {
-      const stat = fs.statSync(DB_PATH);
+      snapshot = buildUserSnapshot(getDB(), {
+        userId: MULTI_USER ? user.id : 0,
+        multiUser: MULTI_USER,
+      });
+      const stat = fs.statSync(snapshot);
       const dateStr = new Date().toISOString().slice(0, 10);
       res.writeHead(200, {
         'Content-Type': 'application/x-sqlite3',
         'Content-Disposition': `attachment; filename="tracker-${dateStr}.db"`,
         'Content-Length': stat.size
       });
-      const stream = fs.createReadStream(DB_PATH);
+
+      const stream = fs.createReadStream(snapshot);
+      // The snapshot is scratch: drop it once it has been sent, and also when
+      // the client goes away mid-download, or temp files pile up per request.
+      let removed = false;
+      const cleanup = () => {
+        if (removed) return;
+        removed = true;
+        fs.unlink(snapshot, () => {});
+      };
+      stream.on('close', cleanup);
+      stream.on('error', cleanup);
+      res.on('close', () => stream.destroy());
       stream.pipe(res);
       return;
     } catch (err) {
+      if (snapshot) fs.unlink(snapshot, () => {});
       return sendJSON(res, { error: err.message }, 500);
     }
   }
 
   // Backup endpoints
   if (pathname === '/api/backup' && req.method === 'POST') {
+    // Writes a snapshot of the whole instance to the server's disk, so it
+    // belongs to whoever runs the instance.
+    if (!isOperator(user)) return sendJSON(res, { error: 'Forbidden' }, 403);
     if (!backup) return sendJSON(res, { error: 'Backup module not available' }, 500);
     try {
       const result = backup.backupNow();
@@ -1739,7 +1808,7 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/export' && req.method === 'GET') {
     if (!backup) return sendJSON(res, { error: 'Backup module not available' }, 500);
     try {
-      const data = backup.exportJSON();
+      const data = backup.exportJSON(MULTI_USER ? user.id : null);
       res.writeHead(200, {
         'Content-Type': 'application/json',
         'Content-Disposition': `attachment; filename="claude-tracker-export-${new Date().toISOString().slice(0, 10)}.json"`

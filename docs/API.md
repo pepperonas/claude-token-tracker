@@ -113,11 +113,18 @@ message passes through.
 
 | Route | Auth | Description |
 |---|---|---|
-| `/api/share-admin-key` | Session | Read, `POST` to regenerate. |
+| `/api/share-admin-key` | Operator | Read, `POST` to regenerate. One key per instance, so it answers to the operator (`OWNER_GITHUB_ID`). |
 | `/api/shares` | Admin key or session | List, `POST` to create `{ project, label, expires_in_days }`. |
 | `/api/shares/:id` | Admin key or session | `DELETE` — revocation takes effect immediately. |
 | `/api/shares/projects` | Admin key or session | Projects with stats, for the share picker. |
 | `/api/public/share/:token` | **Public** | Sanitised project data. 30 requests/min/IP, CORS allowlist. Never exposes the internal project path. |
+
+**Scope.** The admin key and the operator manage the instance's share links —
+that is the path an external consumer such as OPS uses. Any other signed-in
+session manages its own: it lists and revokes the links it created, and may
+publish only a project it actually has. A link records who created it and
+resolves against that account's data, so two accounts with a project of the
+same name get two different links.
 
 ## GitHub
 
@@ -152,10 +159,10 @@ All stale-while-revalidate cached; see [CONFIGURATION.md](CONFIGURATION.md).
 
 | Route | Description |
 |---|---|
-| `/api/export` | Full JSON export. |
+| `/api/export` | JSON export of the requesting account's messages. |
 | `/api/export-html` | Self-contained interactive HTML snapshot. |
-| `/api/download-db` | Streams the SQLite file. |
-| `POST /api/backup` | Take a snapshot now. |
+| `/api/download-db` | A SQLite snapshot of the requesting account's own data, built per request (`lib/export-db.js`): messages, tools, rate-limit events, achievements and project aliases. Account records, session tokens, device API keys, cached third-party payloads and server configuration are not part of it. |
+| `POST /api/backup` | Operator. Take a server-side snapshot now. |
 | `POST /api/rebuild` | Reload the DB history **first**, then re-parse JSONL on top. Doing it the other way round silently dropped everything past the JSONL retention window. |
 | `/api/config` | Mode and feature flags for the frontend. |
 | `/api/stats-cache` | Local `.claude` statistics (single-user only). |
