@@ -656,7 +656,13 @@ const server = http.createServer((req, res) => {
 
   // Config endpoint (tells frontend about mode)
   if (pathname === '/api/config') {
-    return sendJSON(res, { multiUser: MULTI_USER, hasGithubToken: !!process.env.GITHUB_TOKEN });
+    // isOperator is about the requester only, so the settings page can leave
+    // out what it could not use anyway (the instance-wide share key).
+    return sendJSON(res, {
+      multiUser: MULTI_USER,
+      hasGithubToken: !!process.env.GITHUB_TOKEN,
+      isOperator: isOperator(authenticateRequest(req)),
+    });
   }
 
   // Sync endpoint — API key auth, separate from session auth

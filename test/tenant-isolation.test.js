@@ -186,6 +186,17 @@ describe('tenant isolation (multi-user, over HTTP)', () => {
       expect(res.status).toBe(403);
     });
 
+    it('tells each session whether it operates the instance', async () => {
+      const owner = await asOwner('/api/config');
+      const other = await asOther('/api/config');
+      const anon = await request('/api/config');
+      expect(owner.body.isOperator).toBe(true);
+      expect(other.body.isOperator).toBe(false);
+      expect(anon.body.isOperator).toBe(false);
+      // …and it stays a boolean about the requester, never the key itself.
+      expect(JSON.stringify(owner.body)).not.toContain(ADMIN_KEY);
+    });
+
     it('does not let another account trigger a server-side backup', async () => {
       const res = await asOther('/api/backup', { method: 'POST' });
       expect(res.status).toBe(403);

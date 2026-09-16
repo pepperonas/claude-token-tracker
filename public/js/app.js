@@ -256,6 +256,7 @@ async function checkAuth() {
     // Check if multi-user mode
     const config = await fetch('/api/config').then(r => r.json());
     state.multiUser = config.multiUser;
+    state.isOperator = config.isOperator !== false;
 
     if (!state.multiUser) {
       // Single-user mode — no auth needed
@@ -3488,6 +3489,10 @@ function setupDbDownload() {
 async function loadShareAdminKey() {
   const section = document.getElementById('share-api-key-section');
   if (!section) return;
+  // One key for the whole instance — an account that cannot use it is not
+  // shown a field it would only ever see an error in.
+  if (!state.isOperator) { section.style.display = 'none'; return; }
+  section.style.display = '';
   const keyEl = document.getElementById('share-admin-key-value');
   const urlEl = document.getElementById('share-tracker-url');
   const statusEl = document.getElementById('share-admin-key-status');
