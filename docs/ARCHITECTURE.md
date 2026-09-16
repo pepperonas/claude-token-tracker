@@ -62,6 +62,7 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/export-html.js` | Self-contained interactive HTML snapshot. |
 | `lib/backup.js` | `VACUUM INTO` snapshots with a shrink guard. |
 | `lib/export-db.js` | Per-account SQLite snapshot for the database download. |
+| `lib/secret-box.js` | AES-256-GCM for credentials held at rest in the database. |
 | `lib/watcher.js` | File watching and SSE fan-out. |
 
 ---

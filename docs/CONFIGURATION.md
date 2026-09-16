@@ -48,7 +48,7 @@ truncated database must not quietly replace a good backup.
 | `MULTI_USER` | `false` | Turns the hosted mode on. |
 | `GITHUB_CLIENT_ID` | — | **Required** when `MULTI_USER=true`. OAuth app client ID. |
 | `GITHUB_CLIENT_SECRET` | — | **Required** when `MULTI_USER=true`. |
-| `SESSION_SECRET` | — | **Required** when `MULTI_USER=true`. `openssl rand -hex 32`. Also the AES-256-GCM key for stored Anthropic admin keys. |
+| `SESSION_SECRET` | — | **Required** when `MULTI_USER=true`. `openssl rand -hex 32`. Also the AES-256-GCM key for every credential stored in the database — OAuth access tokens and Anthropic admin keys. |
 | `BASE_URL` | `http://localhost:$PORT` | Public URL, used for OAuth callbacks and in generated install scripts. |
 
 Switching this on changes four things at once:
@@ -61,7 +61,15 @@ Switching this on changes four things at once:
    per user on demand and evicts it after 30 minutes of no requests.
 
 **Rotating `SESSION_SECRET` invalidates all sessions and makes previously
-stored Anthropic keys undecryptable.** They have to be re-entered.
+stored credentials undecryptable.** An Anthropic admin key has to be
+re-entered. A GitHub OAuth token repairs itself: the account is not locked out
+— signing in stores a fresh one — but until then the GitHub tab has no token to
+work with and stays empty rather than authenticating with an unreadable value.
+
+Credentials are encrypted by `lib/secret-box.js`. A value stored before
+encryption existed is recognised by its shape, kept usable as-is, and encrypted
+in place the next time the database is opened, so no account has to sign in
+again for the change.
 
 ---
 
