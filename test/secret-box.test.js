@@ -44,8 +44,9 @@ describe('secret-box', () => {
     const stored = box.encrypt('gho_secret');
     const [iv, tag, data] = stored.split(':');
 
-    expect(bend(data)).not.toBe(data);
-    expect(bend(tag)).not.toBe(tag);
+    // Deterministic self-check: a fixed substitution is a no-op for one digit
+    // in sixteen, and the flake only showed up when that digit came up.
+    for (const d of '0123456789abcdef') expect(bend('ff' + d)).not.toBe('ff' + d);
     expect(box.decrypt([iv, tag, bend(data)].join(':'))).toBeNull();
     expect(box.decrypt([iv, bend(tag), data].join(':'))).toBeNull();
     expect(box.decrypt([bend(iv), tag, data].join(':'))).toBeNull();

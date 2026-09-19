@@ -97,6 +97,32 @@ describe('tab strip', () => {
     });
   });
 
+  describe('wiring', () => {
+    it('switchTab asks for the selected tab to be revealed', () => {
+      // The reveal being correct is worthless if nothing calls it — and the
+      // defect being fixed here lived in exactly that call site. Run the real
+      // switchTab against stand-in buttons and record what it reaches for.
+      const seen = F.evalIn(`(() => {
+        const calls = [];
+        const realReveal = revealActiveTab;
+        const realLoad = loadTab;
+        const realQSA = document.querySelectorAll;
+        revealActiveTab = (b) => calls.push(b.dataset.tab);
+        loadTab = () => {};
+        const btn = (tab) => ({ dataset: { tab }, classList: { toggle() {} } });
+        const buttons = [btn('overview'), btn('settings')];
+        document.querySelectorAll = (sel) => sel === '.tab-btn' ? buttons : [];
+        try { switchTab('settings'); } finally {
+          document.querySelectorAll = realQSA;
+          revealActiveTab = realReveal;
+          loadTab = realLoad;
+        }
+        return calls;
+      })()`);
+      expect(seen).toEqual(['settings']);
+    });
+  });
+
   describe('edge hints', () => {
     const marks = (s) => [...s._classes].sort();
 
