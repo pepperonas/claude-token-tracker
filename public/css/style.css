@@ -274,6 +274,23 @@ body {
 }
 .tabs-left::-webkit-scrollbar { display: none; }
 
+/* The strip hides its scrollbar, so a tab cut mid-word was the only sign that
+   more exist — which reads as broken rather than as scrollable. These classes
+   are set from the scroll position, so an edge only fades while something is
+   actually behind it. */
+.tabs-left.scroll-end {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+.tabs-left.scroll-start {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+}
+.tabs-left.scroll-start.scroll-end {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+
 .tabs-right {
   display: flex;
   align-items: center;
@@ -766,6 +783,12 @@ html.js .uheat-anim .uheat-legend {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+  /* A grid item defaults to min-width:auto and refuses to shrink below its
+     content. The usage heatmap is deliberately 540px wide (24 hours at a
+     readable cell size) and carries its own `overflow-x: auto`, but that never
+     got to act: the card grew to 570px at a 393px viewport and pushed the page
+     185px sideways, where `overflow-x: hidden` on the body cut it off. */
+  min-width: 0;
 }
 
 .chart-box h3 {

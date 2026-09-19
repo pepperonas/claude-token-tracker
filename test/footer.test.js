@@ -1,30 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-
 // The footer used to float mid-page on the two tabs whose content is shorter
 // than the viewport, with 242px of nothing beneath it, and its version line sat
 // under AA because of an `opacity`. Both are layout properties, so these pin
 // the CSS that carries them.
 
-const css = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'style.css'), 'utf-8');
-/**
- * The base rule for a selector, comments stripped (the file explains the traps
- * in prose, and a prose match would pass for the wrong reason).
- *
- * Anchored at column 0: the same selectors appear again indented inside the
- * media queries, and the first match in the file is the mobile one — reading
- * that instead is how this helper silently tested something else. Ambiguity is
- * an error rather than a guess.
- */
-function rule(selector) {
-  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const hits = [...bare.matchAll(new RegExp(`^${esc}\\s*\\{`, 'gm'))];
-  if (hits.length === 0) throw new Error(`no top-level rule for ${selector}`);
-  if (hits.length > 1) throw new Error(`${hits.length} top-level rules for ${selector} — ambiguous`);
-  const i = hits[0].index;
-  return bare.slice(i, bare.indexOf('}', i));
-}
+const { rule } = require('./helpers/css');
 
 describe('footer layout', () => {
   it('makes the page a column so the footer can be pushed down', () => {

@@ -453,6 +453,51 @@ function _tabIndex(tab) {
   return _tabOrder.indexOf(tab);
 }
 
+/**
+ * Whether the tab strip has more tabs than it can show.
+ *
+ * A property of the strip, not of the window: at 1200px the twelve tabs need
+ * 1143px and the strip gets 583, because the period buttons on the right take
+ * the rest. The old check asked `innerWidth <= 600` instead, so on a desktop
+ * the selected tab could sit off-screen with no tab appearing active at all.
+ */
+function tabStripOverflows(strip) {
+  return !!strip && strip.scrollWidth > strip.clientWidth + 1;
+}
+
+/** Bring the selected tab into view, but only when the strip actually scrolls. */
+function revealActiveTab(btn) {
+  const strip = btn && btn.closest ? btn.closest('.tabs-left') : null;
+  if (!tabStripOverflows(strip)) return;
+  // `block: 'nearest'` so reaching sideways never scrolls the page vertically.
+  btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+/**
+ * Mark which edges still have tabs behind them.
+ *
+ * The strip hides its scrollbar, so without this a tab cut mid-word is the only
+ * hint that there is more — which reads as broken rather than as scrollable.
+ */
+function updateTabScrollHints(strip) {
+  strip = strip || document.querySelector('.tabs-left');
+  if (!strip) return;
+  const slack = strip.scrollWidth - strip.clientWidth;
+  const atStart = strip.scrollLeft <= 1;
+  const atEnd = strip.scrollLeft >= slack - 1;
+  strip.classList.toggle('scroll-start', slack > 1 && !atStart);
+  strip.classList.toggle('scroll-end', slack > 1 && !atEnd);
+}
+
+function initTabScrollHints() {
+  const strip = document.querySelector('.tabs-left');
+  if (!strip) return;
+  const update = () => updateTabScrollHints(strip);
+  strip.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+}
+
 function switchTab(tab) {
   state.activeTab = tab;
   localStorage.setItem('activeTab', tab);
@@ -473,9 +518,7 @@ function switchTab(tab) {
 
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
-    if (b.dataset.tab === tab && window.innerWidth <= 600) {
-      b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (b.dataset.tab === tab) revealActiveTab(b);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   loadTab(tab);
@@ -4063,6 +4106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslations();
   applyTooltips();
   initExpressiveMotion();
+  initTabScrollHints();
 
   // Check auth before loading data
   const authed = await checkAuth();

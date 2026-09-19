@@ -4,6 +4,31 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.3.1] — 2026-09-20
+
+### Fixed
+
+- **Ein ausgewählter Reiter wurde nicht ins Bild geholt.** Die Reiterleiste
+  scrollt seitwärts und verbirgt ihre Scrollleiste; bei 1200 px brauchen die
+  zwölf Reiter 1143 px und bekommen 583, weil die Zeitraum-Bedienelemente
+  rechts den Rest nehmen. Das vorhandene Scroll-into-view hing an
+  `window.innerWidth <= 600` — also an der Fensterbreite statt daran, ob die
+  Leiste überhaupt überläuft. Auf dem Desktop stand der gewählte Reiter damit
+  außerhalb des Sichtfelds und **kein** Reiter sah aktiv aus; besonders nach
+  einem Neuladen, das den gemerkten Reiter wiederherstellt. Entschieden wird
+  jetzt an der Leiste (`tabStripOverflows`), nicht am Fenster
+- **Die Leiste zeigt jetzt, dass sie weitergeht.** Ohne Scrollleiste war ein
+  mitten im Wort abgeschnittener Reiter der einzige Hinweis auf weitere — das
+  liest sich als Defekt, nicht als Scrollbereich. Die jeweils verdeckte Kante
+  blendet aus, gesteuert von der Scrollposition
+- **Die Übersicht lief auf dem Handy 185 px über.** Die Nutzungs-Heatmap ist
+  bewusst 540 px breit (24 Stunden bei lesbarer Zellgröße) und bringt ihr
+  eigenes `overflow-x: auto` mit — das kam nie zum Zug, weil die Karte als
+  Grid-Item per Default `min-width: auto` hat und nicht unter ihren Inhalt
+  schrumpft. Bei 393 px wuchs die Karte auf 570 px und schob die Seite zur
+  Seite, wo `overflow-x: hidden` sie abschnitt. Mit `min-width: 0` an der Karte
+  scrollt die Heatmap in ihrer Karte, Zellen unverändert 18 px
+
 ## [0.3.0] — 2026-09-16
 
 ### Added

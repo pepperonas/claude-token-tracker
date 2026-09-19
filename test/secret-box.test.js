@@ -37,11 +37,18 @@ describe('secret-box', () => {
   });
 
   it('refuses a tampered value instead of returning garbage', () => {
+    // Change the last hex digit to one it definitely is not. Substituting a
+    // fixed character silently leaves the value untouched one time in sixteen,
+    // and the "tamper" then decrypts fine — which is how this test flaked.
+    const bend = (hex) => hex.slice(0, -1) + (hex.endsWith('a') ? 'b' : 'a');
     const stored = box.encrypt('gho_secret');
     const [iv, tag, data] = stored.split(':');
-    const flipped = data.slice(0, -1) + (data.endsWith('a') ? 'b' : 'a');
-    expect(box.decrypt([iv, tag, flipped].join(':'))).toBeNull();
-    expect(box.decrypt([iv, tag.slice(0, -1) + '0', data].join(':'))).toBeNull();
+
+    expect(bend(data)).not.toBe(data);
+    expect(bend(tag)).not.toBe(tag);
+    expect(box.decrypt([iv, tag, bend(data)].join(':'))).toBeNull();
+    expect(box.decrypt([iv, bend(tag), data].join(':'))).toBeNull();
+    expect(box.decrypt([bend(iv), tag, data].join(':'))).toBeNull();
   });
 
   it('cannot read what another secret wrote', () => {
