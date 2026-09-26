@@ -1027,6 +1027,105 @@ function createOverviewLinesChart(canvasId, daily, hourly, period) {
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
 
+/**
+ * Running totals for a set of numeric columns, oldest row first.
+ *
+ * Pure and input-safe: a missing, null or unparseable value counts as 0 rather
+ * than turning the rest of the curve into NaN — one bad row must not erase
+ * everything after it. The input rows are never touched.
+ */
+function cumulativeRows(rows, keys) {
+  const running = {};
+  for (const k of keys) running[k] = 0;
+  return (rows || []).map((row) => {
+    const out = {};
+    for (const k of keys) {
+      const v = Number(row && row[k]);
+      running[k] += Number.isFinite(v) ? v : 0;
+      out[k] = running[k];
+    }
+    return out;
+  });
+}
+
+/**
+ * Overview: the same four series as the chart above it, as running totals.
+ *
+ * One shared y-axis, deliberately. The chart above needs a second axis because
+ * a day's messages are dwarfed by that day's lines; cumulated over the period
+ * the two land within about 5x of each other (measured over the full history:
+ * 1.48M lines written against 298k messages), and a single scale is then both
+ * honest and readable. A second y-axis would invite comparing two curves whose
+ * relative height is an arbitrary choice of scale.
+ *
+ * The curves are not stacked: written + edited + deleted is not a quantity
+ * anyone wants (it adds removals to additions), and the point of a cumulative
+ * view is comparing the curves against each other.
+ */
+function createCumulativeLinesChart(canvasId, daily, hourly, period) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+
+  // Same period rule as the chart above: a single day is read hour by hour.
+  const byHour = period === 'today';
+  const rows = (byHour ? hourly : daily) || [];
+  if (rows.length === 0) return;
+
+  const KEYS = ['linesWritten', 'linesAdded', 'linesRemoved', 'messages'];
+  const totals = cumulativeRows(rows, KEYS);
+  const labels = byHour
+    ? rows.map(h => h.hour + ':00')
+    : rows.map(d => formatChartDate(d.date));
+
+  // Colours follow the entity, matching the chart above — the pair reads as
+  // one system, and "green is written" holds in both.
+  const series = [
+    { key: 'linesWritten', label: t('linesWritten'), color: '#3fb950' },
+    { key: 'linesAdded', label: t('linesEdited'), color: '#d29922' },
+    { key: 'linesRemoved', label: t('linesDeleted'), color: '#f85149' },
+    { key: 'messages', label: t('messagesLabel'), color: COLORS.input },
+  ];
+
+  const ctx = el.getContext('2d');
+  renderChart(canvasId, ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: series.map(s => ({
+        label: s.label,
+        data: totals.map(row => row[s.key]),
+        borderColor: s.color,
+        backgroundColor: s.color + '20',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+      })),
+    },
+    options: {
+      animation: chartAnimateNext ? undefined : false,
+      responsive: true,
+      maintainAspectRatio: false,
+      // One tooltip for the whole column: with four curves the interesting
+      // question is how they stand at the same moment.
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (c) => `${c.dataset.label}: ${formatNumber(c.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { callback: v => formatNumber(v) } }
+      }
+    }
+  });
+  restoreChartLegendState(canvasId, chartInstances[canvasId]);
+}
+
 // --- Insights chart creators ---
 
 function createCostBreakdownChart(canvasId, data, includeCache) {

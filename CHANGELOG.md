@@ -4,6 +4,32 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.4.0] — 2026-09-26
+
+### Added
+
+- **Kumulierte Codezeilen & Nachrichten** in der Übersicht, direkt unter dem
+  bestehenden Tagesverlauf: dieselben vier Reihen (Write, Edit, Delete,
+  Nachrichten) als laufende Summe über den Zeitraum. Der Tagesverlauf
+  beantwortet „wie viel war an diesem Tag?", die kumulierte Kurve „wo stehen
+  wir insgesamt und wie schnell wächst es?"
+- Zeitraum-Logik identisch zum Chart darüber — ein einzelner Tag wird stündlich
+  gelesen, sonst tageweise; es wird **kein zusätzlicher Request** gestellt, die
+  Kurven entstehen aus der Nutzlast, die die Übersicht ohnehin lädt
+
+### Gestaltung (zwei bewusste Entscheidungen)
+
+- **Eine gemeinsame y-Achse.** Der Chart darüber braucht eine zweite Achse, weil
+  die Nachrichten eines Tages neben den Zeilen desselben Tages verschwinden.
+  Kumuliert liegen beide nah beieinander (über die volle Historie gemessen:
+  1,48 Mio Zeilen gegen 298 k Nachrichten, Faktor 5) — eine Skala ist damit
+  ehrlich und lesbar. Eine zweite Achse würde einladen, zwei Kurven zu
+  vergleichen, deren relative Höhe eine willkürliche Skalenwahl ist
+- **Nicht gestapelt.** `written + edited + deleted` addiert Entferntes zu
+  Hinzugefügtem und ergibt eine Summe, die niemand braucht; der Sinn der
+  kumulierten Ansicht ist der Vergleich der Kurven untereinander
+- Farben identisch zum Chart darüber, damit das Paar als eine Einheit liest
+
 ## [0.3.1] — 2026-09-20
 
 ### Fixed

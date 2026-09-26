@@ -1252,6 +1252,7 @@ async function loadOverview() {
     renderHeatmapWeekday(hourlyWeekday);
   }
   createOverviewLinesChart('chart-overview-lines', daily, hourly, isSingleDay() ? 'today' : state.period);
+  createCumulativeLinesChart('chart-overview-cumulative', daily, hourly, isSingleDay() ? 'today' : state.period);
 
   await Promise.allSettled([sideLoads, loadGlobalComparison()]);
 }

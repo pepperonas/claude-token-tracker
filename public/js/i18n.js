@@ -112,7 +112,9 @@ const LANG = {
     tooltipLinesDeleted: 'Lines removed via the Edit tool',
     tooltipLinesNet: 'Net change: Write + Edit - Delete',
     linesAndMessages: 'Lines of Code & Messages',
+    cumulativeLinesAndMessages: 'Cumulative Lines of Code & Messages',
     tooltipLinesAndMessages: 'Lines of code (stacked bars) and messages (line) — adapts to selected period',
+    tooltipCumulativeLinesAndMessages: 'The same four series as running totals over the period \u2014 one shared scale, so the curves can be compared directly',
     // Settings
     settingsTitle: 'Settings',
     infoSettingsTitle: 'Settings',
@@ -3091,7 +3093,9 @@ const LANG = {
     tooltipLinesDeleted: 'Zeilen entfernt via Edit-Tool',
     tooltipLinesNet: 'Netto-\u00c4nderung: Write + Edit - Delete',
     linesAndMessages: 'Codezeilen & Nachrichten',
+    cumulativeLinesAndMessages: 'Kumulierte Codezeilen & Nachrichten',
     tooltipLinesAndMessages: 'Codezeilen (gestapelte Balken) und Nachrichten (Linie) \u2014 passt sich dem Zeitraum an',
+    tooltipCumulativeLinesAndMessages: 'Dieselben vier Reihen als laufende Summe \u00fcber den Zeitraum \u2014 eine gemeinsame Skala, damit die Kurven direkt vergleichbar sind',
     // Settings
     settingsTitle: 'Einstellungen',
     infoSettingsTitle: 'Einstellungen',
